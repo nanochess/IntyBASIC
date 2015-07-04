@@ -1,0 +1,1217 @@
+>>>>>>>>>>>>>  IntyBASIC user's manual  <<<<<<<<<<<<<<<
+
+                 by Oscar Toledo G.
+       (c) Copyright 2014-2015 Oscar Toledo G.
+                http://nanochess.org/
+               E-mail: biyubi@gmail.com
+
+First developed: Jan/14/2014
+Last revision: Jul/03/2015.
+
+
+>>>>>>>>>>>>>>  Legal notice
+
+This software is provided 'as-is', without any express or implied warranty. 
+In no event will the author be held liable for any damages or loss arising 
+from the use of this software.
+
+It is prohibited to modify, decompile, disassemble or reverse engineer this 
+software.
+
+All trademarks are property of their respective owners.
+
+
+>>>>>>>>>>>>>>  Changes in this version
+
+v1.1   Jul/03/2015  o Generates warning for assigned/non-read variables and also
+                      for read/non-assigned variables.
+                    o Solved bug where multiplication by 0 would take a long time.
+                    o Now optimizes multiplication by $0200, $0400 and $0800.
+                    o Solved bug where ECS code was always included.
+                    o Solved bug where some divisions were signed.
+                    o Optimized code generation for multiplication.
+                    o More optimization at code generation when the right operand
+                      is the most complex.
+                    o Some peephole optimization for code generation (at last
+                      saves code internally for further processing)
+                        * Avoids reloading register with constant if still available
+                        * Avoids reading memory in register if just written
+                        * Combines pairs of instructions in more optimum ways.
+                        * Array reading now array(index) is more optimum
+                        * Optimization for multiple substraction.
+                        * Optimization for comparisons.
+                        * Optimization for IF expr THEN GOTO.
+
+v1.0.4 Apr/23/2015  o Added support for ECS secondary PSG (only in SOUND)
+                    o Added RAND(range) for getting random number in range 0..range-1
+                    o Slight optimization in PRINT with spaces.
+                    o Modulus optimizes every power of 2.
+                    o Multiplication by 32, 64 and 128 optimized.
+                    o Division by 32, 64 and 128 optimized.
+                    o Added intvnut routine for fast multiplication (included
+                      only if you use variable * variable)
+                    o Solved bug where RETURN inside IF was taken as RETURN at
+                      end of PROCEDURE.
+                    o Solved bug in 8-bit and 16-bits variables space counting.
+                      Now it is exact.
+
+v1.0.3 Feb/17/2015  o Added new parameter PLAY NONE
+                    o Added new statements WHILE/WEND
+                    o Added SGN function.
+                    o It doesn't take some statements as a label if followed by
+                      colon.
+                    o Returns error code to command shell in case of compilation
+                      error or warning.
+
+v1.0.2 Jan/25/2015  o Support for changing title of compiled program. (it's
+                      shown by emulators and multicarts)
+                    o Support for Cuttle Cart 3 extra RAM. (same as JLP but
+                      without hardware acceleration for multiplication and
+                      division)
+                    o Support for CONT.* syntax, checks both controllers.
+                    o Support for ON FRAME GOSUB.
+
+v1.0.1 Dec/12/2014  o Statements DEFINE, SCREEN and PLAY allow to use an array
+                      as reference, in order to ease dynamic modification of
+                      data.
+                    o DEFINE statement allows VARPTR syntax.
+                    o Corrected total of free variables, it indicated one more
+                      than available.
+                    o Again optimized code generation for PRINT.
+                    o Optimized code generation for array access and PEEK.
+                    o Optimized code generation for trees of addition and
+                      substraction with constant.
+                    o Uses ultra-optimized macro for multiplication up to 127.
+                      (provided by DZ-Jay)
+                    o Speed up of code for keypad decoding.
+                    o Windows version of IntySmap, I forgot to include it before!
+                    o Many thanks to Kiwi for contributing Apple Catcher as a
+                      game sample.
+                    o Many thanks to catsfolly for contributing Clowns&Ballons
+                      as a game sample.
+
+v1.0  Nov/21/2014   o PRINT allows to display decimal numbers using a library
+                      provided by intvnut.
+                    o Support for Intellivoice via VOICE statement.
+                    o Added --jlp switch for support of multiplication/division
+                      acceleration via hardware.
+                    o --jlp switch also activates use of 16-bits RAM memory at 
+                      $8040-$9f7f (almost 8000 words for arrays/variables)
+                    o Added ABS function.
+                    o Added support for READ A(x)
+                    o Added USR function to call easily assembly functions.
+                    o Added VARPTR function to pass addresses to assembly functions.
+                    o Added DEFINE ALTERNATE
+                    o Optimization of code generation for expressions involving
+                      substraction and cases a+(-b) and a-(-b).
+                    o Optimization of code generation for IF A AND 2
+                    o Optimization of code generation for PRINT with strings.
+                    o Optimization of code generation for = and <> with zero.
+                    o Removes extra RETURN at end if the statement combination
+                      RETURN/END is used.
+                    o MUSIC statement alone doesn't activate tracker module. Only
+                      if PLAY is used (useful to deactivate music)
+                    o Warns of PROCEDURE start without ending previous PROCEDURE
+                    o Warns of END used without starting PROCEDURE
+                    o Added IntySmap utility for mapping assembly code to IntyBASIC
+                    o Added extra information to IntyBASIC assembler output for
+                      source-level debugging.
+                    o Added intbas.pl script for structuring directories.
+
+v0.9  Oct/10/2014   o Added ON GOTO/GOSUB statement.
+                    o Added STACK_CHECK statement.
+                    o Added INCLUDE statement.
+                    o In statement DEFINE now are allowed expressions in parameters
+                      for card number and total cards.
+                    o Added fixed numbers 8.8 style and fixed add and substract
+                      operators (+. and -.)
+                    o Multiplication and division optimized for constant 256.
+                    o Remainder optimized for constants 32, 64, 128 and 256.
+                    o Added extra description for SOUND, MUSIC, MODE and DEFINE
+                      statements.
+
+v0.8  Aug/26/2014   o Generates warning if unable to open prologue/epilogue files.
+                    o Shows total variable space used if exceeds available space.
+                    o Support for binary numbers, using syntax &01010101
+                    o Integrates music player and PLAY/MUSIC statements.
+                    o Integrates PAL/NTSC detection.
+
+v0.7  Apr/02/2014   o Added support to access card codes of Intellivision letters
+                      in expressions.
+                    o New MODE and SCREEN statements, so now all Intellivision video
+                      operations are controlled with IntyBASIC statements, no further
+                      need for POKE/PEEK.
+                    o Comparisons now return $ffff for true results, useful with NOT
+                    o Solved bug where CONT2 wasn't working.
+                    o Following two are experimental:
+                      o Now CONT?.B0 B1 and B2 are checking individual buttons.
+                      o Added support for controller keypads.
+                    
+v0.6  Mar/02/2014   Solved bug where FOR STEP would go beyond admisible values.
+                    Support for constants via CONST statement. Added example
+                    of sprite offset correction in SCROLL.BAS
+
+v0.5  Feb/26/2014   Accelerated assembly language routines for collision registers.
+                    Added SCROLL and BORDER statements. Support for library path
+                    in arguments.
+
+v0.4  Feb/11/2014   Solved bug in assignation to array with constant index.
+
+v0.3  Feb/06/2014   Added DIM statement and indexed array accesses.
+                    Solved bug of undetected extra characters in line.
+                    Added memory limit detection for variables.
+
+v0.2  Feb/03/2014   More definition variations available with BITMAP statement
+                    Added another sample title.bas
+                    Supports officially Mac OS X 10.6 (before only 10.8 and 64-bit)
+                    Supports officially Linux.
+
+v0.1  Jan/28/2014   First release
+
+
+>>>>>>>>>>>>>>  Description
+
+This is an integer BASIC compiler for Intellivision, it works as a cross compiler over a
+PC, Mac or Linux and generates assembler code that can be processed by as1600 (included
+with the jzintv emulator)
+
+Platforms available:
+  o PC with Windows XP or better.
+  o Mac OS X 10.6 or better. (universal 32/64-bits binary)
+  o Linux.
+
+Current limitations are:
+  o Division and remainder (modulus) operators treat numbers as unsigned.
+  o Doesn't detect undefined/redefined labels (anyway assembler catchs it)
+  o There is a quirk in FOR A=10 TO 0 STEP -1, you'll need to use a 16-bits variable if
+    your final value is 0 or negative.
+
+Usage:
+
+  intybasic in.bas output.asm [library_path]
+  intybasic --jlp in.bas output.asm [library_path]
+  intybasic --cc3 in.bas output.asm [library_path]
+  intybasic --title "My cute game" in.bas output.asm [library_path]
+
+Following modules are automatically included as prologue and epilogue of your generated
+code and they set important variables and helper code:
+
+    intybasic_prologue.asm
+    intybasic_epilogue.asm
+    
+By default these are bring from the current directory unless you choose a library path.
+
+Afterwards you should assemble your program (using as1600)
+
+  as1600 -o output.bin -l output.lst output.asm
+
+And finally you can test it using jzintv or Nostalgia emulators:
+
+  jzintv output.bin        Normal run
+  jzintv --jlp output.bin  Run with JLP support
+  jzintv -v1 output.bin    Run with Intellivoice support
+  
+Alternately you can load the program into a CuttleCart or Intellicart for testing over
+a real Intellivision.
+
+Also see below for information of source-level debugging.
+
+Following sample programs are included:
+
+  controller.bas       Test of Intellivision controllers
+  frame.bas            Sample of ON FRAME GOSUB
+  game1.bas            A simple shooting-letter game.
+  game2.bas            A simple labyrinth game with enemies.
+  music.bas            Simple example of music playing
+  screen.bas           MODE statement test
+  scroll.bas           Example of how to use scroll.
+  sprites.bas          Moving sprites sample.
+  test.bas             Test of compiler, anyway there could be hidden bugs.
+  title.bas            Animated tile for title screen
+  voice.bas            Simple example of Intellivoice
+
+  contrib/AppleCatcher.bas    Game Apple Catcher by Kiwi
+  contrib/clowns.bas          Game Clowns & Ballons by catsfolly
+  contrib/lander.bas          Game IntyLander
+  contrib/pak.bas             Game IntyPak
+
+Following utilities are included:
+
+  IntyColor            Converts a bitmap image to IntyBASIC source code/graphics
+  contrib/IntySmap     Converts a smap file to reference IntyBASIC source code.
+                       Useful with jzintv debugger (option -d and --src-map)
+                       See section below for full information.
+
+
+>>>>>>>>>>>>>>  Supporting the developer
+
+If you find IntyBASIC useful, please show your appreciation making a donation
+via Paypal ($9 USD suggested) to b-i+y-u+b-i (at) gmail.com
+
+If you find a bug, please report to same email and I'll try to look into
+it. Because lack of time I cannot guarantee it will be corrected.
+
+
+>>>>>>>>>>>>>>  IntyBASIC language specification:
+  
+Execution starts at init of BASIC program.
+
+Syntax per line:
+  [label:] statement[:statement] [' comment]
+
+  MAIN:    PRINT "HELLO"  ' Prints hello
+  
+Multiple statements are allowed separated by colon.
+Variables are created simply by being used.
+Labels are created simply by being used.
+
+A variable name starts with a letter or # and follows with letter, number or
+underscore.
+
+Variables and arrays (see DIM and bottom section for "exact" variables allowed) can
+be 8-bits (minimum 179 available) or 16-bits size (minimum 28 available), by
+default variables are 8-bit, to use 16-bits size use # as start character in name.
+
+    x
+    y
+    #score
+    
+Note that if you use the # prefix you should use it in all your program, variables
+without # prefix are treated as different 8-bit variables.
+    
+All variables start containing zero value. Also IntyBASIC will warn you if you
+exceed the number of available variables.
+
+Following statements are available:
+
+  REM comment      
+  ' comment
+  
+     Everything since REM to end of line is a comment
+    
+  CONST [name]=[constant expression]
+  
+     Assigns a name to a constant expression. The compiler will replace this
+     name in expressions with the number. These names have priority over
+     variables.
+    
+     This is a kind of directive, it doesn't generate code and it can appear
+     anywhere in the program but it will be taken as constant from the point
+     of appearance onwards.
+  
+  GOTO label        
+  
+     Go to label
+  
+  GOSUB label       
+  
+     Go to subroutine at label (must be PROCEDURE)
+  
+  label: PROCEDURE
+  [code for subroutine]
+  END
+  
+     Create a PROCEDURE callable by GOSUB
+     It's important that PROCEDURE is in same line as label
+
+  RETURN            
+  
+     Return from subroutine
+
+  FOR A=start TO end [STEP increment]
+  NEXT     ' Also supported NEXT A
+  
+  FOR A=1 TO 5 ' Loop
+  [Variable A will contain 1,2,3,4,5]
+  NEXT A
+  
+  FOR A=1 TO 5 STEP 2
+  [Variable A will contain 1, 3, 5]
+  NEXT A
+  
+  FOR A=5 TO 1 STEP -2
+  [Variable A will contain 5, 3, 1]
+  NEXT A
+  
+     Looping statement.
+     
+     Note you can only use normal variables for loop, not array variables.
+
+  WHILE expr:[statement]:WEND
+  WHILE expr
+  [statement]
+  WEND
+  
+     Looping statement while expression evaluates to non-zero.
+
+  IF expr GOTO [label]
+  IF expr THEN [statement]
+  IF expr THEN [statement] ELSE [statement]
+  
+     Decision statement
+
+  ON expr GOTO [label],[label],[label]
+  ON expr GOTO [label],,[label]
+  ON expr GOTO ,,[label]
+  ON expr GOSUB [label],[label],[label]
+  ON expr GOSUB [label],,[label]
+  ON expr GOSUB ,,[label]
+
+     Decision statement
+
+     The expression is evaluated and if the result is zero, the first label is taken,
+     and successively.
+
+     If GOSUB is used then you must be sure that each label goes to PROCEDURE.
+
+     If option has no label or the expression exceeds the number of labels, execution
+     flow continues with following statement after ON.
+     
+  ON FRAME GOSUB label
+  
+     On each video frame interrupt, the IntyBASIC support code will call
+     the indicated label.
+     
+     Note this doesn't generate any code and only should appear one time in your
+     program.
+     
+     Also it could be called even before your initialization routines are ready.
+
+     The only valid assumption is that every single variable is zero after booting.
+
+     Also it's your responsability that the code doesn't take too long, otherwise
+     video frame interrupts will accumulate and your memory stack will overflow.
+
+  POKE address,data
+  
+     Poke memory with data
+
+  WAIT
+  
+     Waits for next frame interruption (1/60 sec. for NTSC or 1/50 for PAL)
+
+  DIM var(size)
+  
+     Creates an array of data called 'var' of size 'size' elements,
+     counting starts on zero, so DIM A(10) creates an array of 0 to 9.
+     
+     Also you can create arrays of 16-bits numbers, using DIM #BIG(10)
+
+     The array can be accessed as follows:
+     
+         A(1)=A(1)+5
+         A(X)=A(Y)-2
+         
+     This is a kind of directive, it doesn't generate code and it can appear
+     anywhere in the program.
+
+
+  RESTORE label
+  READ var
+  READ var,var2
+label:
+  DATA constant_expr[,constant_expr]
+
+    Useful to keep tables/graphics, numbers can be in the 16-bit range.
+    READ will automatically limit to variable size.
+    
+      READ A       ' Reads data into A, limiting to 8 bits
+      READ #A      ' Reads data into #A, no limitations.
+                   ' Notice A and #A are different variables.
+      READ A(B)    ' Reads data into A(B)
+      READ #A(B)   ' Reads data into #A(B)
+                   
+    All data contained in DATA can also be accessed using array-syntax,
+    like this:
+    
+      FOR A=1 TO 5
+      PRINT AT TABLE(A),"Z"
+      NEXT A
+      
+      TABLE:
+      DATA 21,42,63,84,105
+
+
+  DEFINE card_num,total,label
+  DEFINE card_num,total,VARPTR label(expr)
+  DEFINE ALTERNATE card_num,total,label
+  DEFINE ALTERNATE card_num,total,VARPTR label(expr)
+
+    Loads graphics in GRAM "card_num" (0-63) for a total of "total" cards.
+    label points to graphics. (DATA or BITMAP)
+    
+    Label can be also an 16-bits array for dynamically defined GRAM.
+    
+        DIM #graphic(4)
+        
+        DEFINE 0,1,#graphic
+    
+    And the VARPTR syntax allows to select a bitmap from multiple definitions.
+
+    Graphics will be loaded in next frame (WAIT)
+    
+    Note there is an approximate limit of loading 18 GRAM cards per frame
+    (measured with emulator in NTSC mode)
+    
+    This limit is reduced to 16 GRAM cards per frame when using the music player
+    (PLAY statement)
+    
+    Note there are two DEFINE: DEFINE and DEFINE ALTERNATE, this allows you to
+    change two cards sets in one frame. Because if you use DEFINE multiple times
+    per frame only the latest one is taken in account.
+
+  SOUND 0,[VALUE 12 bits],[VOL 0-15]       Channel A
+  SOUND 1,[VALUE 12 bits],[VOL 0-15]       Channel B
+  SOUND 2,[VALUE 12 bits],[VOL 0-15]       Channel C
+  SOUND 3,[VALUE 16 bits],[TYPE 0-15]      Volume envolvent (frequency/shape)
+  SOUND 4,[NOISE 6 bits],[MIX]      Noise and mix register ($38 value by default)
+
+  Only for the secondary PSG in ECS add-on module
+  SOUND 5,[VALUE 12 bits],[VOL 0-15]       Channel A
+  SOUND 6,[VALUE 12 bits],[VOL 0-15]       Channel B
+  SOUND 7,[VALUE 12 bits],[VOL 0-15]       Channel C
+  SOUND 8,[VALUE 16 bits],[TYPE 0-15]      Volume envolvent (frequency/shape)
+  SOUND 9,[NOISE 6 bits],[MIX]      Noise and mix register ($38 value by default)
+
+
+    Desired frequency value can be calculated as:
+    
+       value = (3579545 / 32 / frec)
+       
+    Please note this changes for PAL.
+       
+       value = (4000000 / 32 / frec)
+       
+    Only constant (0-4) can be used in first parameter for SOUND.
+    
+    For channels A, B and C, if you use volume 48 the PSG will use the
+    volume envolvent (see SOUND 3)
+    
+    Use volume 0 to deactivate sound channels instead of mixer bits, also don't use
+    zero value for frequency parameter in channel A, B or C, it's better to use 1 in order
+    to get a fast response when changing frequency.
+    
+    More info about PSG at:
+    
+      http://spatula-city.org/~im14u2c/intv/jzintv-1.0-beta3/doc/programming/psg.txt
+      http://spatula-city.org/~im14u2c/intv/gi_micro_programmable_tv_games/page_7_100.png
+      http://spatula-city.org/~im14u2c/intv/gi_micro_programmable_tv_games/page_7_101.png
+      http://spatula-city.org/~im14u2c/intv/gi_micro_programmable_tv_games/page_7_102.png
+      http://spatula-city.org/~im14u2c/intv/gi_micro_programmable_tv_games/page_7_103.png
+      http://spatula-city.org/~im14u2c/intv/gi_micro_programmable_tv_games/page_7_104.png
+      http://spatula-city.org/~im14u2c/intv/gi_micro_programmable_tv_games/page_7_105.png
+
+    If you use the music player the SOUND capabilities are affected, check below
+    the statement PLAY.
+
+  SPRITE [0-7],x,y,f
+  
+    Only constant (0-7) can be used in first parameter, indicates number of MOB.
+    Sprite (MOB) will be updated in next frame.
+    
+    X contains coordinate X (0-168)
+    bit 8 = Interaction (suggested always 1)
+    bit 9 = Visibility (suggested always 1)
+    bit 10 = Double size X
+    
+    Y contains coordinate Y (0-95)
+    bit 7 = Draw 16-line sprite. (it should be aligned in even GRAM boundary 0/2/4/8 etc)
+    bits 9-8 = Scale 00= 0.5x, 01= 1x, 10= 2x, 11= 4x
+    bit 10 = X flip
+    bit 11 = Y flip
+    
+    F contains color and card number
+    bits 2-0 = Lower bits of color
+    bits 11-3 = Card number (0-255 for GROM, 256-319 for GRAM)
+    bit 12 = Upper bit of color
+    bit 13 = Change color stack.
+    
+    The X,Y,F values are written as-is to STIC, please check specifications at:
+
+      http://spatula-city.org/~im14u2c/intv/jzintv-1.0-beta3/doc/programming/stic.txt
+    
+  CLS
+  
+    Clear screen to 0.
+    Also resets cursor position to top-left screen.
+
+  PRINT [AT [expr]][COLOR [expr]][,]"string"[,"string"]
+  
+    Prints string in current cursor coordinate (or selected via AT value 0-239)
+    String is automatically converted from ASCII to Intellivision characters
+    and XORed with current color ($0000-$0007, $1000-$1007 or $2000 for color stack)
+    
+    For Foreground/Background mode, use $0000-$0007, and $0200 is bit 0 of background
+    color, $0400 is bit 1 of background color, $1000 is bit 2 of background color
+    and $2000 is bit 3 of background color. (check MODE statement below)
+    
+    Note cursor position is not limited so you can write out of screen and crash
+    your program.
+    
+    If you want to use GROM >= 96 or GRAM (256-319) you can use the inverted
+    slash as escape (by example \96\256\319)
+    
+    If you want to use double quotes inside a string you can escape it this way \"
+    
+    Samples of positioning:
+        PRINT AT 0,"A" ' for upper-left corner
+        PRINT AT 19,"B" ' for upper-right corner
+        PRINT AT 220,"C" ' for bottom-left corner
+        PRINT AT 239,"D" ' for bottom-right corner
+        
+    Example:
+    
+        PRINT AT 84 COLOR (RAND AND 7),"HELLO WORLD"
+        PRINT "HELLO WORLD"  ' Starts in previous cursor position
+  
+  PRINT <>expr          ' Simple number
+  PRINT <const>expr     ' Right-aligned with zeroes to 'const' size.
+  PRINT <.const>expr    ' Right-aligned with spaces to 'const' size.
+  
+    Prints decimal number in current position using current color.
+    
+    You can add AT and COLOR options.
+    
+    Example:
+
+        PRINT AT 5 COLOR 6,"Score:",<6>#score,"00"
+  
+  PRINT [AT [expr],]expr[,expr]
+  
+    Pokes 12-bits value directly into screen, useful for variable things and GRAM
+    cards.
+    
+    For format please check STIC specification cited upwards or the F description
+    of SPRITE
+    
+    Also increases cursor position.
+    
+    Example. Printing a digit in yellow:
+    
+        PRINT (DIGIT+16)*8+6
+        
+  SCROLL [offset_x],[offset_y],[move_screen]
+  
+    Allows you to scroll the screen pixel by pixel. Offset X and Y can be any
+    number between 0 and 7.
+    
+    Once you pass the frontier of 8 pixels, you can issue a move_screen command
+    like this:
+    
+        1 = Scroll leftwards
+        2 = Scroll rightwards
+        3 = Scroll upwards
+        4 = Scroll downwards
+    
+    The command will be processed in next frame or interrupt.
+    
+    Note once you use SCROLL statement, automatically you'll have slightly
+    less 16-bits variables because there is need for a buffer and IntyBASIC
+    will include extra code for scrolling.
+    
+    Also note that Intellivision video chip (STIC) requires you to correct
+    sprite position when using scrolling. Check the sample SCROLL.BAS
+    
+  BORDER [color],[mask]
+  
+    Allows you to choose the border color also to mask the edges for scrolling.
+    
+    Color can be any number between 0 and 15.
+    
+    Mask can be 0, 1 (mask top line), 2 (mask left column) or 3 (mask both)
+    
+    Border and mask will be updated in next frame.
+    
+  MODE 0,color1,color2,color3,color4
+  MODE 1
+  
+    Allows to select the video mode (Color Stack mode or Foreground/Background mode)
+    this happens in the next video frame (WAIT)
+    
+    Note you cannot use PRINT AT until WAIT has been used, because the color
+    variable is used to save data, after this COLOR will be reset to 7.
+    
+    In Color Stack mode you can choose the four background colors available in range
+    0-15.
+    
+    In Foreground/Background mode you have access to 16 background colors but you
+    only can use cards 0-63 (basic character set and uppercase letters) and the
+    defined cards 256-319.
+
+  SCREEN label[,origin_offset,target_offset,cols,rows]
+
+    Allows to copy screen data to video the fastest way. Using only "SCREEN label"
+    copies a full screen 20x12 cards to video.
+
+    'label' points to a label inside your program containing the data for the
+    screen, similar to this:
+    
+      my_screen:
+        DATA $0007,$000F,$0007,$000F   ' And so...
+        
+    origin_offset is the offset (0-199) inside the origin screen
+    target_offset is the offset (0-199) inside the target video screen.
+    cols is the size in columns of your copy.
+    rows is the size in rows of your copy.
+    
+    This can serve to displace large elements in video, or to display beautiful 
+    graphics screens.
+    
+    Label can be also an 16-bits array for dynamically drawn elements.
+    
+        DIM #cards(4)
+        
+        SCREEN #cards,0,0,4,1
+
+
+  BITMAP "00000000"
+  BITMAP "00001111"
+  
+  BITMAP "________"
+  BITMAP "____XXXX"
+  
+    Allows you to draw using binary, you should put BITMAP statements in pairs as
+    they are declared in assembler using DECLE
+    
+    Most useful attaching a label and using along DEFINE.
+    
+    Characters taken as zero include: "0" "_" " " "."
+    Every other character will be taken as one.
+    
+  PLAY SIMPLE
+  PLAY FULL
+  
+    Activates music player and selects type of music played, SIMPLE will use only
+    two channels, allowing user to use SOUND 2 for sound effects.
+    
+    FULL will use all three channels. SOUND cannot be used in this case.
+    
+    Note every frame the music player will update the sound channels.
+
+  PLAY NONE
+  
+    Deactivate music player. Following this the user should turn off the sound
+    channels, using this code:
+    
+      SOUND 0,1,0
+      SOUND 1,1,0
+      SOUND 2,1,0
+      SOUND 4,1,$38
+
+  PLAY label
+  
+    Play music pointed by 'label'.
+    
+    label can also be a 16-bits array for loading dinamically generated music.
+    
+    IntyBASIC will include automatically extra code for a music player.
+    
+    Music must be in this format: (each MUSIC statement can contain upto 4 arguments)
+    
+        label:  DATA 8       ' Ticks per note (there are 50 ticks per second)
+                MUSIC F4,A4#,C5
+                MUSIC S,S,S
+                MUSIC -,-,-
+
+                MUSIC REPEAT
+                MUSIC STOP
+
+                MUSIC C4,F4,- ' Note how C4 extends along 4 tempos and F4 only 2
+                MUSIC S,S,-
+                MUSIC S,-,-
+                MUSIC S,-,-
+                
+    Identifiers for notes: Note C, D, E, F, G, A, B followed by octave (2-6), also
+                           available C7
+                           Optionally add # symbol for sharp.
+
+                           Optionally add W for instrument 0 (piano),
+                           X for 1 (clarinet), Y for 2 (flute), Z for 3 (bass)
+                           
+                           Setting instrument carries along in each channel for
+                           following MUSIC statements if these doesn't specify
+                           instrument.
+                           
+                           Note instruments waveform can be altered modifying the
+                           intybasic_epilogue.asm file per program.
+
+                           Also user can put S to sustain previous note.
+                           Also user can put - for silence.
+        
+                           The fourth argument for MUSIC allows simple drums:
+                             Valid values are:
+                                -  none
+                                M1 strong
+                                M2 tap
+                                M3 roll
+
+    IntyBASIC will detect automatically PAL/NTSC Intellivision and will adjust 
+    music timing accordingly.
+
+  PLAY OFF
+  
+    Stops music
+    
+  VOICE INIT
+  
+    Starts Intellivoice support, must be the first thing before using Intellivoice.
+
+    It will detect automatically if Intellivoice is connected in order to use it.
+    
+  VOICE PLAY label
+  
+    Starts speaking, if queue is full some phrases can be lost.
+    
+    label can be an 16-bits array in order to built phrases dynamically.
+    
+  VOICE PLAY WAIT label
+  
+    Starts speaking, but waits for phrase to be fully spoke.
+    
+    label can be an 16-bits array in order to built phrases dynamically.
+    
+  VOICE WAIT
+  
+    Waits for voice queue to be empty.
+    
+  VOICE NUMBER expr
+  
+    Says expression as a number.
+
+  VOICE phrases[,phrases]
+  
+    Data for phrases, use 0 to finish a phrase, for example:
+    
+        VOICE INIT
+        VOICE PLAY WAIT numbers
+        VOICE PLAY WAIT lets_play
+        VOICE NUMBER 147
+    loop:
+        GOTO loop
+        
+    numbers:  VOICE ONE,THREE,SIX,HUNDRED,0
+    
+    lets_play: VOICE LL, EH, EH, PA1, TT2, SS, PA2, PP, LL, EH, EY, PA2, 0
+    
+    Allowed phrases are:
+    
+        PA5, PA4, PA3, PA2, PA1
+        MATTEL, ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE
+        TEN, ELEVEN, TWELVE, THIRTEEN, FOURTEEN, FIFTEEN, SIXTEEN, SEVENTEEN
+        EIGHTEEN, NINETEEN, TWENTY, THIRTY, FOURTY, FIFTY, SIXTY, SEVENTY
+        EIGHTY, NINETY, HUNDRED, THOUSAND, TEEN, TY, PRESS, ENTER, OR, AND
+        AA, AE1, AO, AR, AW, AX, AY, BB1, BB2, CH, DD1, DD2, DH1, DH2, EH,
+        EL, ER1, ER2, EY, FF, GG1, GG2, GG3, HH1, HH2, IH, IY, JH, KK1,
+        KK2, KK3, LL, MM, NG1, NN1, NN2, OR2, OW, OY, PP, RR1, RR2, SH, SS
+        TH, TT1, TT2, UH, UW1, UW2, VV, WH, WW, XR2, YR, YY1, YY2, ZH, ZZ
+
+    
+  STACK_CHECK
+  
+    This statement anywhere in your program will activate a code that will check for
+    stack overflow in the video interrupt routine.
+    
+    If the stack exceeds the allowed limit, it will stop the program and show a
+    prominent warning message in screen saying "Stack overflow"
+    
+    This happens commonly when doing GOSUB to PROCEDURE and getting out of it with
+    GOTO instead of RETURN.
+    
+  INCLUDE filename.bas
+  
+    Allows to include another file inside the current IntyBASIC program, note you
+    cannot use INCLUDE recursively.
+    
+    Also the INCLUDE allows you to include anywhere in your program, even you could
+    have half a procedure in the main file and the rest of it in the included file.
+    
+    Very useful to separate graphics and screen files.
+
+  ASM code
+  
+    Allows you to insert directly assembly code. It's copied directly to output.
+    
+    It's also very useful to include assembly code modules, like this:
+    
+        ASM INCLUDE "yourfile.asm"
+        
+
+>>>>>>>>>>>>>>  Expression syntax
+
+The expression syntax is like a calculator.
+
+Usual precedence rules applies to expression operators (addition and substraction have
+lesser priority than multiplication and division)
+  
+  A=5               Decimal number
+  A=$1000           Hexadecimal number
+  A=&10101          Binary number
+  #A=1.5            Fixed number (translated to $8001, note high byte is fraction)
+                    Note use of 16-bits variable
+                    
+  A="C"             Intellivision card code for letter
+  A=B               Simple assignment
+  A=A+B             Simple addition
+  A=A-B             Simple substraction
+  #A=#A+.#B         Fixed addition (note use of 16-bits variables)
+  #A=#A-.#B         Fixed substraction (note use of 16-bits variables)
+  A=A*B             Note it does multiplication by repeated addition (can be slow)
+                    Multiplication by 2/4/8/16/32/64/128/256/512/1024/2048/4096 is
+                    internally optimized.
+                    Multiplication by constants less than 128 is optimized with macro.
+                    Multiplication of variable by variable uses intvnut fast multiply routine
+                    When using --jlp switch the multiplication is accelerated by hardware
+  A=A/B				Note it does division by repeated substraction (can be slow)
+                    Division by 2/4/8/16/32/64/128/256 is internally optimized.
+                    When using --jlp switch the division is accelerated by hardware
+  A=A%B				Note it does remainder by repeated substraction (can be slow)
+                    Remainder by powers of 2 internally uses AND.
+  A=(A+B)-C
+  A=A AND B
+  A=A OR B			Note this operation is not native, so it's not efficient
+  A=A XOR B
+  A=NOT A
+  A=-A
+  A=A=B             If A and B are the same the result is $ffff (-1) else zero
+  A=A<>B
+  A=A<B
+  A=A>B
+  A=A<=B
+  A=A>=B
+  A=PEEK(expr)		Reads a memory location
+                    PEEK always reads 16-bits data than can be processed in expression.
+  A=ABS(expr)       Gets absolute value of expression (non-negative)
+  A=SGN(expr)       Gets sign of expression (-1, 0 or 1)
+  A=array(expr)     Access array. Array can be defined with DIM or label for DATA
+  array(expr)=A     Writes array. Array can be defined with DIM. DATA not writable
+
+  A=USR NAME        Calls assembly function NAME without arguments
+  A=USR NAME(expr)  Calls assembly function NAME with one argument in R0
+  A=USR NAME(expr,expr)  Calls assembly function NAME with two arguments in R0 and R1
+                    (up to 4 allowed)
+                    Assembly functions can put results in R0
+  #A=VARPTR B       Gets pointer to variable. Useful when linking assembler routines
+  #A=VARPTR C(0)    Gets pointer to array. Can be defined with DIM or label for DATA.
+
+  CONT              Contains AND'ed $01fe and $01ff complemented content (both controllers)
+  CONT.UP           Non-zero if any controller pointing up
+  CONT.DOWN         Non-zero if any controller pointing down
+  CONT.LEFT         Non-zero if any controller pointing left
+  CONT.RIGHT        Non-zero if any controller pointing right
+  CONT.BUTTON       Non-zero if any controller button pressed.
+  CONT.B0           Non-zero if any controller top buttons pressed (left/right)
+  CONT.B1           Non-zero if any controller bottom left button pressed.
+  CONT.B2           Non-zero if any controller bottom right button pressed.
+  CONT.KEY          Current pressed key (0-9 for numbers, 10-Clear, 11-Enter, 12-Not pressed)
+                    In any controller.
+                    Because movements can be taken as keys, it's suggested to wait for
+                    CONT.KEY to contain 12 before waiting for a key.
+
+  CONT1				Contains complemented content of address $01ff (left controller)
+  CONT1.UP			Non-zero if controller pointing up
+  CONT1.DOWN		Non-zero if controller pointing down
+  CONT1.LEFT		Non-zero if controller pointing left
+  CONT1.RIGHT		Non-zero if controller pointing right
+  CONT1.BUTTON		Non-zero if controller button pressed.
+  CONT1.B0          Non-zero if any of top controller buttons pressed (left/right)
+  CONT1.B1          Non-zero if bottom left button pressed
+  CONT1.B2          Non-zero if bottom right button pressed
+  CONT1.KEY         Current pressed key (0-9 for numbers, 10-Clear, 11-Enter, 12-Not pressed)
+                    Because movements can be taken as keys, it's suggested to wait for
+                    CONT1.KEY to contain 12 before waiting for a key.
+
+  CONT2				Contains complemented content of address $01fe (right controller)
+  CONT2.UP          Non-zero if controller pointing up
+  CONT2.DOWN        Non-zero if controller pointing down
+  CONT2.LEFT        Non-zero if controller pointing left
+  CONT2.RIGHT       Non-zero if controller pointing right
+  CONT2.BUTTON      Non-zero if controller button pressed.
+  CONT2.B0          Non-zero if any of top controller buttons pressed (left/right)
+  CONT2.B1          Non-zero if bottom left button pressed
+  CONT2.B2          Non-zero if bottom right button pressed
+  CONT2.KEY         Current pressed key (0-9 for numbers, 10-Clear, 11-Enter, 12-Not pressed)
+                    Because movements can be taken as keys, it's suggested to wait for
+                    CONT2.KEY to contain 12 before waiting for a key.
+                    
+                    Note using the .KEY syntax will include extra code inside IntyBASIC.
+                    also you should use WAIT for each .KEY reading because it's when
+                    IntyBASIC process debouncing and decodes keys. Remember this uses
+                    extra processor time.
+
+                    Useful information to avoid keys pressed to be processed as movements:
+
+                        c = cont2.button
+                        IF (c = $20)+(c = $40)+(c = $80) THEN GOTO skip_disc  ' Ignore keys
+                        ...disc testing...
+                    skip_disc:
+
+
+  COL0
+  COL1
+  COL2
+  COL3
+  COL4
+  COL5
+  COL6
+  COL7
+    Obtains collision between sprites for frame, better used after WAIT
+    Don't forget to set the interaction bit in sprites (bit 8 of X-coordinate)
+    bit 0-7 means collision against sprite number.
+    bit 8 means collision against background pixel (pixel set)
+    bit 9 means collision against borders
+
+  RAND
+    Obtains a pseudo-random value between 0 and 255. Updated on each video frame
+    
+  RAND(range)
+    Obtains a pseudo-random value between 0 and range-1. Updated on each video
+    frame. Note it's slower to generate, the faster generated ones are based on
+    powers of 2. Also range limited to a maximum of 256.
+
+  FRAME
+    Obtains current frame number (0-65535, it cycles over itself)
+    
+  NTSC
+    It will contain 1 if the Intellivision is NTSC.
+
+
+The fixed numbers are useful to move game elements in fractional steps, the trick is
+to preserve the current coordinate in a 16 bits variable, and when using it for the
+final display you should copy the value to a 8 bits variable (cutting the fixed part)
+or use AND 255 or %256 as these are optimized for this purpose.
+
+More about the fixed numbers used in IntyBASIC:
+
+  http://atariage.com/forums/topic/229168-now-available-intybasic-compiler-v08/page-2#entry3080617
+
+
+>>>>>>>>>>>>>>  Some further notes
+
+As execution is sequential unless interrupted by GOTO or GOSUB. In any of your
+programs you should put GOTO at end of main block, otherwise execution could run 
+freely, by example.
+
+Example 1:
+
+    A = 5
+  stop:	GOTO stop	' Prevents BASIC running out of ROM
+
+
+Example 2:
+
+    A = 5
+  stop:   GOTO stop	' Prevents execution going inside procedure
+
+  test:	PROCEDURE
+		END
+        
+Display starts in color-stack mode, each card of the 20x12 screen can have the
+bit 13 set to 1 so it avances current pointer to color-stack and changes the
+background color.
+
+In order to change the 4 color-stack predefined values, you should use this:
+
+    MODE 0,1,2,3,4  ' Select blue color as initial color and load other 3 colors
+    
+The color values are in the range 0-15.
+    
+In order to select foreground/background mode, you should use this:
+
+    MODE 1
+
+IntyBASIC by default starts program in $5000 area, you have space available up to
+$6fff, that is a binary of 16K.
+
+You can measure your program checking the generated LST file created by the
+assembler or the CFG file.
+
+Anyway, you can insert ASM statements to create bigger programs, like this:
+
+    ASM ORG $D000
+    
+    ASM ORG $F000
+    
+This way you can use the areas $D000-$DFFF and $F000-$FFFF. It's easier to
+manage and calculate available space if you put only data in these areas.
+
+Another way is to look into the generated .lst file, you can see what memory
+locations are used by IntyBASIC generated code.
+
+Using modern Flash cart and homebrew cartridge PCBs allows following
+addresses to be used without additional programming:
+
+     $2000-$2FFF
+     $5000-$6FFF
+     $A000-$BFFF
+     $C100-$FFFF
+     
+     
+>>>>>>>>>>>>>>  Real number of variables allowed
+
+The number of 8-bits variables allowed are:
+
+        228
+        
+        Substract 3 if you use SCROLL
+        Substract 3 if you use VOICE
+        Substract 6 if you use the keypad
+        Substract 26 if you use PLAY
+
+The number of 16-bits variables allowed are:
+
+        47 (7962 if using --jlp or --cc3 switch)
+        
+        Substract 20 if you use SCROLL or 30 if you use VOICE
+
+Note each location of an array allocated with DIM counts as one variable.
+
+
+>>>>>>>>>>>>>>  Generating ROM files for Nostalgia emulator
+          
+By default the as1600 assembler generates a .bin/.cfg pair of files, both can
+be copied in the roms directory of the Nostalgia emulator for testing your
+programs.
+
+Alternately you can convert both files to a single .rom file, using the
+bin2rom utility included with jzintv:
+
+    bin2rom game.bin
+    
+It will generate a game.rom file that contains a mix of the .bin and .cfg file
+and it's more easy to test with Nostalgia.
+
+Another alternative is to use the following as1600 invocation to generate
+.rom file in the same run:
+
+  as1600 -o output -l output.lst output.asm
+
+         
+>>>>>>>>>>>>>>  Source code debugging
+
+I've included enough information in the generated ASM file and with extensive
+help from intvnut there is now support for basic debugging with IntyBASIC
+source code shown along the way.
+
+You need to compile your program in this way:
+
+  intybasic input.bas output.asm
+  as1600 -j output.smap -s output.sym -o output.bin -l output.lst output.asm 
+  contrib/intysmap output.smap   
+  jzintv -d output.bin --src-map=output.smap --sym-file=output.sym  
+
+After this you can use normally the jzintv debug commands.
+
+
+>>>>>>>>>>>>>>  Permissions in Mac OS X and Linux
+
+The compressed executables for both Mac OS X and Linux probably will not have
+the right permissions when uncompressed.
+
+So is suggested to run these commands in your IntyBASIC directory:
+
+  chmod 755 intybasic
+  chmod 755 intybasic_linux
+
+If your IntyBASIC directory is not in current path you can run it using this
+while at IntyBASIC directory:
+
+  ./intybasic game.bas game.asm
+
+Also you can structure your IntyBASIC directories using the script intbas.pl
+provided by James Pujals (DZ-Jay), the structures required are the following:
+
+=============================================================================
+FILE PATH:                              DESCRIPTION:
+=============================================================================
++-- intybasic                           Installation directory
+    +-- bin                             IntyBasic binary distribution
+    |    |-- intbas.pl                  -> Helper script to compile/assemble
+    |    |-- intybasic_linux            -> IntyBasic for Linux
+    |    |-- IntyBASIC.exe              -> IntyBasic for Windows
+    |    |-- intybasic                  -> IntyBasic for Mac OSX
+    |    |-- intycolor                  -> IntyColor for Mac OSX
+    |    |-- intyColor.exe              -> IntyColor for Windows
+    |    `-- intycolor_linux            -> IntyColor for Linux
+    |
+    +-- examples                        BASIC sample program repository
+    |    +-- game1                      Sample Project: game1
+    |    |    +-- bin                   AS-1600 assembler output
+    |    |    |    |-- game1.bin        \_ Game binary in BIN+CFG format
+    |    |    |    |-- game1.cfg        /
+    |    |    |    |-- game1.ls         -> Assembler listing file
+    |    |    |    |-- game1.map        -> Assembler memory map
+    |    |    |    |-- game1.rom        -> Game binary in ROM format
+    |    |    |    `-- game1.sym        -> Assembler symbol table
+    |    |    |
+    |    |    +-- asm                   IntyBasic compiler output
+    |    |    |    `-- game1.asm        -> Generated assembly source
+    |    |    |
+    |    |    `-- game1.bas             BASIC source file
+    |    |
+    |    `-- title
+    |        +-- bin                    AS-1600 assembler output
+    |        |    |-- title.bin         \_ Game binary in BIN+CFG format
+    |        |    |-- title.cfg         /
+    |        |    |-- title.ls          -> Assembler listing file
+    |        |    |-- title.map         -> Assembler memory map
+    |        |    |-- title.rom         -> Game binary in ROM format
+    |        |    `-- title.sym         -> Assembler symbol table
+    |        |
+    |        +-- asm                    IntyBasic compiler output
+    |        |    `-- title.asm         -> Generated assembly source
+    |        |
+    |        `-- title.bas              BASIC source file
+    |
+    +-- games                           BASIC game program repository 
+    |   `-- (empty)                     Add your own programs here.
+    |
+    +-- lib                             IntyBasic library modules
+    |    |-- intybasic_prologue.asm     -> Prologue module
+    |    `-- intybasic_epilogue.asm     -> Epilogue module
+    |
+    |-- manual.txt                      IntyBasic manual
+    `-- INTBAS - README.txt             This README file.
+
+You need to setup some environment variables:
+
+  INTV_SDK_PATH    =  Pointing to the directory containing jzintv structure
+  INTV_BASIC_PATH  =  Pointing to the installation directory (per structure)
+
+DZ-Jay mounted his own IntyBASIC distribution following that structure:
+
+  http://atariage.com/forums/index.php?app=core&module=attach&section=attach&attach_id=363028
+
+
+>>>>>>>>>>>>>>  Useful links
+
+jzintv emulator (including as1600 assembler)
+
+  http://spatula-city.org/~im14u2c/intv/
+
+Intellivision Nostalgia emulator
+
+  http://www.intellivision.us/intvgames/nostalgia/nostalgia.php
+  
+  
+>>>>>>>>>>>>>>  Acknowledgments
+
+Thanks to following members of Atariage for contributing valuable suggestions,
+test programs and even support libraries:
+
+  atari2600land
+  awhite2600
+  carlsson
+  catsfolly
+  ckblackm
+  CrazyBoss
+  Cybearg
+  DZ-Jay
+  First Spear
+  freewheel
+  GroovyBee
+  intvnut
+  Jess Ragan
+  Kiwi
+  RevEng
+  SpiceWare
+  Tarzilla
