@@ -115,7 +115,11 @@
 //                         by 128. Used ADDR for some cases of multiplication by
 //                         power of two.
 //  Revision: Jul/04/2015. Added some guard code for extreme cases per intvnut
-//                         comments :)
+//                         comments :). Simple subexpression optimization for
+//                         index into array (common case a(x)=a(x) op expr) also
+//                         for index plus offset. Avoids labels when generating
+//                         boolean results to preserve registers contents in
+//                         optimizer.
 //
 
 //  TODO:
@@ -137,7 +141,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.1 Jul/03/2015";      // Compiler version
+const string VERSION = "v1.1 Jul/04/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -155,19 +159,21 @@ char program_title[256];
 int err_code;
 
 enum opcode {
-    N_ADCR, N_ADD, N_ADDA, N_ADDI, N_ADDR, N_AND, N_ANDA, N_ANDI, N_ANDR, N_B, N_BC, N_BEQ, N_BGE,
-    N_BGT, N_BLE, N_BLT, N_BNE, N_BPL, N_CALL, N_CLRR, N_CMP, N_CMPA, N_CMPI, N_CMPR,
-    N_COMR, N_DECLE, N_DECR, N_INCR, N_MOVR, N_MVI, N_MVIA, N_MVII, N_MVO, N_MVOA,
-    N_MULT, N_NEGR, N_NOP, N_PSHR, N_PULR, N_RRC, N_RETURN, N_SLL, N_SLR, N_SUB, N_SUBA,
-    N_SUBI, N_SUBR, N_SWAP, N_TSTR, N_XOR, N_XORA, N_XORI, N_XORR,
+    N_ADCR, N_ADD, N_ADDA, N_ADDI, N_ADDR, N_AND, N_ANDA, N_ANDI, N_ANDR,
+    N_B, N_BC, N_BEQ, N_BGE, N_BGT, N_BLE, N_BLT, N_BNE, N_BPL,
+    N_CALL, N_CLRR, N_CMP, N_CMPA, N_CMPI, N_CMPR, N_COMR, N_DECLE, N_DECR,
+    N_INCR, N_MOVR, N_MVI, N_MVIA, N_MVII, N_MVO, N_MVOA, N_MULT, N_NEGR, N_NOP,
+    N_PSHR, N_PULR, N_RRC, N_RETURN, N_SLL, N_SLR, N_SUB, N_SUBA, N_SUBI, N_SUBR, N_SWAP,
+    N_TSTR, N_XOR, N_XORA, N_XORI, N_XORR,
 };
 
 static const char *opcode_list[] = {
-    "ADCR", "ADD", "ADD@", "ADDI", "ADDR", "AND", "AND@", "ANDI", "ANDR", "B", "BC", "BEQ", "BGE",
-    "BGT", "BLE", "BLT", "BNE", "BPL", "CALL", "CLRR", "CMP", "CMP@", "CMPI", "CMPR",
-    "COMR", "DECLE", "DECR", "INCR", "MOVR", "MVI", "MVI@", "MVII", "MVO", "MVO@",
-    "MULT", "NEGR", "NOP", "PSHR", "PULR", "RRC", "RETURN", "SLL", "SLR", "SUB", "SUB@",
-    "SUBI", "SUBR", "SWAP", "TSTR", "XOR", "XOR@", "XORI", "XORR",
+    "ADCR", "ADD", "ADD@", "ADDI", "ADDR", "AND", "AND@", "ANDI", "ANDR",
+    "B", "BC", "BEQ", "BGE", "BGT", "BLE", "BLT", "BNE", "BPL",
+    "CALL", "CLRR", "CMP", "CMP@", "CMPI", "CMPR", "COMR", "DECLE", "DECR",
+    "INCR", "MOVR", "MVI", "MVI@", "MVII", "MVO", "MVO@", "MULT", "NEGR", "NOP",
+    "PSHR", "PULR", "RRC", "RETURN", "SLL", "SLR", "SUB", "SUB@", "SUBI", "SUBR", "SWAP",
+    "TSTR", "XOR", "XOR@", "XORI", "XORR",
 };
 
 enum microcode_style {
@@ -246,38 +252,33 @@ public:
     // Generate assembler code for a microcode
     //
     void dump(void) {
-//        std::cerr << "\t" << opcode_list[this->type] << " ";
-//        std::cerr.flush();
-//        if (this->prefix == "")
-//            std::cerr << "$+" << this->value << "\n";
-//        else if (this->value == -1)
-//            std::cerr << this->prefix << "\n";
-//        else
-//            std::cerr << this->prefix << this->value << "\n";
-//        std::cerr.flush();
         switch (this->style) {
-            case M_SINGLE:
-                asm_output << "\t" << opcode_list[this->type] << "\n";
+            case M_SINGLE:  // Single opcode: NOP
+                asm_output << "\t" << opcode_list[this->type];
                 break;
-            case M_R:
-                asm_output << "\t" << opcode_list[this->type] << " R" << this->r1 << "\n";
+            case M_R:  // Single register: CLRR R0
+                asm_output << "\t" << opcode_list[this->type] << " R" << this->r1;
                 break;
-            case M_RR:
+            case M_RR:  // Double register: MOVR R0,R1
                 asm_output << "\t" << opcode_list[this->type] << " R" << this->r1 << ",";
                 if (this->r2 == 7)
-                    asm_output << "PC\n";
+                    asm_output << "PC";
                 else
-                    asm_output << "R" << this->r2 << "\n";
+                    asm_output << "R" << this->r2;
                 break;
-            case M_NR:
+            case M_NR:  // Constant: MVII #5,R0
                 asm_output << "\t" << opcode_list[this->type] << " #";
                 if (this->prefix == "")
                     asm_output << this->value;
                 else
                     asm_output << this->prefix << this->value;
-                asm_output << ",R" << this->r1 << "\n";
+                if (this->offset > 0)
+                    asm_output << "+" << this->offset;
+                else if (this->offset < 0)
+                    asm_output << "-" << (-this->offset);
+                asm_output << ",R" << this->r1;
                 break;
-            case M_LR:
+            case M_LR:  // Label and register: MVI V2,R0
                 asm_output << "\t" << opcode_list[this->type] << " ";
                 if (this->prefix == "") {
                     asm_output << this->value;
@@ -288,9 +289,9 @@ public:
                 }
                 if (this->offset)
                     asm_output << "+" << this->offset;
-                asm_output << ",R" << this->r1 << "\n";
+                asm_output << ",R" << this->r1;
                 break;
-            case M_RL:
+            case M_RL:  // Register and label: MVO R0,V2
                 asm_output << "\t" << opcode_list[this->type] << " R" << this->r1 << ",";
                 if (this->prefix == "")
                     asm_output << this->value;
@@ -300,43 +301,43 @@ public:
                     asm_output << this->prefix << this->value;
                 if (this->offset)
                     asm_output << "+" << this->offset;
-                asm_output << "\n";
                 break;
-            case M_A:
+            case M_A:  // Address (jumps): CALL CLRSCR
                 asm_output << "\t" << opcode_list[this->type] << " ";
                 if (this->prefix == "")
-                    asm_output << "$+" << this->value << "\n";
+                    asm_output << "$+" << this->value;
                 else if (this->value == -1)
-                    asm_output << this->prefix << "\n";
+                    asm_output << this->prefix;
                 else
-                    asm_output << this->prefix << this->value << "\n";
+                    asm_output << this->prefix << this->value;
                 break;
-            case M_S:
-                asm_output << "\t" << opcode_list[this->type] << " R" << this->r1 << "," << this->value << "\n";
+            case M_S:  // Shifts: SLL R0,1
+                asm_output << "\t" << opcode_list[this->type] << " R" << this->r1 << "," << this->value;
                 break;
-            case M_M:
-                asm_output << "\t" << opcode_list[this->type] << " R" << this->r1 << ",R" << this->r2 << "," << this->value << "\n";
+            case M_M:  // Multiply (macro): MULT R0,R4,5
+                asm_output << "\t" << opcode_list[this->type] << " R" << this->r1 << ",R" << this->r2 << "," << this->value;
                 break;
-            case M_L:
-                asm_output << this->prefix << this->value << ":" << "\n";
+            case M_L:  // Label
+                asm_output << this->prefix << this->value << ":";
                 break;
-            case M_D:
-                asm_output << "\t" << opcode_list[this->type] << " " << this->r1 << "\n";
+            case M_D:  // Single word of data
+                asm_output << "\t" << opcode_list[this->type] << " " << this->r1;
                 break;
-            case M_D2:
-                asm_output << "\t" << opcode_list[this->type] << " " << this->r1 << "," << this->r2 << "\n";
+            case M_D2:  // Double word of data
+                asm_output << "\t" << opcode_list[this->type] << " " << this->r1 << "," << this->r2;
                 break;
-            case M_DL:
+            case M_DL:  // Label as data
                 asm_output << "\t" << opcode_list[this->type] << " ";
                 if (this->value == -1)
-                    asm_output << this->prefix << "\n";
+                    asm_output << this->prefix;
                 else
-                    asm_output << this->prefix << this->value << "\n";
+                    asm_output << this->prefix << this->value;
                 break;
-            case M_LITERAL:
+            case M_LITERAL:  // Literal assembler code
                 asm_output << this->prefix << "\n";
                 break;
         }
+        asm_output << "\n";
     }
 };
 
@@ -354,7 +355,13 @@ class code {
         int valid;
         string prefix;
         int value;
+        int offset;
     } register_content[8];
+    
+    bool subexpression_valid;
+    int subexpression_base;
+    int subexpression_offset;
+    int subexpression_index;
     
     // Relates which registers are in which memory locations
     struct {
@@ -370,6 +377,22 @@ public:
         trash_registers();
     }
     
+    //
+    bool subexpression_available(int base, int offset, int index) {
+        if (subexpression_valid && subexpression_base == base && subexpression_offset == offset && subexpression_index == index)
+            return true;
+        return false;
+    }
+    
+    void annotate_subexpression(int base, int offset, int index) {
+        if (subexpression_valid)
+            return;
+        subexpression_valid = true;
+        subexpression_base = base;
+        subexpression_offset = offset;
+        subexpression_index = index;
+    }
+    
     // Trash registers
     void trash_registers(void) {
         int c;
@@ -378,6 +401,7 @@ public:
             register_content[c].valid = 0;
             register_memory[c].valid = 0;
         }
+        subexpression_valid = false;
     }
     
     // Check if enough cycles for non-interruptable sequence of instructions
@@ -436,7 +460,7 @@ public:
         }
                                    
         // Common pattern optimization for zero in register (via CLRR)
-        if (type == N_CLRR && register_content[r1].valid != 0 && register_content[r1].prefix == "" && register_content[r1].value == 0) {
+        if (type == N_CLRR && register_content[r1].valid != 0 && register_content[r1].prefix == "" && register_content[r1].value == 0 && register_content[r1].offset == 0) {
             // Nothing to do =P
             return;
         }
@@ -445,10 +469,13 @@ public:
             register_content[r1].valid = 1;
             register_content[r1].prefix = "";
             register_content[r1].value = 0;
+            register_content[r1].offset = 0;
         } else {
             register_content[r1].valid = 0;
         }
         register_memory[r1].valid = 0;
+        if (r1 == 3)
+            subexpression_valid = false;
         cycles = 0;
     }
     
@@ -471,6 +498,7 @@ public:
                     type = N_SUBA;
                 else if (type == N_XORR)
                     type = N_XORA;
+                r1 = previous->get_r1();
                 everything.pop_back();
                 delete previous;
             }
@@ -478,9 +506,11 @@ public:
         if (type == N_MVOA)
             check_for_cycles(9, 45);
         everything.push_back(new microcode(M_RR, type, r1, r2, "", 0, 0));
-        if (type != N_CMPR) {
+        if (type != N_CMPR && type != N_MVOA) {
             register_content[r2].valid = 0;
             register_memory[r2].valid = 0;
+            if (r2 == 3)
+                subexpression_valid = false;
         }
         if (type == N_MVIA && r2 == 7)  // Jump table
             trash_registers();
@@ -488,6 +518,11 @@ public:
     
     // Emits instruction with constant/address in left side
     void emit_nr(enum opcode type, string prefix, int value, int r) {
+        emit_nor(type, prefix, value, 0, r);
+    }
+    
+    // Emits instruction with constant/address plus offset in left side
+    void emit_nor(enum opcode type, string prefix, int value, int offset, int r) {
         int c;
         int d;
         
@@ -506,7 +541,7 @@ public:
         // Common pattern optimization: constant in register
         for (c = 0; c < 4; c++) {
             d = (r + c) % 4;
-            if (type == N_MVII && register_content[d].valid != 0 && register_content[d].prefix == prefix && register_content[d].value == value) {
+            if (type == N_MVII && register_content[d].valid != 0 && register_content[d].prefix == prefix && register_content[d].value == value && register_content[d].offset == offset) {
                 if (d == r) {
                     // Nothing to do =P
                 } else {
@@ -514,21 +549,29 @@ public:
                     register_content[r].valid = 1;
                     register_content[r].prefix = prefix;
                     register_content[r].value = value;
+                    register_content[r].offset = offset;
+                    if (r == 3)
+                        subexpression_valid = false;
                 }
                 return;
             }
         }
-        everything.push_back(new microcode(M_NR, type, r, 0, prefix, value, 0));
+        everything.push_back(new microcode(M_NR, type, r, 0, prefix, value, offset));
         if (type == N_CMPI) {
             // CMPI doesn't change register so still valid
         } else if (type == N_MVII) {
             register_content[r].valid = 1;
             register_content[r].prefix = prefix;
             register_content[r].value = value;
+            register_content[r].offset = offset;
             register_memory[r].valid = 0;
+            if (r == 3)
+                subexpression_valid = false;
         } else {
             register_content[r].valid = 0;
             register_memory[r].valid = 0;
+            if (r == 3)
+                subexpression_valid = false;
         }
         cycles = 0;
     }
@@ -552,10 +595,14 @@ public:
                     type = N_ADDR;
                     everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
                     register_memory[r].valid = 0;
+                    if (r == 3)
+                        subexpression_valid = false;
                 } else if (type == N_AND) {
                     type = N_ANDR;
                     everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
                     register_memory[r].valid = 0;
+                    if (r == 3)
+                        subexpression_valid = false;
                 } else if (type == N_CMP) {
                     type = N_CMPR;
                     everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
@@ -564,10 +611,14 @@ public:
                     type = N_SUBR;
                     everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
                     register_memory[r].valid = 0;
+                    if (r == 3)
+                        subexpression_valid = false;
                 } else if (type == N_XOR) {
                     type = N_XORR;
                     everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
                     register_memory[r].valid = 0;
+                    if (r == 3)
+                        subexpression_valid = false;
                 } else {
                     if (d == r) {
                         // Nothing to do =P
@@ -577,6 +628,8 @@ public:
                         register_memory[r].prefix = register_memory[d].prefix;
                         register_memory[r].value = register_memory[d].value;
                         register_memory[r].offset = register_memory[d].offset;
+                        if (r == 3)
+                            subexpression_valid = false;
                     }
                 }
                 return;
@@ -597,12 +650,16 @@ public:
         } else if (type == N_ADD || type == N_AND || type == N_CMP || type == N_SUB || type == N_XOR) {
             register_content[r].valid = 0;
             register_memory[r].valid = 0;
+            if (r == 3)
+                subexpression_valid = false;
         } else {
             register_content[r].valid = 0;
             register_memory[r].valid = 1;
             register_memory[r].prefix = prefix;
             register_memory[r].value = value;
             register_memory[r].offset = offset;
+            if (r == 3)
+                subexpression_valid = false;
         }
         cycles = 0;
     }
@@ -618,6 +675,7 @@ public:
             check_for_cycles(11, 23);
         everything.push_back(new microcode(M_RL, type, r, 0, prefix, value, offset));
         register_memory[r].valid = 0;  // Not valid because: cuts upper 8 bits
+        subexpression_valid = false;  // Possibly wrote index variable
     }
     
     // Emits instruction with label plus offset in right side
@@ -629,6 +687,7 @@ public:
         register_memory[r].prefix = prefix;
         register_memory[r].value = value;
         register_memory[r].offset = offset;
+        subexpression_valid = false;  // Possibly wrote index variable
     }
     
     // Emits instruction with single label operand
@@ -647,6 +706,7 @@ public:
             register_content[previous->get_r1()].valid = 1;
             register_content[previous->get_r1()].prefix = "";
             register_content[previous->get_r1()].value = 0;
+            register_content[previous->get_r1()].offset = 0;
         } else if (type == N_B || type == N_CALL) {
             trash_registers();
         }
@@ -662,6 +722,8 @@ public:
         everything.push_back(new microcode(M_S, type, r, 0, "", s, 0));
         register_content[r].valid = 0;
         register_memory[r].valid = 0;
+        if (r == 3)
+            subexpression_valid = false;
     }
     
     // Emits multiply instruction (macro)
@@ -669,6 +731,8 @@ public:
         everything.push_back(new microcode(M_M, type, r1, r2, "", v, 0));
         register_content[r1].valid = 0;
         register_memory[r1].valid = 0;
+        if (r1 == 3)
+            subexpression_valid = false;
         cycles = 0;
     }
     
@@ -834,6 +898,28 @@ public:
             delete right;
             right = this->right;
         }
+        // Optimize common array access case a(c+1)
+        if (type == C_PLUS && left->type == C_NAME_RO && right->type == C_PLUS && right->right->type == C_NUM) {
+            class node *temp;
+            
+            // Pass constant to left side (in order to be added to address in one instruction)
+            temp = right->left;
+            right->left = left;
+            this->left = right;
+            this->right = temp;
+        }
+        // Optimize common array access case a(c-1)
+        if (type == C_PLUS && left->type == C_NAME_RO && right->type == C_MINUS && right->right->type == C_NUM) {
+            class node *temp;
+            
+            // Pass constant to left side (in order to be added to address in one instruction)
+            temp = right->left;
+            right->type = C_PLUS;
+            right->right->value = - right->right->value;
+            right->left = left;
+            this->left = right;
+            this->right = temp;
+        }
         // Optimizes constant expressions
         if (type == C_PLUS && left->type == C_NUM && right->type == C_NUM) {
             this->type = C_NUM;
@@ -963,6 +1049,17 @@ public:
     //
     void set_right(class node *right) {
         this->right = right;
+    }
+    
+    //
+    // Check for valid array with or without offset
+    //
+    bool valid_array(void) {
+        if (this->type == C_NAME_RO)
+            return true;
+        if (this->type == C_PLUS && left->type == C_NAME_RO && right->type == C_NUM)
+            return true;
+        return false;
     }
     
     //
@@ -1155,12 +1252,25 @@ public:
                 }
                 break;
             case C_PEEK:    // PEEK()
-                if (left->type == C_NUM) {
+                if (left->type == C_NUM) {  // Peek directly from memory location
                     output->emit_lr(N_MVI, "", left->value, reg);
-                } else if (left->type == C_PLUS && left->left->type == C_NAME_RO && left->right->type == C_NUM) {
+                } else if (left->type == C_PLUS && left->left->type == C_NAME_RO && left->right->type == C_NUM) {  // Constant index into array
                     output->emit_lor(N_MVI, LABEL_PREFIX, left->left->value, left->right->value, reg);
+                } else if (left->type == C_PLUS && left->left->valid_array() && left->right->type == C_NAME) {  // Simple index into array
+                    if (left->left->type == C_NAME_RO) {
+                        if (!output->subexpression_available(left->left->value, 0, left->right->value)) {
+                            left->generate(3, 0);
+                            output->annotate_subexpression(left->left->value, 0, left->right->value);
+                        }
+                    } else {
+                        if (!output->subexpression_available(left->left->left->value, left->left->right->value, left->right->value)) {
+                            left->generate(3, 0);
+                            output->annotate_subexpression(left->left->left->value, left->left->right->value, left->right->value);
+                        }
+                    }
+                    output->emit_rr(N_MVIA, 3, reg);
                 } else {
-                    if (reg == 0) {
+                    if (reg == 0) {  // R0 cannot be used as source of address
                         left->generate(reg + 1, 0);
                         output->emit_rr(N_MVIA, reg + 1, reg);
                     } else {
@@ -1201,7 +1311,7 @@ public:
             case C_DIV:
             case C_MOD:
                 
-                // Ultra-special case
+                // Ultra-special cases
                 if (type == C_MUL && left->type == C_NAME && right->type == C_NAME && !jlp_used) {
                     left->generate(0, 0);
                     right->generate(1, 0);
@@ -1210,6 +1320,22 @@ public:
                         output->emit_rr(N_MOVR, 1, reg);
                     }
                     fastmult_used = 1;
+                } else if (type == C_PLUS && left->type == C_NAME_RO && right->type == C_NUM) {
+                    output->emit_nor(N_MVII, LABEL_PREFIX, left->value, right->value, reg);
+                } else if (type == C_ASSIGN && right->type == C_PLUS && right->left->valid_array() && right->right->type == C_NAME) {
+                    left->generate(0, 0);
+                    if (right->left->type == C_NAME_RO) {
+                        if (!output->subexpression_available(right->left->value, 0, right->right->value)) {
+                            right->generate(3, 0);
+                            output->annotate_subexpression(right->left->value, 0, right->right->value);
+                        }
+                    } else {
+                        if (!output->subexpression_available(right->left->left->value, right->left->right->value, right->right->value)) {
+                            right->generate(3, 0);
+                            output->annotate_subexpression(right->left->left->value, right->left->right->value, right->right->value);
+                        }
+                    }
+                    output->emit_rr(N_MVOA, 0, 3);
                 // Optimize right side when it's constant
                 } else if (right->type == C_NUM && type != C_ASSIGN) {
                     left->generate(reg, 0);
@@ -1246,8 +1372,6 @@ public:
                             output->emit_nr(N_XORI, "", right->value & 0xffff, reg);
                         }
                     } else if (type == C_EQUAL) {
-                        int label = next_local++;
-                        
                         if ((right->value) & 0xffff)
                             output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
                         else if (left->type != C_AND && left->type != C_OR && left->type != C_XOR
@@ -1258,13 +1382,10 @@ public:
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BEQ, TEMP_PREFIX, label);
+                            output->emit_a(N_BEQ, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_NOTEQUAL) {
-                        int label = next_local++;
-                        
                         if ((right->value) & 0xffff)
                             output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
                         else if (left->type != C_AND && left->type != C_OR && left->type != C_XOR
@@ -1275,61 +1396,48 @@ public:
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BNE, TEMP_PREFIX, label);
+                            output->emit_a(N_BNE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_LESS) {
-                        int label = next_local++;
-                        
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
 						if (decision) {
                             output->emit_a(N_BGE, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BLT, TEMP_PREFIX, label);
+                            output->emit_a(N_BLT, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_LESSEQUAL) {
-                        int label = next_local++;
-                        
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
 						if (decision) {
                             output->emit_a(N_BGT, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BLE, TEMP_PREFIX, label);
+                            output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_GREATER) {
-                        int label = next_local++;
-                        
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
 						if (decision) {
                             output->emit_a(N_BLE, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BGT, TEMP_PREFIX, label);
+                            output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_GREATEREQUAL) {
-                        int label = next_local++;
-                        
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
 						if (decision) {
                             output->emit_a(N_BLT, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BGE, TEMP_PREFIX, label);
+                            output->emit_a(N_BGE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_MUL) {
                         if ((right->value & 0xffff) == 0) {
@@ -1515,82 +1623,64 @@ public:
                         output->emit_rr(N_ANDR, 4, reg);
                         output->emit_lr(N_XOR, VAR_PREFIX, right->value, reg);
                     } else if (type == C_EQUAL) {
-                        int label = next_local++;
-                        
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
 						if (decision) {
                             output->emit_a(N_BNE, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BEQ, TEMP_PREFIX, label);
+                            output->emit_a(N_BEQ, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_NOTEQUAL) {
-                        int label = next_local++;
-                        
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
    						if (decision) {
                             output->emit_a(N_BEQ, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BNE, TEMP_PREFIX, label);
+                            output->emit_a(N_BNE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_LESS) {
-                        int label = next_local++;
-                        
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
 						if (decision) {
                             output->emit_a(N_BGE, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BLT, TEMP_PREFIX, label);
+                            output->emit_a(N_BLT, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_LESSEQUAL) {
-                        int label = next_local++;
-                        
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
 						if (decision) {
                             output->emit_a(N_BGT, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BLE, TEMP_PREFIX, label);
+                            output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_GREATER) {
-                        int label = next_local++;
-                        
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
 						if (decision) {
                             output->emit_a(N_BLE, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BGT, TEMP_PREFIX, label);
+                            output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_GREATEREQUAL) {
-                        int label = next_local++;
-                        
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
 						if (decision) {
                             output->emit_a(N_BLT, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BGE, TEMP_PREFIX, label);
+                            output->emit_a(N_BGE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_MUL) {
                         if (jlp_used) {
@@ -1710,82 +1800,64 @@ public:
                         output->emit_r(N_COMR, reg + 1);
                         output->emit_rr(N_XORR, reg + 1, reg);
                     } else if (type == C_EQUAL) {
-                        int label = next_local++;
-                        
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(N_BNE, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BEQ, TEMP_PREFIX, label);
+                            output->emit_a(N_BEQ, "", 3);
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_NOTEQUAL) {
-                        int label = next_local++;
-                        
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(N_BEQ, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(N_BNE, TEMP_PREFIX, label);
+                            output->emit_a(N_BNE, "", 3);
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_LESS) {
-                        int label = next_local++;
-                        
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(reversed ? N_BLE : N_BGE, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(reversed ? N_BGT : N_BLT, TEMP_PREFIX, label);
+                            output->emit_a(reversed ? N_BGT : N_BLT, "", 3);
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_LESSEQUAL) {
-                        int label = next_local++;
-                        
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(reversed ? N_BLT : N_BGT, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(reversed ? N_BGE : N_BLE, TEMP_PREFIX, label);
+                            output->emit_a(reversed ? N_BGE : N_BLE, "", 3);
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_GREATER) {
-                        int label = next_local++;
-                        
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(reversed ? N_BGE : N_BLE, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(reversed ? N_BLT : N_BGT, TEMP_PREFIX, label);
+                            output->emit_a(reversed ? N_BLT : N_BGT, "", 3);
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_GREATEREQUAL) {
-                        int label = next_local++;
-                        
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(reversed ? N_BGT : N_BLT, TEMP_PREFIX, decision);
 							optimized = 1;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
-                            output->emit_a(reversed ? N_BLE : N_BGE, TEMP_PREFIX, label);
+                            output->emit_a(reversed ? N_BLE : N_BGE, "", 3);
                             output->emit_r(N_INCR, reg);
-                            output->emit_l(TEMP_PREFIX, label);
 						}
                     } else if (type == C_MUL) {
                         if (jlp_used) {
