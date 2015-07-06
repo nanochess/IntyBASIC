@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jul/03/2015.
+Last revision: Jul/06/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,8 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.1   Jul/03/2015  o Generates warning for assigned/non-read variables and also
+v1.1   Jul/06/2015  o New RANDOM() function
+                    o Generates warning for assigned/non-read variables and also
                       for read/non-assigned variables.
                     o Solved bug where multiplication by 0 would take a long time.
                     o Now optimizes multiplication by $0200, $0400 and $0800.
@@ -967,6 +968,11 @@ lesser priority than multiplication and division)
     Obtains a pseudo-random value between 0 and range-1. Updated on each video
     frame. Note it's slower to generate, the faster generated ones are based on
     powers of 2. Also range limited to a maximum of 256.
+    
+  RANDOM(range)
+    Obtains a pseudo-random value between 0 and range-1. Forces update of random
+    number (it doesn't need a WAIT to change). Note it's slower to generate, the
+    faster ones are based on powers of 2. Also range limited to a maximum of 256.
 
   FRAME
     Obtains current frame number (0-65535, it cycles over itself)

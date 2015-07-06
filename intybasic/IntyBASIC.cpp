@@ -120,6 +120,7 @@
 //                         for index plus offset. Avoids labels when generating
 //                         boolean results to preserve registers contents in
 //                         optimizer.
+//  Revision: Jul/06/2015. More comments. RANDOM implemented.
 //
 
 //  TODO:
@@ -141,7 +142,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.1 Jul/04/2015";      // Compiler version
+const string VERSION = "v1.1 Jul/06/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -299,8 +300,10 @@ public:
                     asm_output << this->prefix;
                 else
                     asm_output << this->prefix << this->value;
-                if (this->offset)
+                if (this->offset > 0)
                     asm_output << "+" << this->offset;
+                else if (this->offset < 0)
+                    asm_output << "-" << (-this->offset);
                 break;
             case M_A:  // Address (jumps): CALL CLRSCR
                 asm_output << "\t" << opcode_list[this->type] << " ";
@@ -377,13 +380,14 @@ public:
         trash_registers();
     }
     
-    //
+    // Checks for subexpression available (currently only in R3)
     bool subexpression_available(int base, int offset, int index) {
         if (subexpression_valid && subexpression_base == base && subexpression_offset == offset && subexpression_index == index)
             return true;
         return false;
     }
     
+    // Annotate for subexpression available (currently only in R3)
     void annotate_subexpression(int base, int offset, int index) {
         if (subexpression_valid)
             return;
@@ -465,7 +469,7 @@ public:
             return;
         }
         everything.push_back(new microcode(M_R, type, r1, 0, "", 0, 0));
-        if (type == N_CLRR) {  // Annotate new available constant
+        if (type == N_CLRR) {  // Annotate new available constant (zero)
             register_content[r1].valid = 1;
             register_content[r1].prefix = "";
             register_content[r1].value = 0;
@@ -826,16 +830,20 @@ public:
     }
 };
 
+// Lexical components
 enum lexical_component {C_END, C_NAME, C_NAME_R, C_NAME_RO,
     C_STRING, C_LABEL, C_NUM,
     C_OR, C_XOR, C_AND, C_NOT, C_NEG, C_PEEK, C_ABS, C_SGN,
-    C_READ, C_VAR, C_USR, C_RAND,
+    C_READ, C_VAR, C_USR, C_RAND, C_RANDOM,
     C_ASSIGN,
     C_EQUAL, C_NOTEQUAL, C_LESS, C_LESSEQUAL, C_GREATER, C_GREATEREQUAL,
     C_PLUS, C_MINUS, C_PLUSF, C_MINUSF, C_MUL, C_DIV, C_MOD,
     C_LPAREN, C_RPAREN, C_COLON, C_PERIOD, C_COMMA,
     C_ERR};
 
+//
+// Expression tree builder
+//
 class node {
     enum lexical_component type;
     int value;
@@ -1076,7 +1084,7 @@ public:
         // Unary nodes
         if (right == NULL) {
             left->label();
-            if (type == C_USR || type == C_RAND)
+            if (type == C_USR || type == C_RAND || type == C_RANDOM)
                 regs = 10;
             else
                 regs = left->regs;
@@ -1204,6 +1212,23 @@ public:
                 if (reg)
                     output->emit_rr(N_MOVR, 0, reg);
                 fastmult_used = 1;
+                break;
+            case C_RANDOM:    // Generate random number in range
+                if (left->type == C_NUM && (left->value == 2 || left->value == 4 || left->value == 8 || left->value == 16 || left->value == 32 || left->value == 64 || left->value == 128 || left->value == 256)) {
+                    output->emit_a(N_CALL, "_next_random", -1);
+                    output->emit_nr(N_ANDI, "", left->value - 1, 0);
+                    if (reg)
+                        output->emit_rr(N_MOVR, 0, reg);
+                } else {
+                    left->generate(1, 0);
+                    output->emit_a(N_CALL, "_next_random", -1);
+                    output->emit_a(N_CALL, "qs_mpy8", -1);
+                    output->emit_r(N_SWAP, 0);
+                    output->emit_nr(N_ANDI, "", 0x00ff, 0);
+                    if (reg)
+                        output->emit_rr(N_MOVR, 0, reg);
+                    fastmult_used = 1;
+                }
                 break;
             case C_NOT:     // NOT
                 left->generate(reg, 0);
@@ -2631,7 +2656,7 @@ private:
                     get_lex();
                     tree = eval_level0();
                     if (lex != C_RPAREN)
-                        emit_error("missing right parenthesis in ABS");
+                        emit_error("missing right parenthesis in RAND");
                     else
                         get_lex();
                     if (tree->node_type() == C_NUM) {
@@ -2650,6 +2675,20 @@ private:
                     return new node(C_RAND, 0, tree, NULL);
                 }
                 return new node(C_VAR, 9, NULL, NULL);
+            } else if (name == "RANDOM") {
+                class node *tree;
+                
+                get_lex();
+                if (lex != C_LPAREN)
+                    emit_error("missing left parenthesis in RANDOM");
+                else
+                    get_lex();
+                tree = eval_level0();
+                if (lex != C_RPAREN)
+                    emit_error("missing right parenthesis in RANDOM");
+                else
+                    get_lex();
+                return new node(C_RANDOM, 0, tree, NULL);
             } else if (name == "NTSC") {
                 get_lex();
                 return new node(C_VAR, 12, NULL, NULL);

@@ -476,26 +476,7 @@ _int_vector:     PROC
         ;
         ; Random number generator
         ;
-MACRO _ROR
-	RRC R0,1
-	MOVR R0,R1
-	SLR R1,2
-	SLR R1,2
-	ANDI #$0800,R1
-	SLR R1,2
-	SLR R1,2
-	ANDI #$007F,R0
-	XORR R1,R0
-ENDM
-        MVI _rand,R0
-        SETC
-        _ROR
-        XOR _frame,R0
-        _ROR
-        XOR _rand,R0
-        _ROR
-        XORI #9,R0
-        MVO R0,_rand
+	CALL _next_random
 
     IF DEFINED intybasic_music
 	; Generate sound for next frame
@@ -519,6 +500,34 @@ ENDM
 
         RETURN
         ENDP
+
+	;
+	; Generates the next random number
+	;
+_next_random:	PROC
+
+MACRO _ROR
+	RRC R0,1
+	MOVR R0,R2
+	SLR R2,2
+	SLR R2,2
+	ANDI #$0800,R2
+	SLR R2,2
+	SLR R2,2
+	ANDI #$007F,R0
+	XORR R2,R0
+ENDM
+        MVI _rand,R0
+        SETC
+        _ROR
+        XOR _frame,R0
+        _ROR
+        XOR _rand,R0
+        _ROR
+        XORI #9,R0
+        MVO R0,_rand
+	JR R5
+	ENDP
 
     IF DEFINED intybasic_music
 
