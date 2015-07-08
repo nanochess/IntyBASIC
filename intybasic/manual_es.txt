@@ -22,7 +22,7 @@ Todas las marcas pertenecen a sus respectivos propietarios.
 
 
 ESTA ES LA TRADUCCIÓN AL ESPAÑOL DEL MANUAL DE INTYBASIC, EN CASO DE CUALQUIER
-DIFERENCIA CON EL ORIGINAL INGLÉS, LA VERSIÓN INGLÉS TIENE LA PRIORIDAD.
+DIFERENCIA CON EL ORIGINAL INGLÉS, LA VERSIÓN EN INGLÉS TIENE LA PRIORIDAD.
 
 Se hace referencia a muchos documentos Intellivision que sólo están disponibles
 en inglés.
@@ -46,7 +46,8 @@ v1.1   06-jul-2015  o Nueva función RANDOM()
                         * Evita cargar registro con constante si aún está disponible.
                         * Evita leer memoria en registro si acaba de escribirla.
                         * Combina pares de instrucciones en formas más óptimas.
-                        * La lectura de arreglos arreglo(indice) es más rápida.
+                        * La lectura de arreglos arreglo(const) es más rápida.
+                        * Remoción de subexpresiones comunes para índice simple en arreglo.
                         * Optimiza resta múltiple.
                         * Optimiza comparaciones.
                         * Optimiza IF expr THEN GOTO.
@@ -240,22 +241,22 @@ También vea debajo para información sobre depuración a nivel de código fuent
 
 Los siguientes programas de ejemplo están incluídos:
 
-  controller.bas       Prueba de los controladores Intellivision
-  frame.bas            Muestra de ON FRAME GOSUB
-  game1.bas            Un juego sencillo de dispara a la letra.
-  game2.bas            Un juego sencillo de laberinto con enemigos.
-  music.bas            Ejemplo sencillo de reproducción de música.
-  screen.bas           Prueba de la sentencia MODE
-  scroll.bas           Ejemplo de como usar el scroll
-  sprites.bas          Ejemplo de sprites movibles
-  test.bas             Prueba del compilador, aún así pueden existir bugs ;)
-  title.bas            Caracter gráfico animado para pantalla de título
-  voice.bas            Ejemplo sencillo del uso de Intellivoice
+  samples/controller.bas      Prueba de los controladores Intellivision
+  samples/frame.bas           Muestra de ON FRAME GOSUB
+  samples/game1.bas           Un juego sencillo de dispara a la letra.
+  samples/game2.bas           Un juego sencillo de laberinto con enemigos.
+  samples/lander.bas          Juego del aterrizaje lunar
+  samples/music.bas           Ejemplo sencillo de reproducción de música.
+  samples/pak.bas             Juego de come puntos que incluye fantasmas ;)
+  samples/screen.bas          Prueba de la sentencia MODE
+  samples/scroll.bas          Ejemplo de como usar el scroll
+  samples/sprites.bas         Ejemplo de sprites movibles
+  samples/test.bas            Prueba del compilador, aún así pueden existir bugs.
+  samples/title.bas           Caracter gráfico animado para pantalla de título
+  samples/voice.bas           Ejemplo sencillo del uso de Intellivoice
 
   contrib/AppleCatcher.bas    Juego Apple Catcher por Kiwi
   contrib/clowns.bas          Juego Clowns & Ballons por catsfolly
-  contrib/lander.bas          Juego IntyLander
-  contrib/pak.bas             Juego IntyPak
 
 Se incluyen las siguientes utilidades:
 

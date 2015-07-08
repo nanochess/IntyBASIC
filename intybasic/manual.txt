@@ -38,7 +38,8 @@ v1.1   Jul/06/2015  o New RANDOM() function
                         * Avoids reloading register with constant if still available
                         * Avoids reading memory in register if just written
                         * Combines pairs of instructions in more optimum ways.
-                        * Array reading now array(index) is more optimum
+                        * Array reading array(const) is more optimum
+                        * Common subexpression removal for simple index into array.
                         * Optimization for multiple substraction.
                         * Optimization for comparisons.
                         * Optimization for IF expr THEN GOTO.
@@ -219,22 +220,22 @@ Also see below for information of source-level debugging.
 
 Following sample programs are included:
 
-  controller.bas       Test of Intellivision controllers
-  frame.bas            Sample of ON FRAME GOSUB
-  game1.bas            A simple shooting-letter game.
-  game2.bas            A simple labyrinth game with enemies.
-  music.bas            Simple example of music playing
-  screen.bas           MODE statement test
-  scroll.bas           Example of how to use scroll.
-  sprites.bas          Moving sprites sample.
-  test.bas             Test of compiler, anyway there could be hidden bugs.
-  title.bas            Animated tile for title screen
-  voice.bas            Simple example of Intellivoice
+  samples/controller.bas      Test of Intellivision controllers
+  samples/frame.bas           Sample of ON FRAME GOSUB
+  samples/game1.bas           A simple shooting-letter game.
+  samples/game2.bas           A simple labyrinth game with enemies.
+  samples/lander.bas          Lunar Lander-style game
+  samples/music.bas           Simple example of music playing
+  samples/pak.bas             Labyrinth game eating points with ghosts
+  samples/screen.bas          MODE statement test
+  samples/scroll.bas          Example of how to use scroll.
+  samples/sprites.bas         Moving sprites sample.
+  samples/test.bas            Test of compiler, anyway there could be hidden bugs.
+  samples/title.bas           Animated tile for title screen
+  samples/voice.bas           Simple example of Intellivoice
 
   contrib/AppleCatcher.bas    Game Apple Catcher by Kiwi
   contrib/clowns.bas          Game Clowns & Ballons by catsfolly
-  contrib/lander.bas          Game IntyLander
-  contrib/pak.bas             Game IntyPak
 
 Following utilities are included:
 

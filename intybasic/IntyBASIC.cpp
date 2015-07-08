@@ -121,6 +121,8 @@
 //                         boolean results to preserve registers contents in
 //                         optimizer.
 //  Revision: Jul/06/2015. More comments. RANDOM implemented.
+//  Revision: Jul/08/2015. Replace succesive addition multiplication with faster
+//                         shift algorithm.
 //
 
 //  TODO:
@@ -142,7 +144,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.1 Jul/06/2015";      // Compiler version
+const string VERSION = "v1.1 Jul/08/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -161,8 +163,8 @@ int err_code;
 
 enum opcode {
     N_ADCR, N_ADD, N_ADDA, N_ADDI, N_ADDR, N_AND, N_ANDA, N_ANDI, N_ANDR,
-    N_B, N_BC, N_BEQ, N_BGE, N_BGT, N_BLE, N_BLT, N_BNE, N_BPL,
-    N_CALL, N_CLRR, N_CMP, N_CMPA, N_CMPI, N_CMPR, N_COMR, N_DECLE, N_DECR,
+    N_B, N_BC, N_BEQ, N_BGE, N_BGT, N_BLE, N_BLT, N_BNC, N_BNE, N_BPL,
+    N_CALL, N_CLRC, N_CLRR, N_CMP, N_CMPA, N_CMPI, N_CMPR, N_COMR, N_DECLE, N_DECR,
     N_INCR, N_MOVR, N_MVI, N_MVIA, N_MVII, N_MVO, N_MVOA, N_MULT, N_NEGR, N_NOP,
     N_PSHR, N_PULR, N_RRC, N_RETURN, N_SLL, N_SLR, N_SUB, N_SUBA, N_SUBI, N_SUBR, N_SWAP,
     N_TSTR, N_XOR, N_XORA, N_XORI, N_XORR,
@@ -170,8 +172,8 @@ enum opcode {
 
 static const char *opcode_list[] = {
     "ADCR", "ADD", "ADD@", "ADDI", "ADDR", "AND", "AND@", "ANDI", "ANDR",
-    "B", "BC", "BEQ", "BGE", "BGT", "BLE", "BLT", "BNE", "BPL",
-    "CALL", "CLRR", "CMP", "CMP@", "CMPI", "CMPR", "COMR", "DECLE", "DECR",
+    "B", "BC", "BEQ", "BGE", "BGT", "BLE", "BLT", "BNC", "BNE", "BPL",
+    "CALL", "CLRC", "CLRR", "CMP", "CMP@", "CMPI", "CMPR", "COMR", "DECLE", "DECR",
     "INCR", "MOVR", "MVI", "MVI@", "MVII", "MVO", "MVO@", "MULT", "NEGR", "NOP",
     "PSHR", "PULR", "RRC", "RETURN", "SLL", "SLR", "SUB", "SUB@", "SUBI", "SUBR", "SWAP",
     "TSTR", "XOR", "XOR@", "XORI", "XORR",
@@ -1345,8 +1347,10 @@ public:
                         output->emit_rr(N_MOVR, 1, reg);
                     }
                     fastmult_used = 1;
+                // Get address of array with constant index
                 } else if (type == C_PLUS && left->type == C_NAME_RO && right->type == C_NUM) {
                     output->emit_nor(N_MVII, LABEL_PREFIX, left->value, right->value, reg);
+                // Optimization for assignation to array with simple index
                 } else if (type == C_ASSIGN && right->type == C_PLUS && right->left->valid_array() && right->right->type == C_NAME) {
                     left->generate(0, 0);
                     if (right->left->type == C_NAME_RO) {
@@ -1525,15 +1529,18 @@ public:
                                 int label = next_local++;
                                 int label2 = next_local++;
                         
-                                output->emit_rr(N_MOVR, reg, 4);
-                                output->emit_a(N_BEQ, TEMP_PREFIX, label);
-                                output->emit_r(N_CLRR, reg);
                                 output->emit_nr(N_MVII, "", right->value & 0xffff, 5);
-                                output->emit_l(TEMP_PREFIX, label2);
-                                output->emit_rr(N_ADDR, 5, reg);
-                                output->emit_r(N_DECR, 4);
-                                output->emit_a(N_BNE, TEMP_PREFIX, label2);
+                                output->emit_r(N_CLRR, 4);
                                 output->emit_l(TEMP_PREFIX, label);
+                                output->emit(N_CLRC);
+                                output->emit_s(N_RRC, reg, 1);
+                                output->emit_a(N_BNC, TEMP_PREFIX, label2);
+                                output->emit_rr(N_ADDR, 5, 4);
+                                output->emit_l(TEMP_PREFIX, label2);
+                                output->emit_rr(N_ADDR, 5, 5);
+                                output->emit_r(N_TSTR, reg);
+                                output->emit_a(N_BNE, TEMP_PREFIX, label);
+                                output->emit_rr(N_MOVR, 4, reg);
                             }
                         }
                     } else if (type == C_DIV) {
@@ -1893,14 +1900,17 @@ public:
                             int label = next_local++;
                             int label2 = next_local++;
                         
-                            output->emit_rr(N_MOVR, reg, 4);
-                            output->emit_a(N_BEQ, TEMP_PREFIX, label);
-                            output->emit_r(N_CLRR, reg);
-                            output->emit_l(TEMP_PREFIX, label2);
-                            output->emit_rr(N_ADDR, reg + 1, reg);
-                            output->emit_r(N_DECR, 4);
-                            output->emit_a(N_BNE, TEMP_PREFIX, label2);
+                            output->emit_r(N_CLRR, 4);
                             output->emit_l(TEMP_PREFIX, label);
+                            output->emit(N_CLRC);
+                            output->emit_s(N_RRC, reg, 1);
+                            output->emit_a(N_BNC, TEMP_PREFIX, label2);
+                            output->emit_rr(N_ADDR, reg + 1, 4);
+                            output->emit_l(TEMP_PREFIX, label2);
+                            output->emit_rr(N_ADDR, reg + 1, reg + 1);
+                            output->emit_r(N_TSTR, reg);
+                            output->emit_a(N_BNE, TEMP_PREFIX, label);
+                            output->emit_rr(N_MOVR, 4, reg);
                         }
                     } else if (type == C_DIV) {
                         if (jlp_used) {
