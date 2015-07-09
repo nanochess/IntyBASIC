@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jul/06/2015.
+Last revision: Jul/08/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.1   Jul/06/2015  o New RANDOM() function
+v1.1   Jul/08/2015  o New RANDOM() function
                     o Generates warning for assigned/non-read variables and also
                       for read/non-assigned variables.
                     o Solved bug where multiplication by 0 would take a long time.
@@ -857,13 +857,15 @@ lesser priority than multiplication and division)
   A=A-B             Simple substraction
   #A=#A+.#B         Fixed addition (note use of 16-bits variables)
   #A=#A-.#B         Fixed substraction (note use of 16-bits variables)
-  A=A*B             Note it does multiplication by repeated addition (can be slow)
+  A=A*B             Simple multiplication
                     Multiplication by 2/4/8/16/32/64/128/256/512/1024/2048/4096 is
                     internally optimized.
                     Multiplication by constants less than 128 is optimized with macro.
-                    Multiplication of variable by variable uses intvnut fast multiply routine
+                    Multiplication uses a shift algorithm that is relatively
+                    efficient for most cases. (42 minimum or 702 cycles in worst case)
+                    Multiplication of variable by variable uses intvnut's fast multiply routine (fixed 272 cycles)
                     When using --jlp switch the multiplication is accelerated by hardware
-  A=A/B				Note it does division by repeated substraction (can be slow)
+  A=A/B				Simple unsigned division (done by repeated substraction, it can be slow)
                     Division by 2/4/8/16/32/64/128/256 is internally optimized.
                     When using --jlp switch the division is accelerated by hardware
   A=A%B				Note it does remainder by repeated substraction (can be slow)

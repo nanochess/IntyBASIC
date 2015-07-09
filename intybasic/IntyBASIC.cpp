@@ -122,7 +122,8 @@
 //                         optimizer.
 //  Revision: Jul/06/2015. More comments. RANDOM implemented.
 //  Revision: Jul/08/2015. Replace succesive addition multiplication with faster
-//                         shift algorithm.
+//                         shift algorithm. Solved bug in ASM statement when
+//                         putting out labels (as1600 needs no space before).
 //
 
 //  TODO:
@@ -339,7 +340,7 @@ public:
                     asm_output << this->prefix << this->value;
                 break;
             case M_LITERAL:  // Literal assembler code
-                asm_output << this->prefix << "\n";
+                asm_output << this->prefix;
                 break;
         }
         asm_output << "\n";
@@ -4059,6 +4060,15 @@ private:
                     get_lex();
                     stack_used = 1;
                 } else if (name == "ASM") {         // ASM statement for inserting assembly code
+                    size_t c;
+                    
+                    c = line_pos;
+                    while (c < line_size && isspace(line[c]))
+                        c++;
+                    while (c < line_size && !isspace(line[c]))
+                        c++;
+                    if (line[c - 1] == ':')
+                        skip_spaces();
                     output->emit_literal(line.substr(line_pos, line_size - line_pos));
                     line_pos = line_size;
                     get_lex();
