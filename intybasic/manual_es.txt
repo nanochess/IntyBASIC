@@ -31,6 +31,7 @@ en inglés.
 >>>>>>>>>>>>>>  Cambios en esta versión
 
 v1.1   10-jul-2015  o Nueva función RANDOM()
+                    o Nueva sentencia DEF FN y FN para expresiones.
                     o Genera advertencia para variables asignadas pero no leídas y
                       también para variables leídas pero no asignadas.
                     o Algoritmo optimizado para multiplicación (ya no realiza suma
@@ -856,6 +857,20 @@ label:
         TH, TT1, TT2, UH, UW1, UW2, VV, WH, WW, XR2, YR, YY1, YY2, ZH, ZZ
 
     
+  DEF FN func = RAND % 10
+  DEF FN screen_off(row, col) = (row * 20 + col)
+
+    Permite definir funciones con cualquier número de argumentos.
+
+    Observe que son tomadas como macros, los argumentos son reemplazados tal cual
+    y el texto de la función es insertado tal cual después de reemplazar argumentos.
+    (por eso se incluyeron los parentesis en la expresión de screen_off)
+
+    Por ejemplo, las dos funciones superiores pueden ser llamadas como:
+
+          A = FN func
+          PRINT AT FN screen_off(4,8),"HELLO!"
+
   STACK_CHECK
   
     Esta sentencia en cualquier parte dentro de su programa activará un código que

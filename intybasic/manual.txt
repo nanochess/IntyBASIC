@@ -24,6 +24,7 @@ All trademarks are property of their respective owners.
 >>>>>>>>>>>>>>  Changes in this version
 
 v1.1   Jul/10/2015  o New RANDOM() function
+                    o New DEF FN statement and FN for expressions.
                     o Generates warning for assigned/non-read variables and also
                       for read/non-assigned variables.
                     o Multiplication algorithm optimized (no more successive addition
@@ -811,6 +812,20 @@ label:
         TH, TT1, TT2, UH, UW1, UW2, VV, WH, WW, XR2, YR, YY1, YY2, ZH, ZZ
 
     
+  DEF FN func = RAND % 10
+  DEF FN screen_off(row, col) = (row * 20 + col)
+
+    Allows to define functions with any number of arguments.
+    
+    Note these are taken as macros, the arguments are replaced as-is and the text of
+    the function is inserted as-is after argument replacement. (because of that the
+    parenthesis in screen_off expression)
+
+    For example, the two upper functions could be called as:
+    
+          A = FN func
+          PRINT AT FN screen_off(4,8),"HELLO!"
+
   STACK_CHECK
   
     This statement anywhere in your program will activate a code that will check for

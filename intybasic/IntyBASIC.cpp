@@ -126,7 +126,8 @@
 //                         putting out labels (as1600 needs no space before).
 //  Revision: Jul/10/2015. Solved bug where internal division/modulus by zero
 //                         was possible (intvnut). Added support for my fast
-//                         division/remainder routine.
+//                         division/remainder routine. Implemented DEF FN as macro
+//                         processor.
 //
 
 //  TODO:
@@ -847,6 +848,19 @@ enum lexical_component {C_END, C_NAME, C_NAME_R, C_NAME_RO,
     C_PLUS, C_MINUS, C_PLUSF, C_MINUSF, C_MUL, C_DIV, C_MOD,
     C_LPAREN, C_RPAREN, C_COLON, C_PERIOD, C_COMMA,
     C_ERR};
+
+// For debugging purposes
+static const char *lexical_names[] = {
+    "[end]", "[name]", "[name_r]", "[name_ro]",
+    "[string]", "[label]", "[num]",
+    "OR", "XOR", "AND", "NOT", "NEG", "PEEK", "ABS", "SGN",
+    "READ", "VAR", "USR", "RAND", "RANDOM",
+    "[assign]",
+    "=", "<>", "<", "<=", ">", ">=",
+    "+", "-", "+.", "-.", "*", "/", "%",
+    "(", ")", ":", ".", ",",
+    "[err]",
+};
 
 //
 // Expression tree builder
@@ -2037,6 +2051,40 @@ struct loop {
 };
 
 //
+// Representation for a macro
+//
+class lexical_element {
+    enum lexical_component lex;
+    int value;
+    string name;
+    
+public:
+    lexical_element(enum lexical_component lex, int value, string name) {
+        this->lex = lex;
+        this->value = value;
+        this->name = name;
+    }
+    
+    enum lexical_component get_lex(void) {
+        return this->lex;
+    }
+    
+    int get_value(void) {
+        return this->value;
+    }
+    
+    string get_name(void) {
+        return this->name;
+    }
+};
+
+struct macro {
+    int total_arguments;
+    bool in_use;
+    list <lexical_element *> definition;
+};
+
+//
 // The compiler
 //
 class compiler {
@@ -2050,11 +2098,9 @@ private:
     ifstream include[50];
     string line;
 	int line_start;
-    string name;
     string assigned;
     int pstring[256];
     int offset;
-    int value;
     size_t line_pos;
     size_t line_size;
     map <string, int> arrays;
@@ -2063,12 +2109,18 @@ private:
     map <string, int> constants;
     map <string, int> functions;
     map <string, int> read_write;
+    map <string, macro *> macros;
     map <string, int>::iterator access;
     list <struct loop> loops;
     int line_number;
     int next_label;
     int next_var;
+    
     enum lexical_component lex;
+    int value;
+    string name;
+    list <lexical_element *> accumulated;
+    
     int bitmap_value;
     int bitmap_byte;
     int frame_drive;    // Label for frame-driven game (ON FRAME GOSUB)
@@ -2101,8 +2153,22 @@ private:
     
     //
     // Gets another lexical component
+    // Output:
+    //  lex = lexical component
+    //  name = identifier
+    //  value = value
+    //  pstring = string for PRINT
     //
     void get_lex(void) {
+        if (accumulated.size() > 0) {
+            lex = accumulated.front()->get_lex();
+            value = accumulated.front()->get_value();
+            name = accumulated.front()->get_name();
+            accumulated.pop_front();
+//            std::cerr << "C " << lexical_names[lex] << "," << value << "," << name << "\n";
+//            std::cerr.flush();
+            return;
+        }
         skip_spaces();
         if (line_pos == line_size) {
             lex = C_END;
@@ -2809,6 +2875,86 @@ private:
                 temp = variables[name];
                 get_lex();
                 return new node(C_NAME_R, temp, NULL, NULL);
+            } else if (name == "FN") {  // Function (macro)
+                string function;
+                int total_arguments;
+                int c;
+                int level;
+                list <lexical_element *>::iterator explorer;
+                list <lexical_element *>::iterator explorer2;
+                list <lexical_element *> *argument;
+                
+                get_lex();
+                if (lex != C_NAME) {
+                    emit_error("missing name for FN");
+                    return new node(C_NUM, 0, NULL, NULL);
+                }
+                function = name;
+                get_lex();
+                if (macros[function] == NULL) {
+                    emit_error("FN using name not defined");
+                    return new node(C_NUM, 0, NULL, NULL);
+                }
+                if (macros[function]->in_use) {
+                    emit_error("FN name already in use");
+                    return new node(C_NUM, 0, NULL, NULL);
+                }
+                macros[function]->in_use = true;
+                total_arguments = macros[function]->total_arguments;
+                if (total_arguments > 0) {
+                    argument = new list <lexical_element *> [total_arguments]();
+                    if (lex != C_LPAREN) {
+                        emit_error("missing left parenthesis in FN");
+                        return new node(C_NUM, 0, NULL, NULL);
+                    }
+                    get_lex();
+                    c = 0;
+                    level = 0;
+                    while (c < total_arguments) {
+                        while (1) {
+                            if (level == 0 && (lex == C_RPAREN || lex == C_COMMA))
+                                break;
+                            if (lex == C_LPAREN)
+                                level++;
+                            if (lex == C_RPAREN)
+                                level--;
+                            argument[c].push_back(new lexical_element(lex, value, name));
+                            get_lex();
+                        }
+                        if (lex == C_COMMA && c + 1 < total_arguments) {
+                            get_lex();
+                            c++;
+                            continue;
+                        }
+                        if (lex == C_RPAREN && c + 1 == total_arguments) {
+                            get_lex();
+                            break;
+                        }
+                        emit_error("syntax error in FN");
+                        break;
+                    }
+                }
+                // Push macro into lexical analyzer
+                explorer = macros[function]->definition.begin();
+                while (explorer != macros[function]->definition.end()) {
+                    if ((*explorer)->get_lex() == C_ERR) {
+                        explorer2 = argument[(*explorer)->get_value()].begin();
+                        while (explorer2 != argument[(*explorer)->get_value()].end()) {
+                            accumulated.push_back(new lexical_element((*explorer2)->get_lex(), (*explorer2)->get_value(), (*explorer2)->get_name()));
+                            ++explorer2;
+                        }
+                    } else {
+                        accumulated.push_back(new lexical_element((*explorer)->get_lex(), (*explorer)->get_value(), (*explorer)->get_name()));
+                    }
+                    ++explorer;
+                }
+                accumulated.push_back(new lexical_element(lex, value, name));  // The actual one for later
+                lex = accumulated.front()->get_lex();
+                value = accumulated.front()->get_value();
+                name = accumulated.front()->get_name();
+                accumulated.pop_front();
+                macros[function]->in_use = false;
+                return eval_level0();
             }
             if (sneak_peek() == '(') {  // Indexed access
                 class node *tree;
@@ -4096,6 +4242,70 @@ private:
                     output->emit_literal(line.substr(line_pos, line_size - line_pos));
                     line_pos = line_size;
                     get_lex();
+                } else if (name == "DEF") {     // Function definition (macro in IntyBASIC)
+                    string function;
+                    int total_arguments;
+                    map <string, int> arguments;
+                    
+                    get_lex();
+                    if (lex != C_NAME || name != "FN") {
+                        emit_error("syntax error for DEF FN");
+                    } else {
+                        get_lex();
+                        if (lex != C_NAME) {
+                            emit_error("missing function name for DEF FN");
+                        } else if (macros[name] != NULL) {
+                            emit_error("DEF FN name already defined");
+                        } else {
+                            function = name;
+                            get_lex();
+                            total_arguments = 0;
+                            if (lex == C_LPAREN) {
+                                get_lex();
+                                while (1) {
+                                    if (lex != C_NAME) {
+                                        emit_error("syntax error in argument list for DEF FN");
+                                        break;
+                                    }
+                                    arguments[name] = ++total_arguments;
+                                    get_lex();
+                                    if (lex == C_COMMA) {
+                                        get_lex();
+                                    } else if (lex == C_RPAREN) {
+                                        get_lex();
+                                        break;
+                                    } else {
+                                        emit_error("syntax error in argument list for DEF FN");
+                                        break;
+                                    }
+                                }
+                            }
+                            macros[function] = new struct macro;
+                            macros[function]->total_arguments = total_arguments;
+                            macros[function]->in_use = NULL;
+                            if (lex != C_EQUAL) {
+                                emit_error("missing = in DEF FN");
+                            } else {
+                                get_lex();
+                                while (lex != C_END) {
+                                    if (lex == C_ERR) {
+                                        emit_error("bad syntax inside DEF FN replacement text");
+                                        break;
+                                    }
+                                    if (lex == C_STRING) {
+                                        emit_error("strings not accepted in DEF FN");
+                                        break;
+                                    }
+                                    if (lex == C_NAME && arguments[name] != 0) {  // Checks for argument
+                                        lex = C_ERR;
+                                        value = arguments[name] - 1;
+                                    }
+                                    macros[function]->definition.push_back(new lexical_element(lex, value, name));
+                                    get_lex();
+                                }
+                            }
+                        }
+                    }
                 } else {
                     compile_assignment(0);
                 }
