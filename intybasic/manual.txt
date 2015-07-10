@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jul/08/2015.
+Last revision: Jul/10/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,14 +23,17 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.1   Jul/08/2015  o New RANDOM() function
+v1.1   Jul/10/2015  o New RANDOM() function
                     o Generates warning for assigned/non-read variables and also
                       for read/non-assigned variables.
+                    o Multiplication algorithm optimized (no more successive addition
+                      that could take a long time, 2 seconds in worst case)
+                    o New fast division/remainder algorithm for special case of only
+                      variables as arguments.
                     o Solved bug where multiplication by 0 would take a long time.
                     o Now optimizes multiplication by $0200, $0400 and $0800.
                     o Solved bug where ECS code was always included.
                     o Solved bug where some divisions were signed.
-                    o Optimized code generation for multiplication.
                     o More optimization at code generation when the right operand
                       is the most complex.
                     o Some peephole optimization for code generation (at last
@@ -867,9 +870,14 @@ lesser priority than multiplication and division)
                     When using --jlp switch the multiplication is accelerated by hardware
   A=A/B				Simple unsigned division (done by repeated substraction, it can be slow)
                     Division by 2/4/8/16/32/64/128/256 is internally optimized.
+                    Division of variable by variable uses my fast division routine (214 to
+                    517 cycles)
                     When using --jlp switch the division is accelerated by hardware
-  A=A%B				Note it does remainder by repeated substraction (can be slow)
+  A=A%B				Simple unsigned remainder
+                    Note it does remainder by repeated substraction (can be slow)
                     Remainder by powers of 2 internally uses AND.
+                    Remainder of variable by variable uses my fast remainder routine (214 to
+                    517 cycles)
   A=(A+B)-C
   A=A AND B
   A=A OR B			Note this operation is not native, so it's not efficient

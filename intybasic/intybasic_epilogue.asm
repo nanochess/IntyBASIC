@@ -2500,6 +2500,142 @@ qs_mpy16:   PROC
 
 	ENDI
 
+	IF DEFINED intybasic_fastdiv
+
+; Fast unsigned division/remainder
+; Assembly code by Oscar Toledo G. Jul/10/2015
+; Released to public domain.
+
+	; Ultrafast unsigned division/remainder operation
+	; Entry: R0 = Quotient
+	;        R1 = Divisor
+	; Output: R0 = Result
+	;         R2 = Remainder
+	; Worst case: 6 + 6 + 9 + 496 = 517 cycles
+	; Best case: 6 + (6 + 7) * 16 = 214 cycles
+
+uf_udiv16:	PROC
+	CLRR R2		; 6
+	ADDR R0,R0	; 6
+	BC @@1		; 7/9
+	ADDR R0,R0	; 6
+	BC @@2		; 7/9
+	ADDR R0,R0	; 6
+	BC @@3		; 7/9
+	ADDR R0,R0	; 6
+	BC @@4		; 7/9
+	ADDR R0,R0	; 6
+	BC @@5		; 7/9
+	ADDR R0,R0	; 6
+	BC @@6		; 7/9
+	ADDR R0,R0	; 6
+	BC @@7		; 7/9
+	ADDR R0,R0	; 6
+	BC @@8		; 7/9
+	ADDR R0,R0	; 6
+	BC @@9		; 7/9
+	ADDR R0,R0	; 6
+	BC @@10		; 7/9
+	ADDR R0,R0	; 6
+	BC @@11		; 7/9
+	ADDR R0,R0	; 6
+	BC @@12		; 7/9
+	ADDR R0,R0	; 6
+	BC @@13		; 7/9
+	ADDR R0,R0	; 6
+	BC @@14		; 7/9
+	ADDR R0,R0	; 6
+	BC @@15		; 7/9
+	ADDR R0,R0	; 6
+	BC @@16		; 7/9
+	JR R5
+
+@@1:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@2:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@3:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@4:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@5:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@6:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@7:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@8:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@9:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@10:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@11:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@12:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@13:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@14:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@15:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+@@16:	RLC R2,1	; 6
+	CMPR R1,R2	; 6
+	BNC $+3		; 7/9
+	SUBR R1,R2	; 6
+	RLC R0,1	; 6
+	JR R5
+	
+	ENDP
+
+	ENDI
+
         ORG $319,$319,"-RWB"
         ;
         ; 16-bits variables

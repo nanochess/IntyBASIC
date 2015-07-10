@@ -124,6 +124,9 @@
 //  Revision: Jul/08/2015. Replace succesive addition multiplication with faster
 //                         shift algorithm. Solved bug in ASM statement when
 //                         putting out labels (as1600 needs no space before).
+//  Revision: Jul/10/2015. Solved bug where internal division/modulus by zero
+//                         was possible (intvnut). Added support for my fast
+//                         division/remainder routine.
 //
 
 //  TODO:
@@ -145,7 +148,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.1 Jul/08/2015";      // Compiler version
+const string VERSION = "v1.1 Jul/10/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -158,6 +161,7 @@ int optimized;
 int jlp_used;       // Indicates if JLP is used
 int cc3_used;       // Indicates if CC3 is used
 int fastmult_used;  // Indicates if fast multiplication is used
+int fastdiv_used;   // Indicates if fast division/remainder is used
 int program_year;
 char program_title[256];
 int err_code;
@@ -961,7 +965,7 @@ public:
                 this->right = left;
             }
         }
-        if (type == C_DIV && left->type == C_NUM && right->type == C_NUM && right->value) {
+        if (type == C_DIV && left->type == C_NUM && right->type == C_NUM && (right->value & 0xffff) != 0) {
             this->type = C_NUM;
             this->value = (left->value & 0xffff) / (right->value & 0xffff);
             delete this->left;
@@ -969,7 +973,7 @@ public:
             delete this->right;
             this->right = NULL;
         }
-        if (type == C_MOD && left->type == C_NUM && right->type == C_NUM && right->value) {
+        if (type == C_MOD && left->type == C_NUM && right->type == C_NUM && (right->value & 0xffff) != 0) {
             this->type = C_NUM;
             this->value = (left->value & 0xffff) % (right->value & 0xffff);
             delete this->left;
@@ -1150,6 +1154,10 @@ public:
             }
             if (type == C_MUL && left->type == C_NAME && right->type == C_NAME && !jlp_used)
                 regs = 10;
+            else if (type == C_DIV && left->type == C_NAME && right->type == C_NAME && !jlp_used)
+                regs = 10;
+            else if (type == C_MOD && left->type == C_NAME && right->type == C_NAME && !jlp_used)
+                regs = 10;
             else if (left->regs > right->regs)
                 regs = left->regs;
             else if (right->regs > left->regs)
@@ -1285,12 +1293,12 @@ public:
                 } else if (left->type == C_PLUS && left->left->type == C_NAME_RO && left->right->type == C_NUM) {  // Constant index into array
                     output->emit_lor(N_MVI, LABEL_PREFIX, left->left->value, left->right->value, reg);
                 } else if (left->type == C_PLUS && left->left->valid_array() && left->right->type == C_NAME) {  // Simple index into array
-                    if (left->left->type == C_NAME_RO) {
+                    if (left->left->type == C_NAME_RO) {  // Without offset
                         if (!output->subexpression_available(left->left->value, 0, left->right->value)) {
                             left->generate(3, 0);
                             output->annotate_subexpression(left->left->value, 0, left->right->value);
                         }
-                    } else {
+                    } else {  // With offset into array
                         if (!output->subexpression_available(left->left->left->value, left->left->right->value, left->right->value)) {
                             left->generate(3, 0);
                             output->annotate_subexpression(left->left->left->value, left->left->right->value, left->right->value);
@@ -1348,6 +1356,22 @@ public:
                         output->emit_rr(N_MOVR, 1, reg);
                     }
                     fastmult_used = 1;
+                } else if (type == C_DIV && left->type == C_NAME && right->type == C_NAME && !jlp_used) {
+                    left->generate(0, 0);
+                    right->generate(1, 0);
+                    output->emit_a(N_CALL, "uf_udiv16", -1);
+                    if (reg != 0) {
+                        output->emit_rr(N_MOVR, 0, reg);
+                    }
+                    fastdiv_used = 1;
+                } else if (type == C_MOD && left->type == C_NAME && right->type == C_NAME && !jlp_used) {
+                    left->generate(0, 0);
+                    right->generate(1, 0);
+                    output->emit_a(N_CALL, "uf_udiv16", -1);
+                    if (reg != 2) {
+                        output->emit_rr(N_MOVR, 2, reg);
+                    }
+                    fastdiv_used = 1;
                 // Get address of array with constant index
                 } else if (type == C_PLUS && left->type == C_NAME_RO && right->type == C_NUM) {
                     output->emit_nor(N_MVII, LABEL_PREFIX, left->value, right->value, reg);
@@ -4110,6 +4134,7 @@ public:
         jlp_used = ((flags & 1) != 0);
         cc3_used = ((flags & 2) != 0);
         fastmult_used = 0;
+        fastdiv_used = 0;
         frame_drive = -1;
         active_include = 0;
         next_include = 0;
@@ -4287,6 +4312,8 @@ public:
             asm_output << "intybasic_ecs:\tequ 1\t; Forces to include ECS startup\n";
         if (fastmult_used)
             asm_output << "intybasic_fastmult:\tequ 1\t; Forces to include fast multiplication\n";
+        if (fastdiv_used)
+            asm_output << "intybasic_fastdiv:\tequ 1\t; Forces to include fast division/remainder\n";
         strcpy(path, library_path);
 #ifdef _WIN32
         if (strlen(path) > 0 && path[strlen(path) - 1] != '\\')
