@@ -128,6 +128,10 @@
 //                         was possible (intvnut). Added support for my fast
 //                         division/remainder routine. Implemented DEF FN as macro
 //                         processor.
+//  Revision: Jul/11/2015. Doesn't require FN to call macro. Added support for
+//                         quotes in INCLUDE. Improvement in multiplication code
+//                         courtesy of intvnut. Tries to locate INCLUDE files in
+//                         library path.
 //
 
 //  TODO:
@@ -149,7 +153,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.1 Jul/10/2015";      // Compiler version
+const string VERSION = "v1.1 Jul/11/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -172,7 +176,7 @@ enum opcode {
     N_B, N_BC, N_BEQ, N_BGE, N_BGT, N_BLE, N_BLT, N_BNC, N_BNE, N_BPL,
     N_CALL, N_CLRC, N_CLRR, N_CMP, N_CMPA, N_CMPI, N_CMPR, N_COMR, N_DECLE, N_DECR,
     N_INCR, N_MOVR, N_MVI, N_MVIA, N_MVII, N_MVO, N_MVOA, N_MULT, N_NEGR, N_NOP,
-    N_PSHR, N_PULR, N_RRC, N_RETURN, N_SLL, N_SLR, N_SUB, N_SUBA, N_SUBI, N_SUBR, N_SWAP,
+    N_PSHR, N_PULR, N_RRC, N_RETURN, N_SARC, N_SLL, N_SLR, N_SUB, N_SUBA, N_SUBI, N_SUBR, N_SWAP,
     N_TSTR, N_XOR, N_XORA, N_XORI, N_XORR,
 };
 
@@ -181,7 +185,7 @@ static const char *opcode_list[] = {
     "B", "BC", "BEQ", "BGE", "BGT", "BLE", "BLT", "BNC", "BNE", "BPL",
     "CALL", "CLRC", "CLRR", "CMP", "CMP@", "CMPI", "CMPR", "COMR", "DECLE", "DECR",
     "INCR", "MOVR", "MVI", "MVI@", "MVII", "MVO", "MVO@", "MULT", "NEGR", "NOP",
-    "PSHR", "PULR", "RRC", "RETURN", "SLL", "SLR", "SUB", "SUB@", "SUBI", "SUBR", "SWAP",
+    "PSHR", "PULR", "RRC", "RETURN", "SARC", "SLL", "SLR", "SUB", "SUB@", "SUBI", "SUBR", "SWAP",
     "TSTR", "XOR", "XOR@", "XORI", "XORR",
 };
 
@@ -458,7 +462,7 @@ public:
                                    || c == N_XOR || c == N_XORA || c == N_XORI
                                    || c == N_INCR || c == N_DECR
                                    || c == N_COMR || c == N_NEGR
-                                   || c == N_SLL || c == N_SLR || c == N_RRC
+                                   || c == N_SARC || c == N_SLL || c == N_SLR || c == N_RRC
                                    || c == N_CLRR || c == N_SWAP)
                 && previous->get_r1() == r1) {
                 // There is no need to insert TSTR
@@ -849,6 +853,7 @@ enum lexical_component {C_END, C_NAME, C_NAME_R, C_NAME_RO,
     C_LPAREN, C_RPAREN, C_COLON, C_PERIOD, C_COMMA,
     C_ERR};
 
+#if defined(DEBUG_FN)
 // For debugging purposes
 static const char *lexical_names[] = {
     "[end]", "[name]", "[name_r]", "[name_ro]",
@@ -861,6 +866,7 @@ static const char *lexical_names[] = {
     "(", ")", ":", ".", ",",
     "[err]",
 };
+#endif
 
 //
 // Expression tree builder
@@ -1570,15 +1576,18 @@ public:
                         
                                 output->emit_nr(N_MVII, "", right->value & 0xffff, 5);
                                 output->emit_r(N_CLRR, 4);
-                                output->emit_l(TEMP_PREFIX, label);
                                 output->emit(N_CLRC);
                                 output->emit_s(N_RRC, reg, 1);
-                                output->emit_a(N_BNC, TEMP_PREFIX, label2);
+                                output->emit_a(N_BEQ, TEMP_PREFIX, label2);
+                                output->emit_l(TEMP_PREFIX, label);
+                                output->emit_a(N_BNC, "", 3);  // Two words of jump and one of ADDR
                                 output->emit_rr(N_ADDR, 5, 4);
-                                output->emit_l(TEMP_PREFIX, label2);
                                 output->emit_rr(N_ADDR, 5, 5);
-                                output->emit_r(N_TSTR, reg);
+                                output->emit_s(N_SARC, reg, 1);
                                 output->emit_a(N_BNE, TEMP_PREFIX, label);
+                                output->emit_l(TEMP_PREFIX, label2);
+                                output->emit_a(N_BNC, "", 3);  // Two words of jump and one of ADDR
+                                output->emit_rr(N_ADDR, 5, 4);
                                 output->emit_rr(N_MOVR, 4, reg);
                             }
                         }
@@ -1763,15 +1772,22 @@ public:
                             int label = next_local++;
                             int label2 = next_local++;
                         
-                            output->emit_rr(N_MOVR, reg, 4);
-                            output->emit_a(N_BEQ, TEMP_PREFIX, label);
                             output->emit_lr(N_MVI, VAR_PREFIX, right->value, 5);
-                            output->emit_r(N_CLRR, reg);
-                            output->emit_l(TEMP_PREFIX, label2);
-                            output->emit_rr(N_ADDR, 5, reg);
-                            output->emit_r(N_DECR, 4);
-                            output->emit_a(N_BNE, TEMP_PREFIX, label2);
+                            output->emit_r(N_CLRR, 4);
+                            output->emit(N_CLRC);
+                            output->emit_s(N_RRC, reg, 1);
+                            output->emit_a(N_BEQ, TEMP_PREFIX, label2);
                             output->emit_l(TEMP_PREFIX, label);
+                            output->emit_a(N_BNC, "", 3);  // Two words of jump and one of ADDR
+                            output->emit_rr(N_ADDR, 5, 4);
+                            output->emit_rr(N_ADDR, 5, 5);
+                            output->emit_s(N_SARC, reg, 1);
+                            output->emit_a(N_BNE, TEMP_PREFIX, label);
+                            output->emit_l(TEMP_PREFIX, label2);
+                            output->emit_a(N_BNC, "", 3);  // Two words of jump and one of ADDR
+                            output->emit_rr(N_ADDR, 5, 4);
+                            output->emit_rr(N_MOVR, 4, reg);
+                            
                         }
                     } else if (type == C_DIV) {
                         if (jlp_used) {
@@ -1940,15 +1956,18 @@ public:
                             int label2 = next_local++;
                         
                             output->emit_r(N_CLRR, 4);
-                            output->emit_l(TEMP_PREFIX, label);
                             output->emit(N_CLRC);
                             output->emit_s(N_RRC, reg, 1);
-                            output->emit_a(N_BNC, TEMP_PREFIX, label2);
+                            output->emit_a(N_BEQ, TEMP_PREFIX, label2);
+                            output->emit_l(TEMP_PREFIX, label);
+                            output->emit_a(N_BNC, "", 3);  // Two words of jump and one of ADDR
                             output->emit_rr(N_ADDR, reg + 1, 4);
-                            output->emit_l(TEMP_PREFIX, label2);
                             output->emit_rr(N_ADDR, reg + 1, reg + 1);
-                            output->emit_r(N_TSTR, reg);
+                            output->emit_s(N_SARC, reg, 1);
                             output->emit_a(N_BNE, TEMP_PREFIX, label);
+                            output->emit_l(TEMP_PREFIX, label2);
+                            output->emit_a(N_BNC, "", 3);  // Two words of jump and one of ADDR
+                            output->emit_rr(N_ADDR, reg + 1, 4);
                             output->emit_rr(N_MOVR, 4, reg);
                         }
                     } else if (type == C_DIV) {
@@ -2165,8 +2184,10 @@ private:
             value = accumulated.front()->get_value();
             name = accumulated.front()->get_name();
             accumulated.pop_front();
-//            std::cerr << "C " << lexical_names[lex] << "," << value << "," << name << "\n";
-//            std::cerr.flush();
+#if defined(DEBUG_FN)
+            std::cerr << "C " << lexical_names[lex] << "," << value << "," << name << "\n";
+            std::cerr.flush();
+#endif
             return;
         }
         skip_spaces();
@@ -2875,7 +2896,7 @@ private:
                 temp = variables[name];
                 get_lex();
                 return new node(C_NAME_R, temp, NULL, NULL);
-            } else if (name == "FN") {  // Function (macro)
+            } else if (macros[name] != NULL) {  // Function (macro)
                 string function;
                 int total_arguments;
                 int c;
@@ -2884,19 +2905,10 @@ private:
                 list <lexical_element *>::iterator explorer2;
                 list <lexical_element *> *argument;
                 
-                get_lex();
-                if (lex != C_NAME) {
-                    emit_error("missing name for FN");
-                    return new node(C_NUM, 0, NULL, NULL);
-                }
                 function = name;
                 get_lex();
-                if (macros[function] == NULL) {
-                    emit_error("FN using name not defined");
-                    return new node(C_NUM, 0, NULL, NULL);
-                }
                 if (macros[function]->in_use) {
-                    emit_error("FN name already in use");
+                    emit_error("Recursion in FN name");
                     return new node(C_NUM, 0, NULL, NULL);
                 }
                 macros[function]->in_use = true;
@@ -2904,7 +2916,7 @@ private:
                 if (total_arguments > 0) {
                     argument = new list <lexical_element *> [total_arguments]();
                     if (lex != C_LPAREN) {
-                        emit_error("missing left parenthesis in FN");
+                        emit_error("missing left parenthesis in call to FN");
                         return new node(C_NUM, 0, NULL, NULL);
                     }
                     get_lex();
@@ -2930,7 +2942,7 @@ private:
                             get_lex();
                             break;
                         }
-                        emit_error("syntax error in FN");
+                        emit_error("syntax error in call to FN");
                         break;
                     }
                 }
@@ -4362,14 +4374,6 @@ public:
             return 2;
         }
         asm_output << "\t; IntyBASIC compiler " << VERSION << "\n";
-        strcpy(path, library_path);
-#ifdef _WIN32
-        if (strlen(path) > 0 && path[strlen(path) - 1] != '\\')
-            strcat(path, "\\");
-#else
-        if (strlen(path) > 0 && path[strlen(path) - 1] != '/')
-            strcat(path, "/");
-#endif
         if (jlp_used || voice_used) {
             asm_output << "\tIF DEFINED __FEATURE.CFGVAR\n";
             if (jlp_used)
@@ -4380,6 +4384,14 @@ public:
                 asm_output << "\t\tCFGVAR \"ecs\" = 1\n";
             asm_output << "\tENDI\n";
         }
+        strcpy(path, library_path);
+#ifdef _WIN32
+        if (strlen(path) > 0 && path[strlen(path) - 1] != '\\')
+            strcat(path, "\\");
+#else
+        if (strlen(path) > 0 && path[strlen(path) - 1] != '/')
+            strcat(path, "/");
+#endif
         strcat(path, "intybasic_prologue.asm");
         included.open(path);
         if (included.is_open()) {
@@ -4463,22 +4475,59 @@ public:
                     last_is_return = 0;
                     output->trash_registers();
                 } else if (name == "INCLUDE") {
-                    if (next_include == 50) {
+                    int quotes;
+                    
+                    if (next_include == 50) {  // No more than 50 INCLUDE
                         std::cerr << "Error: more than 50 INCLUDE used at line " << line_number << "\n";
                         err_code = 1;
-                    } else if (active_include) {
+                    } else if (active_include) {  // No nested INCLUDE
                         std::cerr << "Error: trying to use INCLUDE inside INCLUDE in line " << line_number << "\n";
                         err_code = 1;
                     } else {
                         while (line_pos < line_size && isspace(line[line_pos]))
                             line_pos++;
+                        
+                        // Separate filename, admit use of quotes
+                        if (line_pos < line_size && line[line_pos] == '"') {
+                            quotes = 1;
+                            line_pos++;
+                        } else {
+                            quotes = 0;
+                        }
                         p = &path[0];
-                        while (p < &path[4095] && line_pos < line_size)
+                        while (p < &path[4095] && line_pos < line_size) {
+                            if (quotes && line[line_pos] == '"')
+                                break;
                             *p++ = line[line_pos++];
-                        while (p > &path[0] && isspace(*(p - 1)))
-                            p--;
+                        }
+                        if (quotes) {
+                            if (line_pos >= line_size || line[line_pos] != '"')
+                                std::cerr << "Error: missing quotes in INCLUDE in line " << line_number << "\n";
+                            else
+                                line_pos++;
+                        } else {
+                            while (p > &path[0] && isspace(*(p - 1)))
+                                p--;
+                        }
                         *p = '\0';
+                        
+                        // Try to open in current directory and then try library path.
                         include[next_include].open(path);
+                        if (!include[next_include].is_open() && strlen(library_path) + strlen(path) + 2 < 4095) {
+                            char path2[4096];
+                            
+                            strcpy(path2, path);
+                            strcpy(path, library_path);
+#ifdef _WIN32
+                            if (strlen(path) > 0 && path[strlen(path) - 1] != '\\')
+                                strcat(path, "\\");
+#else
+                            if (strlen(path) > 0 && path[strlen(path) - 1] != '/')
+                                strcat(path, "/");
+#endif
+                            strcat(path, path2);
+                            include[next_include].open(path);
+                        }
                         if (!include[next_include].is_open()) {
                             std::cerr << "Error: INCLUDE not successful in line " << line_number << "\n";
                             err_code = 2;
@@ -4732,6 +4781,10 @@ int main(int argc, const char * argv[])
         std::cerr << "                Only appears in emulators/multicarts.\n\n";
         std::cerr << "    The library path is where the intybasic_prologue.asm and\n";
         std::cerr << "    intybasic_epilogue.asm files are searched for inclusion.\n";
+        std::cerr << "\n";
+        std::cerr << "Many thanks to atari2600land, awhite2600, carlsson, catsfolly, ckblackm,\n";
+        std::cerr << "CrazyBoss, Cybearg, DZ-Jay, First Spear, freewheel, GroovyBee, intvnut,\n";
+        std::cerr << "Jess Ragan, Kiwi, RevEng, SpiceWare and Tarzilla.\n";
         std::cerr << "\n";
         return 0;
     }

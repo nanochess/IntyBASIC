@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 10-jul-2015
+Última revisión: 11-jul-2015
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,8 +30,9 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.1   10-jul-2015  o Nueva función RANDOM()
-                    o Nueva sentencia DEF FN y FN para expresiones.
+v1.1   11-jul-2015  o Nueva función RANDOM()
+                    o Nueva sentencia DEF FN para expresiones tipo macro.
+                    o INCLUDE ahora admite comillas y busca en camino de librería.
                     o Genera advertencia para variables asignadas pero no leídas y
                       también para variables leídas pero no asignadas.
                     o Algoritmo optimizado para multiplicación (ya no realiza suma
@@ -858,7 +859,7 @@ label:
 
     
   DEF FN func = RAND % 10
-  DEF FN screen_off(row, col) = (row * 20 + col)
+  DEF FN screen_off(linea, columna) = (linea * 20 + columna)
 
     Permite definir funciones con cualquier número de argumentos.
 
@@ -868,8 +869,12 @@ label:
 
     Por ejemplo, las dos funciones superiores pueden ser llamadas como:
 
-          A = FN func
-          PRINT AT FN screen_off(4,8),"HELLO!"
+          A = func
+          PRINT AT screen_off(4,8),"HELLO!"
+          
+    Note que aunque es posible reutilizar nombres de funciones internas, al ser
+    llamadas las funciones internas tienen prioridad sobre DEF FN. (significa que
+    DEF FN será ignorado)
 
   STACK_CHECK
   
@@ -883,7 +888,7 @@ label:
     Esto sucede por lo común cuando se hace GOSUB a PROCEDURE y saliendo con GOTO
     en lugar de RETURN.
 
-  INCLUDE archivo.bas
+  INCLUDE "archivo.bas"
   
     Permite incluir otro archivo dentro del programa IntyBASIC actual, note que no
     puede usar INCLUDE recursivamente.
@@ -893,6 +898,9 @@ label:
     su archivo incluido.
     
     Muy útil para separar archivos de gráficos y pantallas.
+
+    Intentará primero incluir el archivo del directorio actual y luego intentará
+    agregar el camino de librería provisto en la línea de órdenes.
 
   ASM código
   

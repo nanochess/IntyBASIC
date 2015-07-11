@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jul/10/2015.
+Last revision: Jul/11/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,8 +23,9 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.1   Jul/10/2015  o New RANDOM() function
-                    o New DEF FN statement and FN for expressions.
+v1.1   Jul/11/2015  o New RANDOM() function
+                    o New DEF FN statement for macro expressions.
+                    o INCLUDE now allows quotes and searchs also in library path.
                     o Generates warning for assigned/non-read variables and also
                       for read/non-assigned variables.
                     o Multiplication algorithm optimized (no more successive addition
@@ -823,8 +824,12 @@ label:
 
     For example, the two upper functions could be called as:
     
-          A = FN func
-          PRINT AT FN screen_off(4,8),"HELLO!"
+          A = func
+          PRINT AT screen_off(4,8),"HELLO!"
+
+    Please note that although it's possible to reuse internal function names, when
+    called the internal functions have priority over DEF FN (that is DEF FN is
+    ignored)
 
   STACK_CHECK
   
@@ -837,7 +842,7 @@ label:
     This happens commonly when doing GOSUB to PROCEDURE and getting out of it with
     GOTO instead of RETURN.
     
-  INCLUDE filename.bas
+  INCLUDE "filename.bas"
   
     Allows to include another file inside the current IntyBASIC program, note you
     cannot use INCLUDE recursively.
@@ -846,6 +851,9 @@ label:
     have half a procedure in the main file and the rest of it in the included file.
     
     Very useful to separate graphics and screen files.
+
+    It will try to include first from the current directory and then will try adding
+    the library path provided in the command line.
 
   ASM code
   

@@ -17,3 +17,26 @@ manual.txt     Manual for IntyBASIC
 manual_es.txt  Spanish manual for IntyBASIC
 
 ReadMe.txt     This file.
+
+>>>>>>>>>>>>>>  Acknowledgments
+
+Thanks to following members of Atariage for contributing valuable suggestions,
+test programs and even support libraries:
+
+  atari2600land
+  awhite2600
+  carlsson
+  catsfolly
+  ckblackm
+  CrazyBoss
+  Cybearg
+  DZ-Jay
+  First Spear
+  freewheel
+  GroovyBee
+  intvnut
+  Jess Ragan
+  Kiwi
+  RevEng
+  SpiceWare
+  Tarzilla
