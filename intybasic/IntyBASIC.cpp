@@ -4526,7 +4526,13 @@ public:
                                 strcat(path, "/");
 #endif
                             strcat(path, path2);
-                            include[next_include].open(path);
+                            // This needed because of bug in Visual C++ 2008 Express Edition
+                            if (++next_include == 50) {
+                                std::cerr << "Error: too many INCLUDE used at line " << line_number << "\n";
+                                err_code = 1;
+                            } else {
+                                include[next_include].open(path);
+                            }
                         }
                         if (!include[next_include].is_open()) {
                             std::cerr << "Error: INCLUDE not successful in line " << line_number << "\n";
