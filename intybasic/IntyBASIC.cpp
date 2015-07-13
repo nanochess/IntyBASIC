@@ -132,6 +132,9 @@
 //                         quotes in INCLUDE. Improvement in multiplication code
 //                         courtesy of intvnut. Tries to locate INCLUDE files in
 //                         library path.
+//  Revision: Jul/13/2015. Implemented CONT3 and CONT4 (ECS). FN now can be called
+//                         as statement. New #MOBSHADOW array allows to access
+//                         MOB shadow buffer.
 //
 
 //  TODO:
@@ -153,7 +156,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.1 Jul/11/2015";      // Compiler version
+const string VERSION = "v1.1 Jul/14/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -852,6 +855,8 @@ enum lexical_component {C_END, C_NAME, C_NAME_R, C_NAME_RO,
     C_PLUS, C_MINUS, C_PLUSF, C_MINUSF, C_MUL, C_DIV, C_MOD,
     C_LPAREN, C_RPAREN, C_COLON, C_PERIOD, C_COMMA,
     C_ERR};
+
+//#define DEBUG_FN
 
 #if defined(DEBUG_FN)
 // For debugging purposes
@@ -2150,7 +2155,7 @@ private:
     int stack_used;     // Indicates if stack check used
     int numbers_used;   // Indicates if numbers used (PRINT)
     int voice_used;     // Indicates if Intellivoice used (VOICE)
-    int ecs_used;       // Indicates if ECS used (SOUND)
+    bool ecs_used;      // Indicates if ECS used (SOUND, CONT3, CONT4)
     
     //
     // Avoid spaces
@@ -2164,6 +2169,11 @@ private:
     // Sneak-peek to next character
     //
     int sneak_peek(void) {
+        if (accumulated.size() > 0) {
+            if (accumulated.front()->get_lex() == C_LPAREN)
+                return '(';
+            return 0;
+        }
         skip_spaces();
         if (line_pos == line_size)
             return '\0';
@@ -2700,6 +2710,16 @@ private:
                     tree = new node(C_NUM, c = 0x01FF, NULL, NULL);
                     tree = new node(C_PEEK, 0, tree, NULL);
                     tree = new node(C_NOT, 0, tree, NULL);
+                } else if (name == "CONT4") {
+                    tree = new node(C_NUM, c = 0x00FE, NULL, NULL);
+                    tree = new node(C_PEEK, 0, tree, NULL);
+                    tree = new node(C_NOT, 0, tree, NULL);
+                    ecs_used = true;
+                } else if (name == "CONT3") {
+                    tree = new node(C_NUM, c = 0x00FF, NULL, NULL);
+                    tree = new node(C_PEEK, 0, tree, NULL);
+                    tree = new node(C_NOT, 0, tree, NULL);
+                    ecs_used = true;
                 } else {
                     tree = new node(C_VAR, c = 13, NULL, NULL);
                 }
@@ -2731,14 +2751,19 @@ private:
                                         new node(C_AND, 0, tree, new node(C_NUM, 0xe0, NULL, NULL)),
                                         new node(C_NUM, 0xc0, NULL, NULL));
                     else if (name == "KEY") {
-                        delete tree;
-                        if (c == 13)
-                            tree = new node(C_VAR, 14, NULL, NULL);
-                        else
-                            tree = new node(C_VAR, (c == 0x01ff) ? 10 : 11, NULL, NULL);
-                        keypad_used = 1;
-                    } else
+                        if (c < 0x100) {
+                            emit_error("KEY support not available (yet) for CONT3 and CONT4");
+                        } else {
+                            delete tree;
+                            if (c == 13)
+                                tree = new node(C_VAR, 14, NULL, NULL);
+                            else
+                                tree = new node(C_VAR, (c == 0x01ff) ? 10 : 11, NULL, NULL);
+                            keypad_used = 1;
+                        }
+                    } else {
                         emit_error("wrong name for CONT? syntax");
+                    }
                     get_lex();
                 }
                 return tree;
@@ -2897,75 +2922,8 @@ private:
                 get_lex();
                 return new node(C_NAME_R, temp, NULL, NULL);
             } else if (macros[name] != NULL) {  // Function (macro)
-                string function;
-                int total_arguments;
-                int c;
-                int level;
-                list <lexical_element *>::iterator explorer;
-                list <lexical_element *>::iterator explorer2;
-                list <lexical_element *> *argument;
-                
-                function = name;
-                get_lex();
-                if (macros[function]->in_use) {
-                    emit_error("Recursion in FN name");
+                if (replace_macro())
                     return new node(C_NUM, 0, NULL, NULL);
-                }
-                macros[function]->in_use = true;
-                total_arguments = macros[function]->total_arguments;
-                if (total_arguments > 0) {
-                    argument = new list <lexical_element *> [total_arguments]();
-                    if (lex != C_LPAREN) {
-                        emit_error("missing left parenthesis in call to FN");
-                        return new node(C_NUM, 0, NULL, NULL);
-                    }
-                    get_lex();
-                    c = 0;
-                    level = 0;
-                    while (c < total_arguments) {
-                        while (1) {
-                            if (level == 0 && (lex == C_RPAREN || lex == C_COMMA))
-                                break;
-                            if (lex == C_LPAREN)
-                                level++;
-                            if (lex == C_RPAREN)
-                                level--;
-                            argument[c].push_back(new lexical_element(lex, value, name));
-                            get_lex();
-                        }
-                        if (lex == C_COMMA && c + 1 < total_arguments) {
-                            get_lex();
-                            c++;
-                            continue;
-                        }
-                        if (lex == C_RPAREN && c + 1 == total_arguments) {
-                            get_lex();
-                            break;
-                        }
-                        emit_error("syntax error in call to FN");
-                        break;
-                    }
-                }
-                // Push macro into lexical analyzer
-                explorer = macros[function]->definition.begin();
-                while (explorer != macros[function]->definition.end()) {
-                    if ((*explorer)->get_lex() == C_ERR) {
-                        explorer2 = argument[(*explorer)->get_value()].begin();
-                        while (explorer2 != argument[(*explorer)->get_value()].end()) {
-                            accumulated.push_back(new lexical_element((*explorer2)->get_lex(), (*explorer2)->get_value(), (*explorer2)->get_name()));
-                            ++explorer2;
-                        }
-                    } else {
-                        accumulated.push_back(new lexical_element((*explorer)->get_lex(), (*explorer)->get_value(), (*explorer)->get_name()));
-                    }
-                    ++explorer;
-                }
-                accumulated.push_back(new lexical_element(lex, value, name));  // The actual one for later
-                lex = accumulated.front()->get_lex();
-                value = accumulated.front()->get_value();
-                name = accumulated.front()->get_name();
-                accumulated.pop_front();
-                macros[function]->in_use = false;
                 return eval_level0();
             }
             if (sneak_peek() == '(') {  // Indexed access
@@ -3022,6 +2980,83 @@ private:
     {
         std::cerr << "Error: " << message << " in line " << line_number << "\n";
         err_code = 1;
+    }
+    
+    //
+    // Replace a macro
+    //
+    int replace_macro(void)
+    {
+        string function;
+        int total_arguments;
+        int c;
+        int level;
+        list <lexical_element *>::iterator explorer;
+        list <lexical_element *>::iterator explorer2;
+        list <lexical_element *> *argument;
+        
+        function = name;
+        get_lex();
+        if (macros[function]->in_use) {
+            emit_error("Recursion in FN name");
+            return 1;
+        }
+        macros[function]->in_use = true;
+        total_arguments = macros[function]->total_arguments;
+        if (total_arguments > 0) {
+            argument = new list <lexical_element *> [total_arguments]();
+            if (lex != C_LPAREN) {
+                emit_error("missing left parenthesis in call to FN");
+                return 1;
+            }
+            get_lex();
+            c = 0;
+            level = 0;
+            while (c < total_arguments) {
+                while (1) {
+                    if (level == 0 && (lex == C_RPAREN || lex == C_COMMA))
+                        break;
+                    if (lex == C_LPAREN)
+                        level++;
+                    if (lex == C_RPAREN)
+                        level--;
+                    argument[c].push_back(new lexical_element(lex, value, name));
+                    get_lex();
+                }
+                if (lex == C_COMMA && c + 1 < total_arguments) {
+                    get_lex();
+                    c++;
+                    continue;
+                }
+                if (lex == C_RPAREN && c + 1 == total_arguments) {
+                    get_lex();
+                    break;
+                }
+                emit_error("syntax error in call to FN");
+                break;
+            }
+        }
+        // Push macro into lexical analyzer
+        explorer = macros[function]->definition.begin();
+        while (explorer != macros[function]->definition.end()) {
+            if ((*explorer)->get_lex() == C_ERR) {
+                explorer2 = argument[(*explorer)->get_value()].begin();
+                while (explorer2 != argument[(*explorer)->get_value()].end()) {
+                    accumulated.push_back(new lexical_element((*explorer2)->get_lex(), (*explorer2)->get_value(), (*explorer2)->get_name()));
+                    ++explorer2;
+                }
+            } else {
+                accumulated.push_back(new lexical_element((*explorer)->get_lex(), (*explorer)->get_value(), (*explorer)->get_name()));
+            }
+            ++explorer;
+        }
+        accumulated.push_back(new lexical_element(lex, value, name));  // The actual one for later
+        lex = accumulated.front()->get_lex();
+        value = accumulated.front()->get_value();
+        name = accumulated.front()->get_name();
+        accumulated.pop_front();
+        macros[function]->in_use = false;
+        return 0;
     }
     
     //
@@ -3437,7 +3472,7 @@ private:
                             emit_error("bad channel for SOUND");
                         get_lex();
                         if (channel >= 5)
-                            ecs_used = 1;
+                            ecs_used = true;
                     }
                     if (lex != C_COMMA) {
                         emit_error("bad syntax for SOUND");
@@ -4318,6 +4353,11 @@ private:
                             }
                         }
                     }
+                } else if (macros[name] != NULL) {  // Function (macro)
+                    if (!replace_macro()) {
+                        compile_statement();
+                        return;
+                    }
                 } else {
                     compile_assignment(0);
                 }
@@ -4352,7 +4392,7 @@ public:
         stack_used = 0;
         numbers_used = 0;
         voice_used = 0;
-        ecs_used = 0;
+        ecs_used = false;
         jlp_used = ((flags & 1) != 0);
         cc3_used = ((flags & 2) != 0);
         fastmult_used = 0;
@@ -4410,6 +4450,7 @@ public:
         asm_output << "\t;FILE " << input_file << "\n";
         bitmap_byte = 0;
         inside_proc = 0;
+        arrays["#MOBSHADOW"] = 24 | (next_label++ << 16);  // #MOBSHADOW array
         while (1) {
             int label_exists;
             
@@ -4679,11 +4720,15 @@ public:
                 int size;
                 int label;
                 
-                size = access->second & 0xffff;
                 label = access->second >> 16;
-                asm_output << LABEL_PREFIX << label << ":\tRMB "
-                    << size << "\t; " << access->first << "\n";
-                used_space += size;
+                if (access->first == "#MOBSHADOW") {
+                    asm_output << LABEL_PREFIX << label << ":\tEQU _mobs\n";
+                } else {
+                    size = access->second & 0xffff;
+                    asm_output << LABEL_PREFIX << label << ":\tRMB "
+                        << size << "\t; " << access->first << "\n";
+                    used_space += size;
+                }
             }
         }
         if (jlp_used || cc3_used) {

@@ -32,6 +32,7 @@ en inglés.
 
 v1.1   11-jul-2015  o Nueva función RANDOM()
                     o Nueva sentencia DEF FN para expresiones tipo macro.
+                    o Soporte experimental para CONT3 y CONT4 sin decodif. teclas (ECS)
                     o INCLUDE ahora admite comillas y busca en camino de librería.
                     o Genera advertencia para variables asignadas pero no leídas y
                       también para variables leídas pero no asignadas.
@@ -264,6 +265,8 @@ Los siguientes programas de ejemplo están incluídos:
 
   contrib/AppleCatcher.bas    Juego Apple Catcher por Kiwi
   contrib/clowns.bas          Juego Clowns & Ballons por catsfolly
+  contrib/hello.bas           Hello World por DZ-Jay
+  contrib/keypad.bas          Keypad test por GroovyBee
 
 Se incluyen las siguientes utilidades:
 
@@ -860,6 +863,7 @@ label:
     
   DEF FN func = RAND % 10
   DEF FN screen_off(linea, columna) = (linea * 20 + columna)
+  DEF FN resetsprite(number) = SPRITE number,0
 
     Permite definir funciones con cualquier número de argumentos.
 
@@ -871,6 +875,7 @@ label:
 
           A = func
           PRINT AT screen_off(4,8),"HELLO!"
+          resetsprite(0)
           
     Note que aunque es posible reutilizar nombres de funciones internas, al ser
     llamadas las funciones internas tienen prioridad sobre DEF FN. (significa que
@@ -1067,6 +1072,10 @@ la resta tienen menos prioridad que la multiplicación y la división)
     
   NTSC
     Contiene 1 si el Intellivision es NTSC.
+
+  #MOBSHADOW(x)
+    Accede elementos del buffer MOB (el lugar donde se guardan los datos de SPRITE)
+    Los elementos 0-23 replican exactamente las locaciones 0-23 del STIC
 
 
 Los números fijos son útiles para mover elementos del juego en pasos fraccionales, el

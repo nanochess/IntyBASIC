@@ -25,11 +25,13 @@ All trademarks are property of their respective owners.
 
 v1.1   Jul/11/2015  o New RANDOM() function
                     o New DEF FN statement for macro expressions.
+                    o Experimental CONT3 and CONT4 support, no keypad decoding (ECS)
                     o INCLUDE now allows quotes and searchs also in library path.
                     o Generates warning for assigned/non-read variables and also
                       for read/non-assigned variables.
                     o Multiplication algorithm optimized (no more successive addition
                       that could take a long time, 2 seconds in worst case)
+                    o New #MOBSHADOW array.
                     o New fast division/remainder algorithm for special case of only
                       variables as arguments.
                     o Solved bug where multiplication by 0 would take a long time.
@@ -241,6 +243,8 @@ Following sample programs are included:
 
   contrib/AppleCatcher.bas    Game Apple Catcher by Kiwi
   contrib/clowns.bas          Game Clowns & Ballons by catsfolly
+  contrib/hello.bas           Hello World by DZ-Jay
+  contrib/keypad.bas          Keypad test by GroovyBee
 
 Following utilities are included:
 
@@ -815,6 +819,7 @@ label:
     
   DEF FN func = RAND % 10
   DEF FN screen_off(row, col) = (row * 20 + col)
+  DEF FN resetsprite(number) = SPRITE number,0
 
     Allows to define functions with any number of arguments.
     
@@ -826,6 +831,7 @@ label:
     
           A = func
           PRINT AT screen_off(4,8),"HELLO!"
+          resetsprite(0)
 
     Please note that although it's possible to reuse internal function names, when
     called the internal functions have priority over DEF FN (that is DEF FN is
@@ -1013,6 +1019,10 @@ lesser priority than multiplication and division)
     
   NTSC
     It will contain 1 if the Intellivision is NTSC.
+    
+  #MOBSHADOW(x)
+    Access elements of MOB buffer (the place where is saved the SPRITE data)
+    The indexes 0-23 replicate exactly the locations 0-23 of STIC.
 
 
 The fixed numbers are useful to move game elements in fractional steps, the trick is
