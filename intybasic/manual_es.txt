@@ -215,8 +215,6 @@ Plataformas disponibles:
 Las limitaciones actuales son:
   o La división y resto (módulo) tratan los números como sin signo.
   o No detecta etiquetas indefinidas o redefinidas (el ensamblador lo hace)
-  o Hay una pequeña aberración en FOR A=10 TO 0 STEP -1, debe usar variables de
-    16-bits si su valor final es 0 o negativo.
 
 Forma de uso:
 
@@ -377,6 +375,9 @@ Las siguientes sentencias están disponibles:
      
      Note que sólo puede utilizar variables normales para el bucle, no variables
      en matrices.
+          
+     Hay un pequeño detalle si se usan variables de 8 bits y la expresión TO es
+     demasiado compleja y alcanza 0 o 255. El bucle puede ser infinito.
 
   WHILE expr:[sentencia]:WEND
   WHILE expr

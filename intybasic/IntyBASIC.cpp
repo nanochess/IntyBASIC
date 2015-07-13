@@ -134,7 +134,8 @@
 //                         library path.
 //  Revision: Jul/13/2015. Implemented CONT3 and CONT4 (ECS). FN now can be called
 //                         as statement. New #MOBSHADOW array allows to access
-//                         MOB shadow buffer.
+//                         MOB shadow buffer. Redesigned FOR for taking advantage
+//                         of optimizer.
 //
 
 //  TODO:
@@ -2751,7 +2752,7 @@ private:
                                         new node(C_AND, 0, tree, new node(C_NUM, 0xe0, NULL, NULL)),
                                         new node(C_NUM, 0xc0, NULL, NULL));
                     else if (name == "KEY") {
-                        if (c < 0x100) {
+                        if (c != 13 && c < 0x100) {
                             emit_error("KEY support not available (yet) for CONT3 and CONT4");
                         } else {
                             delete tree;
@@ -3214,6 +3215,7 @@ private:
                     class node *final = NULL;
                     class node *step = NULL;
 					struct loop new_loop;
+                    bool positive;
                     
                     get_lex();
                     compile_assignment(0);
@@ -3226,6 +3228,7 @@ private:
                     } else {
                         get_lex();
                         final = eval_level0();
+                        positive = true;
                         if (lex == C_NAME && name == "STEP") {
                             get_lex();
                             if (lex == C_MINUS) {
@@ -3233,12 +3236,18 @@ private:
                                 step = eval_level0();
                                 step = new node(C_MINUS, 0,
                                                 new node(C_NAME, variables[loop], 0, 0), step);
+                                positive = false;
                             } else {
                                 step = eval_level0();
                                 step = new node(C_PLUS, 0,
                                                 new node(C_NAME, variables[loop], 0, 0), step);
                             }
+                        } else {
+                            step = new node(C_NUM, 1, NULL, NULL);
+                            step = new node(C_PLUS, 0,
+                                            new node(C_NAME, variables[loop], 0, 0), step);
                         }
+                        final = new node(positive ? C_GREATER : C_LESS, 0, new node(C_NAME, variables[loop], 0, 0), final);
                     }
                     new_loop.type = 0;
 					new_loop.step = step;
@@ -3269,22 +3278,19 @@ private:
                             if (step != NULL) {
                                 step->label();
                                 step->generate(0, 0);
-                            } else {
-                                output->emit_lr(N_MVI, VAR_PREFIX, variables[loop], 0);
-                                output->emit_r(N_INCR, 0);
                             }
-                            output->emit_rl(N_MVO, 0, VAR_PREFIX, variables[loop]);
+                            // This gives us better optimization and solves a bug ;)
+//                            if (loop[0] == '#')
+                                output->emit_rl(N_MVO, 0, VAR_PREFIX, variables[loop]);
+//                            else
+//                                output->emit_rlo8(N_MVO, 0, VAR_PREFIX, variables[loop], 0);
                             if (final != NULL) {
                                 final->label();
-                                final->generate(0, 0);
+                                optimized = 0;
+                                final->generate(0, label1);
                                 delete final;
                                 final = NULL;
                             }
-                            output->emit_lr(N_CMP, VAR_PREFIX, variables[loop], 0);
-                            if (step == NULL || step->node_type() == C_PLUS)
-                                output->emit_a(N_BGE, TEMP_PREFIX, label1);
-                            else
-                                output->emit_a(N_BLE, TEMP_PREFIX, label1);
                             if (step != NULL) {
                                 delete step;
                                 step = NULL;
