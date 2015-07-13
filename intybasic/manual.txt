@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jul/11/2015.
+Last revision: Jul/14/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.1   Jul/11/2015  o New RANDOM() function
+v1.1   Jul/14/2015  o New RANDOM() function
                     o New DEF FN statement for macro expressions.
                     o Experimental CONT3 and CONT4 support, no keypad decoding (ECS)
                     o INCLUDE now allows quotes and searchs also in library path.
@@ -50,6 +50,8 @@ v1.1   Jul/11/2015  o New RANDOM() function
                         * Optimization for multiple substraction.
                         * Optimization for comparisons.
                         * Optimization for IF expr THEN GOTO.
+                    * New contributions: keypad (GroovyBee), intro (Tarzilla) and
+                      Hello (DZ-Jay)
 
 v1.0.4 Apr/23/2015  o Added support for ECS secondary PSG (only in SOUND)
                     o Added RAND(range) for getting random number in range 0..range-1
@@ -227,6 +229,7 @@ Also see below for information of source-level debugging.
 
 Following sample programs are included:
 
+  samples/constants.bas       Constants library (used by all samples)
   samples/controller.bas      Test of Intellivision controllers
   samples/frame.bas           Sample of ON FRAME GOSUB
   samples/game1.bas           A simple shooting-letter game.
@@ -241,9 +244,11 @@ Following sample programs are included:
   samples/title.bas           Animated tile for title screen
   samples/voice.bas           Simple example of Intellivoice
 
+  contrib/constants.bas       Constants library (same as samples)
   contrib/AppleCatcher.bas    Game Apple Catcher by Kiwi
   contrib/clowns.bas          Game Clowns & Ballons by catsfolly
   contrib/hello.bas           Hello World by DZ-Jay
+  contrib/intro.bas           Intro to IntyBASIC by Tarzilla
   contrib/keypad.bas          Keypad test by GroovyBee
 
 Following utilities are included:
