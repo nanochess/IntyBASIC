@@ -252,7 +252,7 @@ Following sample programs are included:
 Following utilities are included:
 
   IntyColor            Converts a bitmap image to IntyBASIC source code/graphics
-  contrib/IntySmap     Converts a smap file to reference IntyBASIC source code.
+  IntySmap             Converts a smap file to reference IntyBASIC source code.
                        Useful with jzintv debugger (option -d and --src-map)
                        See section below for full information.
 
@@ -1152,7 +1152,7 @@ You need to compile your program in this way:
 
   intybasic input.bas output.asm
   as1600 -j output.smap -s output.sym -o output.bin -l output.lst output.asm 
-  contrib/intysmap output.smap   
+  intysmap output.smap   
   jzintv -d output.bin --src-map=output.smap --sym-file=output.sym  
 
 After this you can use normally the jzintv debug commands.

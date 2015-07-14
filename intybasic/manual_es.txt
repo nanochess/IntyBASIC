@@ -274,7 +274,7 @@ Los siguientes programas de ejemplo están incluídos:
 Se incluyen las siguientes utilidades:
 
   IntyColor            Convierte un bitmap a código fuente o gráficos de IntyBASIC.
-  contrib/IntySmap     Convierte un archivo smap para referenciar código fuente de
+  IntySmap             Convierte un archivo smap para referenciar código fuente de
                        IntyBASIC. Útil con el depurador de jzintv (opción -d y
                        --src-map). Vea la sección más adelante para mayor
                        información.
@@ -1205,7 +1205,7 @@ Necesita compilar su programa de esta forma:
 
   intybasic entrada.bas salida.asm
   as1600 -j salida.smap -s salida.sym -o salida.bin -l salida.lst salida.asm 
-  contrib/intysmap salida.smap   
+  intysmap salida.smap
   jzintv -d salida.bin --src-map=salida.smap --sym-file=salida.sym  
 
 Después de esto puede usar normalmente las órdenes de depuración de jzintv.
