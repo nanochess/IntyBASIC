@@ -668,7 +668,7 @@ label:
 
     El color puede ser cualquier número entre 0 y 15.
 
-    La mascara puede ser 0, 1 (enmascara línea superior), 2 (enmascara columna izquierda)
+    La mascara puede ser 0, 1 (enmascara columna izquierda), 2 (enmascara línea superior)
     o 3 (enmascara ambos)
 
     El borde y la mascara serán actualizados en el siguiente cuadro de video.

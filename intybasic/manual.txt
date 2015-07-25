@@ -635,7 +635,7 @@ label:
     
     Color can be any number between 0 and 15.
     
-    Mask can be 0, 1 (mask top line), 2 (mask left column) or 3 (mask both)
+    Mask can be 0, 1 (mask left column), 2 (mask top column) or 3 (mask both)
     
     Border and mask will be updated in next frame.
     

@@ -136,6 +136,8 @@
 //                         as statement. New #MOBSHADOW array allows to access
 //                         MOB shadow buffer. Redesigned FOR for taking advantage
 //                         of optimizer.
+//  Revision: Jul/25/2015. Changed some flags to bool type. Some warnings changed
+//                         to errors. Warnings now can be disable with option -w.
 //
 
 //  TODO:
@@ -157,7 +159,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.1 Jul/14/2015";      // Compiler version
+const string VERSION = "v1.2 Jul/25/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -166,11 +168,12 @@ const string FUNC_PREFIX = "F";     // Prefix for USR functions
 ofstream asm_output;
 class code *output;
 int next_local = 1;
-int optimized;
-int jlp_used;       // Indicates if JLP is used
-int cc3_used;       // Indicates if CC3 is used
-int fastmult_used;  // Indicates if fast multiplication is used
-int fastdiv_used;   // Indicates if fast division/remainder is used
+bool optimized;      // Indicates if expression for IF statement jump was optimized
+bool jlp_used;       // Indicates if JLP is used
+bool cc3_used;       // Indicates if CC3 is used
+bool fastmult_used;  // Indicates if fast multiplication is used
+bool fastdiv_used;   // Indicates if fast division/remainder is used
+bool warnings;       // Indicates if warnings are generated
 int program_year;
 char program_title[256];
 int err_code;
@@ -1248,7 +1251,7 @@ public:
                 output->emit_nr(N_ANDI, "", 0x00ff, 0);
                 if (reg)
                     output->emit_rr(N_MOVR, 0, reg);
-                fastmult_used = 1;
+                fastmult_used = true;
                 break;
             case C_RANDOM:    // Generate random number in range
                 if (left->type == C_NUM && (left->value == 2 || left->value == 4 || left->value == 8 || left->value == 16 || left->value == 32 || left->value == 64 || left->value == 128 || left->value == 256)) {
@@ -1264,7 +1267,7 @@ public:
                     output->emit_nr(N_ANDI, "", 0x00ff, 0);
                     if (reg)
                         output->emit_rr(N_MOVR, 0, reg);
-                    fastmult_used = 1;
+                    fastmult_used = true;
                 }
                 break;
             case C_NOT:     // NOT
@@ -1381,7 +1384,7 @@ public:
                     if (reg != 1) {
                         output->emit_rr(N_MOVR, 1, reg);
                     }
-                    fastmult_used = 1;
+                    fastmult_used = true;
                 } else if (type == C_DIV && left->type == C_NAME && right->type == C_NAME && !jlp_used) {
                     left->generate(0, 0);
                     right->generate(1, 0);
@@ -1389,7 +1392,7 @@ public:
                     if (reg != 0) {
                         output->emit_rr(N_MOVR, 0, reg);
                     }
-                    fastdiv_used = 1;
+                    fastdiv_used = true;
                 } else if (type == C_MOD && left->type == C_NAME && right->type == C_NAME && !jlp_used) {
                     left->generate(0, 0);
                     right->generate(1, 0);
@@ -1397,7 +1400,7 @@ public:
                     if (reg != 2) {
                         output->emit_rr(N_MOVR, 2, reg);
                     }
-                    fastdiv_used = 1;
+                    fastdiv_used = true;
                 // Get address of array with constant index
                 } else if (type == C_PLUS && left->type == C_NAME_RO && right->type == C_NUM) {
                     output->emit_nor(N_MVII, LABEL_PREFIX, left->value, right->value, reg);
@@ -1459,7 +1462,7 @@ public:
                             output->emit_r(N_TSTR, reg);
 						if (decision) {
                             output->emit_a(N_BNE, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BEQ, "", 3);   // two words of jump and one word of INCR
@@ -1473,7 +1476,7 @@ public:
                             output->emit_r(N_TSTR, reg);
 						if (decision) {
                             output->emit_a(N_BEQ, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BNE, "", 3);   // two words of jump and one word of INCR
@@ -1483,7 +1486,7 @@ public:
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
 						if (decision) {
                             output->emit_a(N_BGE, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BLT, "", 3);   // two words of jump and one word of INCR
@@ -1493,7 +1496,7 @@ public:
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
 						if (decision) {
                             output->emit_a(N_BGT, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
@@ -1503,7 +1506,7 @@ public:
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
 						if (decision) {
                             output->emit_a(N_BLE, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
@@ -1513,7 +1516,7 @@ public:
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
 						if (decision) {
                             output->emit_a(N_BLT, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BGE, "", 3);   // two words of jump and one word of INCR
@@ -1712,7 +1715,7 @@ public:
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
 						if (decision) {
                             output->emit_a(N_BNE, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BEQ, "", 3);   // two words of jump and one word of INCR
@@ -1722,7 +1725,7 @@ public:
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
    						if (decision) {
                             output->emit_a(N_BEQ, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BNE, "", 3);   // two words of jump and one word of INCR
@@ -1732,7 +1735,7 @@ public:
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
 						if (decision) {
                             output->emit_a(N_BGE, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BLT, "", 3);   // two words of jump and one word of INCR
@@ -1742,7 +1745,7 @@ public:
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
 						if (decision) {
                             output->emit_a(N_BGT, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
@@ -1752,7 +1755,7 @@ public:
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
 						if (decision) {
                             output->emit_a(N_BLE, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
@@ -1762,7 +1765,7 @@ public:
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
 						if (decision) {
                             output->emit_a(N_BLT, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BGE, "", 3);   // two words of jump and one word of INCR
@@ -1896,7 +1899,7 @@ public:
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(N_BNE, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BEQ, "", 3);
@@ -1906,7 +1909,7 @@ public:
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(N_BEQ, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BNE, "", 3);
@@ -1916,7 +1919,7 @@ public:
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(reversed ? N_BLE : N_BGE, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(reversed ? N_BGT : N_BLT, "", 3);
@@ -1926,7 +1929,7 @@ public:
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(reversed ? N_BLT : N_BGT, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(reversed ? N_BGE : N_BLE, "", 3);
@@ -1936,7 +1939,7 @@ public:
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(reversed ? N_BGE : N_BLE, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(reversed ? N_BLT : N_BGT, "", 3);
@@ -1946,7 +1949,7 @@ public:
                         output->emit_rr(N_CMPR, reg + 1, reg);
 						if (decision) {
                             output->emit_a(reversed ? N_BGT : N_BLT, TEMP_PREFIX, decision);
-							optimized = 1;
+							optimized = true;
 						} else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(reversed ? N_BLE : N_BGE, "", 3);
@@ -2233,13 +2236,15 @@ private:
             while (line_pos < line_size && isdigit(line[line_pos]))
                 value = (value * 10) + line[line_pos++] - '0';
             if (value > 65535) {
-                std::cerr << "Warning: Number exceeds 16 bits in line " << line_number << "\n";
+                if (warnings)
+                    std::cerr << "Warning: Number exceeds 16 bits in line " << line_number << "\n";
                 err_code = 1;
             }
             if (line_pos < line_size && line[line_pos] == '.'
                 && line_pos + 1 < line_size && isdigit(line[line_pos + 1])) {
                 if (value > 255) {
-                    std::cerr << "Warning: Fixed number exceeds basic 8 bits in line " << line_number << "\n";
+                    if (warnings)
+                        std::cerr << "Warning: Fixed number exceeds basic 8 bits in line " << line_number << "\n";
                     err_code = 1;
                 }
                 line_pos++;
@@ -2431,7 +2436,7 @@ private:
         
         tree = eval_level0();
         tree->label();
-		optimized = 0;
+		optimized = false;
         tree->generate(reg, decision);
         c = tree->node_type();
         delete tree;
@@ -3107,7 +3112,7 @@ private:
                             new node(C_PLUS, 0,
                                         new node(C_NAME_RO, temp, NULL, NULL), tree));
             tree->label();
-            optimized = 0;
+            optimized = false;
             tree->generate(0, 0);
             delete tree;
             tree = NULL;
@@ -3286,7 +3291,7 @@ private:
 //                                output->emit_rlo8(N_MVO, 0, VAR_PREFIX, variables[loop], 0);
                             if (final != NULL) {
                                 final->label();
-                                optimized = 0;
+                                optimized = false;
                                 final->generate(0, label1);
                                 delete final;
                                 final = NULL;
@@ -4401,8 +4406,9 @@ public:
         ecs_used = false;
         jlp_used = ((flags & 1) != 0);
         cc3_used = ((flags & 2) != 0);
-        fastmult_used = 0;
-        fastdiv_used = 0;
+        warnings = ((flags & 4) == 0);
+        fastmult_used = false;
+        fastdiv_used = false;
         frame_drive = -1;
         active_include = 0;
         next_include = 0;
@@ -4450,7 +4456,7 @@ public:
             }
             included.close();
 		} else {
-			std::cerr << "Warning: unable to include: " << path << "\n";
+			std::cerr << "Error: unable to include: " << path << "\n";
             err_code = 2;
         }
         asm_output << "\t;FILE " << input_file << "\n";
@@ -4500,7 +4506,8 @@ public:
             if (lex == C_NAME) {
                 if (name == "PROCEDURE") {
                     if (inside_proc) {
-                        std::cerr << "Warning: starting PROCEDURE without ENDing previous PROCEDURE in line " << line_number << "\n";
+                        if (warnings)
+                            std::cerr << "Warning: starting PROCEDURE without ENDing previous PROCEDURE in line " << line_number << "\n";
                         err_code = 1;
                     }
                     // as1600 requires that label and PROC are on same line
@@ -4511,7 +4518,8 @@ public:
                     output->trash_registers();
                 } else if (name == "END") {
                     if (!inside_proc) {
-                        std::cerr << "Warning: END without PROCEDURE in line " << line_number << "\n";
+                        if (warnings)
+                            std::cerr << "Warning: END without PROCEDURE in line " << line_number << "\n";
                         err_code = 1;
                     }
                     get_lex();
@@ -4601,7 +4609,8 @@ public:
                 }
             }
             if (lex != C_END) {
-                std::cerr << "Warning: Invalid extra characters in line " << line_number << "\n";
+                if (warnings)
+                    std::cerr << "Warning: Invalid extra characters in line " << line_number << "\n";
                 err_code = 1;
             }
             
@@ -4648,16 +4657,18 @@ public:
             }
             included2.close();
 		} else {
-			std::cerr << "Warning: unable to include: " << path << "\n";
+			std::cerr << "Error: unable to include: " << path << "\n";
             err_code = 2;
 		}
         
         // Warns of read but non-assigned variables
         for (access = read_write.begin(); access != read_write.end(); access++) {
             if (access->second == 1) {
-                std::cerr << "Warning: variable '" << access->first << "' read but never assigned\n";
+                if (warnings)
+                    std::cerr << "Warning: variable '" << access->first << "' read but never assigned\n";
             } else if (access->second == 2) {
-                std::cerr << "Warning: variable '" << access->first << "' assigned but never read\n";
+                if (warnings)
+                    std::cerr << "Warning: variable '" << access->first << "' assigned but never read\n";
             }
         }
         
@@ -4695,7 +4706,7 @@ public:
         if (music_used)
             available_vars -= 26;
         if (used_space > available_vars) {
-            std::cerr << "Warning: Use of 8-bits variables exceeds available space (" << used_space << " vs " << available_vars << ")\n";
+            std::cerr << "Error: Use of 8-bits variables exceeds available space (" << used_space << " vs " << available_vars << ")\n";
             err_code = 1;
         } else {
             std::cerr << used_space << " used 8-bit variables of " << available_vars << " available\n";
@@ -4748,7 +4759,7 @@ public:
                 available_vars = 0x337 - 0x2f0 - 24;
         }
         if (used_space > available_vars) {
-            std::cerr << "Warning: Use of 16-bits variables exceeds available space (" << used_space << " vs " << available_vars << ")\n";
+            std::cerr << "Error: Use of 16-bits variables exceeds available space (" << used_space << " vs " << available_vars << ")\n";
             err_code = 1;
         } else {
             std::cerr << used_space << " used 16-bit variables of " << available_vars << " available\n";
@@ -4803,6 +4814,9 @@ int main(int argc, const char * argv[])
         } else if (argc > base && strcmp(argv[base], "--cc3") == 0) {
             flags |= 2;
             base++;
+        } else if (argc > base && strcmp(argv[base], "-w") == 0) {
+            flags |= 4;
+            base++;
         } else if (argc > base + 1 && strcmp(argv[base], "--title") == 0) {
             base++;
             p1 = program_title;
@@ -4836,6 +4850,7 @@ int main(int argc, const char * argv[])
         std::cerr << "    --title \"a\" Selects title of the compiled program.\n";
         std::cerr << "                By default this is \"IntyBASIC program\".\n";
         std::cerr << "                Only appears in emulators/multicarts.\n\n";
+        std::cerr << "    -w          Disables warnings\n\n";
         std::cerr << "    The library path is where the intybasic_prologue.asm and\n";
         std::cerr << "    intybasic_epilogue.asm files are searched for inclusion.\n";
         std::cerr << "\n";
