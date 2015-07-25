@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jul/14/2015.
+Last revision: Jul/25/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -26,6 +26,7 @@ All trademarks are property of their respective owners.
 v1.2   Jul/25/2015  o New option -w for disabling compilation warnings.
                     o Strings now allowed in DEF FN and as arguments to macro.
                     o New LEN() function.
+                    o Solved bug where nested macros wouldn't work.
 
 v1.1   Jul/14/2015  o New RANDOM() function
                     o New DEF FN statement for macro expressions.

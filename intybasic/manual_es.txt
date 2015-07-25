@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 14-jul-2015
+Última revisión: 25-jul-2015
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -33,6 +33,7 @@ en inglés.
 v1.2   25-jul-2015  o Nueva opción -w para desactivar advertencias de compilación.
                     o Se admiten cadenas en DEF FN y como argumentos para macro.
                     o Nueva función LEN()
+                    o Se soluciona bug en que macros anidadas no funcionaban.
 
 v1.1   14-jul-2015  o Nueva función RANDOM()
                     o Nueva sentencia DEF FN para expresiones tipo macro.
