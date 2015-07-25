@@ -138,6 +138,11 @@
 //                         of optimizer.
 //  Revision: Jul/25/2015. Changed some flags to bool type. Some warnings changed
 //                         to errors. Warnings now can be disable with option -w.
+//                         pstring changed to C++ string and then merged with
+//                         'name' variable. DEF FN now accepts strings. Macro
+//                         replacement now works with strings. New LEN function.
+//                         Reversed push order for macro replacement so it now
+//                         works properly with nested macros.
 //
 
 //  TODO:
@@ -2127,8 +2132,6 @@ private:
     string line;
 	int line_start;
     string assigned;
-    int pstring[256];
-    int offset;
     size_t line_pos;
     size_t line_size;
     map <string, int> arrays;
@@ -2188,9 +2191,8 @@ private:
     // Gets another lexical component
     // Output:
     //  lex = lexical component
-    //  name = identifier
+    //  name = identifier or string
     //  value = value
-    //  pstring = string for PRINT
     //
     void get_lex(void) {
         if (accumulated.size() > 0) {
@@ -2294,24 +2296,16 @@ private:
         }
         if (line[line_pos] == '"') {  // String
             line_pos++;
-            offset = 0;
+            name = "";
             while (line_pos < line_size && line[line_pos] != '"') {
-                if (offset == 255) {
-                    emit_error("string too long");
-                    do {
-                        line_pos++;
-                    } while (line_pos < line_size && line[line_pos] != '"') ;
-                    break;
-                }
                 if (line[line_pos] == '\\') {
                     int c;
                     
                     line_pos++;
                     if (line_pos < line_size && line[line_pos] == '"') {
-                        c = line[line_pos] - 32;
+                        c = line[line_pos++] - 32;
                         if (c < 0)
                             c = 0;
-                        line_pos++;
                     } else {
                         c = 0;
                         while (line_pos < line_size && isdigit(line[line_pos])) {
@@ -2319,15 +2313,14 @@ private:
                             line_pos++;
                         }
                     }
-                    pstring[offset++] = c;
+                    name += c;
                 } else {
                     int c;
                     
-                    c = line[line_pos] - 32;
+                    c = line[line_pos++] - 32;
                     if (c < 0)
                         c = 0;
-                    line_pos++;
-                    pstring[offset++] = c;
+                    name += c;
                 }
             }
             if (line_pos < line_size && line[line_pos] == '"') {
@@ -2650,11 +2643,11 @@ private:
         if (lex == C_STRING) {
             int temp;
             
-            if (offset == 0) {
+            if (name.length() == 0) {
                 emit_error("empty string");
                 temp = 0;
             } else {
-                temp = pstring[0];
+                temp = name[0];
             }
             get_lex();
             return new node(C_NUM, temp, NULL, NULL);
@@ -2927,6 +2920,26 @@ private:
                 temp = variables[name];
                 get_lex();
                 return new node(C_NAME_R, temp, NULL, NULL);
+            } else if (name == "LEN") { // Access to string length
+                int c;
+                
+                get_lex();
+                if (lex != C_LPAREN)
+                    emit_error("missing left parenthesis in LEN");
+                else
+                    get_lex();
+                if (lex != C_STRING) {
+                    c = 0;
+                    emit_error("missing string inside LEN");
+                } else {
+                    c = (int) name.length();
+                    get_lex();
+                }
+                if (lex != C_RPAREN)
+                    emit_error("missing right parenthesis in LEN");
+                else
+                    get_lex();
+                return new node(C_NUM, c, NULL, NULL);
             } else if (macros[name] != NULL) {  // Function (macro)
                 if (replace_macro())
                     return new node(C_NUM, 0, NULL, NULL);
@@ -2997,8 +3010,8 @@ private:
         int total_arguments;
         int c;
         int level;
-        list <lexical_element *>::iterator explorer;
-        list <lexical_element *>::iterator explorer2;
+        list <lexical_element *>::reverse_iterator explorer;
+        list <lexical_element *>::reverse_iterator explorer2;
         list <lexical_element *> *argument;
         
         function = name;
@@ -3042,21 +3055,21 @@ private:
                 break;
             }
         }
+        accumulated.push_front(new lexical_element(lex, value, name));  // The actual one for later
         // Push macro into lexical analyzer
-        explorer = macros[function]->definition.begin();
-        while (explorer != macros[function]->definition.end()) {
+        explorer = macros[function]->definition.rbegin();
+        while (explorer != macros[function]->definition.rend()) {
             if ((*explorer)->get_lex() == C_ERR) {
-                explorer2 = argument[(*explorer)->get_value()].begin();
-                while (explorer2 != argument[(*explorer)->get_value()].end()) {
-                    accumulated.push_back(new lexical_element((*explorer2)->get_lex(), (*explorer2)->get_value(), (*explorer2)->get_name()));
+                explorer2 = argument[(*explorer)->get_value()].rbegin();
+                while (explorer2 != argument[(*explorer)->get_value()].rend()) {
+                    accumulated.push_front(new lexical_element((*explorer2)->get_lex(), (*explorer2)->get_value(), (*explorer2)->get_name()));
                     ++explorer2;
                 }
             } else {
-                accumulated.push_back(new lexical_element((*explorer)->get_lex(), (*explorer)->get_value(), (*explorer)->get_name()));
+                accumulated.push_front(new lexical_element((*explorer)->get_lex(), (*explorer)->get_value(), (*explorer)->get_name()));
             }
             ++explorer;
         }
-        accumulated.push_back(new lexical_element(lex, value, name));  // The actual one for later
         lex = accumulated.front()->get_lex();
         value = accumulated.front()->get_value();
         name = accumulated.front()->get_name();
@@ -3623,22 +3636,22 @@ private:
                             
                             output->emit_lr(N_MVI, "_screen", -1, 4);
 							p = -1;
-                            for (c = 0; c < offset; c++) {
-								if (pstring[c] * 8 != p) {
+                            for (c = 0; c < name.length(); c++) {
+								if (name[c] * 8 != p) {
                                     if (p != -1) {
-                                        if ((p ^ (pstring[c] * 8)) == 0)
+                                        if ((p ^ (name[c] * 8)) == 0)
                                             output->emit(N_NOP);
                                         else
-                                            output->emit_nr(N_XORI, "", (p ^ (pstring[c] * 8)), 0);
+                                            output->emit_nr(N_XORI, "", (p ^ (name[c] * 8)), 0);
                                     } else {
-                                        if (pstring[c] == 0) {
+                                        if (name[c] == 0) {
                                             output->emit_lr(N_MVI, "_color", -1, 0);
                                         } else {
-                                            output->emit_nr(N_MVII, "", (pstring[c] * 8), 0);
+                                            output->emit_nr(N_MVII, "", (name[c] * 8), 0);
                                             output->emit_lr(N_XOR, "_color", -1, 0);
                                         }
 									}
-                                    p = pstring[c] * 8;
+                                    p = name[c] * 8;
 								}
                                 output->emit_rr(N_MVOA, 0, 4);
                             }
@@ -3695,15 +3708,15 @@ private:
                     }
                 } else if (name == "BITMAP") {
                     get_lex();
-                    if (lex != C_STRING || offset != 8) {
+                    if (lex != C_STRING || name.length() != 8) {
                         emit_error("syntax error in BITMAP");
                     } else {
                         int c;
                         
                         value = 0;
                         for (c = 0; c < 8; c++) {
-                            if (pstring[c] != 0x10 && pstring[c] != 0x3f   // 0 and _
-                             && pstring[c] != 0x00 && pstring[c] != 0x0e)  // space and .
+                            if (name[c] != 0x10 && name[c] != 0x3f   // 0 and _
+                             && name[c] != 0x00 && name[c] != 0x0e)  // space and .
                                 value |= 0x80 >> c;
                         }
                         get_lex();
@@ -4348,10 +4361,6 @@ private:
                                 while (lex != C_END) {
                                     if (lex == C_ERR) {
                                         emit_error("bad syntax inside DEF FN replacement text");
-                                        break;
-                                    }
-                                    if (lex == C_STRING) {
-                                        emit_error("strings not accepted in DEF FN");
                                         break;
                                     }
                                     if (lex == C_NAME && arguments[name] != 0) {  // Checks for argument

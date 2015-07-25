@@ -23,6 +23,10 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
+v1.2   Jul/25/2015  o New option -w for disabling compilation warnings.
+                    o Strings now allowed in DEF FN and as arguments to macro.
+                    o New LEN() function.
+
 v1.1   Jul/14/2015  o New RANDOM() function
                     o New DEF FN statement for macro expressions.
                     o Experimental CONT3 and CONT4 support, no keypad decoding (ECS)
@@ -1019,6 +1023,10 @@ lesser priority than multiplication and division)
     Obtains a pseudo-random value between 0 and range-1. Forces update of random
     number (it doesn't need a WAIT to change). Note it's slower to generate, the
     faster ones are based on powers of 2. Also range limited to a maximum of 256.
+
+  LEN(string)
+    Gives you length of a string. Very useful in combination with DEF FN
+    For example for creating strings centered on screen.
 
   FRAME
     Obtains current frame number (0-65535, it cycles over itself)

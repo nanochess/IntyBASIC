@@ -30,6 +30,10 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
+v1.2   25-jul-2015  o Nueva opción -w para desactivar advertencias de compilación.
+                    o Se admiten cadenas en DEF FN y como argumentos para macro.
+                    o Nueva función LEN()
+
 v1.1   14-jul-2015  o Nueva función RANDOM()
                     o Nueva sentencia DEF FN para expresiones tipo macro.
                     o Soporte experimental para CONT3 y CONT4 sin decodif. teclas (ECS)
@@ -1072,6 +1076,10 @@ la resta tienen menos prioridad que la multiplicación y la división)
     Obtiene un número seudoaleatorio entre 0 y rango - 1. Forza actualización del número
     aleatorio (no hay necesidad de WAIT). Note que es más lento de generar, los más
     rápidos se basan en poderes de 2. También el rango se limita a un máximo de 256.
+
+  LEN(cadena)
+    Devuelve la longitud de la cadena. Muy útil en combinación con DEF FN.
+    Por ejemplo para crear texto centrado en la pantalla.
 
   FRAME
     Obtiene el número de cuadro actual (0-65535, y vuelve a cero)

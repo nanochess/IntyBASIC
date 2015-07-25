@@ -30,6 +30,14 @@
 	; Revision: Apr/22/2015. Added Joseph Zbiciak accelerated multiplication
 	;                        routines.
 	; Revision: Jun/04/2015. Optimized play_music (per GroovyBee suggestion)
+	; Revision: Jul/25/2015. Added infinite loop at start to avoid crashing
+	;                        with empty programs. Solved bug where _color
+	;                        didn't started with white.
+
+	;
+	; Avoids empty programs to crash
+	; 
+stuck:	B stuck
 
         ;
         ; Copy screen helper for SCREEN statement
@@ -197,7 +205,7 @@ _int_vector:     PROC
         DECR R0
         BEQ @@vi14
         MVO R0,$21  ; Activates Foreground/Background mode
-        B @@vi0
+        B @@vi15
 
 @@vi14: MVI $21,R0  ; Activates Color Stack mode
         MVI _color,R0
@@ -209,7 +217,7 @@ _int_vector:     PROC
         MVO R0,$2A
         SWAP R0
         MVO R0,$2B
-        MVII #7,R0
+@@vi15: MVII #7,R0
         MVO R0,_color           ; Default color for PRINT "string"
 @@vi0:
         MVI _border_color,R0
