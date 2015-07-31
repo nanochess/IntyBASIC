@@ -146,7 +146,8 @@
 //  Revision: Jul/31/2015. Added POS() function. Shows file when error or warning
 //                         inside INCLUDE. New function emit_warning(). Added
 //                         support for EXIT FOR and EXIT WHILE. Support for
-//                         multiline IF and ELSEIF.
+//                         multiline IF and ELSEIF. Solved bug in processing of
+//                         constants for GRAM characters.
 //
 
 //  TODO:
@@ -2150,6 +2151,7 @@ private:
     map <string, macro *> macros;
     map <string, int>::iterator access;
     list <struct loop> loops;
+    list <struct loop>::iterator loop_explorer;
     int line_number;
     int next_label;
     int next_var;
@@ -3292,7 +3294,7 @@ private:
                         output->emit_l(TEMP_PREFIX, label2);
                     }
                     last_is_return = 0;  // Solves bug where last internal statement was RETURN
-                } else if (name == "ELSEIF") {  // ELSEIF
+                } else if (name == "ELSEIF") {
                     enum lexical_component type;
                     
                     get_lex();
@@ -3321,7 +3323,7 @@ private:
                     if (lex == C_END)
                         break;
                     continue;
-                } else if (name == "ELSE") {  // ELSE
+                } else if (name == "ELSE") {
                     if (check_for_else)
                         break;
                     get_lex();
@@ -3340,7 +3342,7 @@ private:
                     if (lex == C_END)
                         break;
                     continue;
-                } else if (name == "END") {  // END IF
+                } else if (name == "END") {
                     get_lex();
                     if (lex != C_NAME || name != "IF") {
                         emit_error("wrong END");
@@ -3356,7 +3358,7 @@ private:
                             loops.pop_front();
                         }
                     }
-                } else if (name == "FOR") {  // FOR loop
+                } else if (name == "FOR") {  
                     int label_loop;
                     string loop;
                     class node *final = NULL;
@@ -3482,31 +3484,43 @@ private:
                         output->emit_l(TEMP_PREFIX, loops.front().label_exit);
                         loops.pop_front();
                     }
-                } else if (name == "EXIT") {
+                } else if (name == "EXIT") {  // EXIT
                     get_lex();
-                    if (lex != C_NAME) {
-                        emit_error("missing type of EXIT, WHILE/FOR");
-                    } else if (name == "FOR") {
-                        get_lex();
-                        if (loops.size() == 0 || loops.front().type != 0) {
-                            emit_error("EXIT FOR without FOR");
-                        } else {
-                            if (loops.front().label_exit == 0)
-                                loops.front().label_exit = next_local++;
-                            output->emit_a(N_B, TEMP_PREFIX, loops.front().label_exit);
-                        }
-                    } else if (name == "WHILE") {
-                        get_lex();
-                        if (loops.size() == 0 || loops.front().type != 1) {
-                            emit_error("EXIT WHILE without WHILE");
-                        } else {
-                            output->emit_a(N_B, TEMP_PREFIX, loops.front().label_exit);
-                        }
-                    } else {
-                        emit_error("only supported EXIT WHILE/FOR");
-                        get_lex();
+                    
+                    // Avoid IF blocks
+                    loop_explorer = loops.begin();
+                    while (loop_explorer != loops.end()) {
+                        if (loop_explorer->type != 2)
+                            break;
+                        ++loop_explorer;
                     }
-                } else if (name == "POKE") {
+                    if (loops.size() == 0 || loop_explorer == loops.end()) {
+                        emit_error("nowhere to EXIT");
+                    } else {
+                        if (lex != C_NAME) {
+                            emit_error("missing type of EXIT, WHILE/FOR");
+                        } else if (name == "FOR") {
+                            get_lex();
+                            if (loops.size() == 0 || loop_explorer->type != 0) {
+                                emit_error("EXIT FOR without FOR");
+                            } else {
+                                if (loop_explorer->label_exit == 0)
+                                    loop_explorer->label_exit = next_local++;
+                                output->emit_a(N_B, TEMP_PREFIX, loop_explorer->label_exit);
+                            }
+                        } else if (name == "WHILE") {
+                            get_lex();
+                            if (loops.size() == 0 || loop_explorer->type != 1) {
+                                emit_error("EXIT WHILE without WHILE");
+                            } else {
+                                output->emit_a(N_B, TEMP_PREFIX, loop_explorer->label_exit);
+                            }
+                        } else {
+                            emit_error("only supported EXIT WHILE/FOR");
+                            get_lex();
+                        }
+                    }
+                } else if (name == "POKE") {  // POKE
                     get_lex();
                     eval_expr(0, 0);
                     output->emit_r(N_PSHR, 0);
@@ -3518,15 +3532,15 @@ private:
                     output->emit_r(N_PULR, 4);
                     output->emit_rr(N_MVOA, 0, 4);
                     
-                } else if (name == "REM") {
+                } else if (name == "REM") {  // REM (comment)
                     line_pos = line_size;
                     get_lex();
-                } else if (name == "CLS") {
+                } else if (name == "CLS") {  // CLS
                     get_lex();
                     output->emit_a(N_CALL, "CLRSCR", -1);
                     output->emit_nr(N_MVII, "", 0x200, 0);
                     output->emit_rl(N_MVO, 0, "_screen", -1);
-                } else if (name == "WAIT") {
+                } else if (name == "WAIT") {  // WAIT
                     get_lex();
                     output->emit_a(N_CALL, "_wait", -1);
                 } else if (name == "RESTORE") {
