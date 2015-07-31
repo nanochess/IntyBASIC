@@ -147,7 +147,8 @@
 //                         inside INCLUDE. New function emit_warning(). Added
 //                         support for EXIT FOR and EXIT WHILE. Support for
 //                         multiline IF and ELSEIF. Solved bug in processing of
-//                         constants for GRAM characters.
+//                         constants for GRAM characters. Added DO/LOOP with
+//                         support for WHILE/UNTIL in both sides, also EXIT DO.
 //
 
 //  TODO:
@@ -2083,12 +2084,12 @@ public:
 // Representation for a loop
 //
 struct loop {
-    int type;
+    int type;           // 0=FOR, 1=WHILE, 2=IF, 3=DO WHILE/UNTIL LOOP, 4=DO LOOP WHILE/UNTIL
     class node *step;
     class node *final;
     string var;
-    int label_loop;
-    int label_exit;
+    int label_loop;     // Main label, in C this would be destination for 'continue'
+    int label_exit;     // Exit label, in C this would be destination for 'break'
 };
 
 //
@@ -3477,14 +3478,95 @@ private:
                     get_lex();
                     if (loops.size() == 0) {
                         emit_error("WEND without WHILE");
-                    } else if (loops.front().type == 0) {
+                    } else if (loops.front().type != 1) {
                         emit_error("bad nested WEND");
                     } else {
                         output->emit_a(N_B, TEMP_PREFIX, loops.front().label_loop);
                         output->emit_l(TEMP_PREFIX, loops.front().label_exit);
                         loops.pop_front();
                     }
-                } else if (name == "EXIT") {  // EXIT
+                } else if (name == "DO") {
+                    int label_loop;
+                    int label_exit;
+                    enum lexical_component type;
+					struct loop new_loop;
+                    
+                    get_lex();
+                    label_loop = next_local++;
+                    label_exit = next_local++;
+                    output->emit_l(TEMP_PREFIX, label_loop);
+                    if (lex == C_NAME && name == "WHILE") {
+                        get_lex();
+                        type = eval_expr(0, label_exit);
+                        if (!optimized) {
+                            output->emit_r(N_TSTR, 0);
+                            output->emit_a(N_BEQ, TEMP_PREFIX, label_exit);
+                        }
+                        new_loop.var = "1"; // Uses exit label
+                        new_loop.type = 3;  // Condition at top
+                    } else if (lex == C_NAME && name == "UNTIL") {
+                        int label_temp = next_local++;
+                        
+                        get_lex();
+                        type = eval_expr(0, label_temp);
+                        if (!optimized) {
+                            output->emit_r(N_TSTR, 0);
+                            output->emit_a(N_BEQ, TEMP_PREFIX, label_temp);
+                        }
+                        // Let optimizer to solve this =P
+                        output->emit_a(N_B, TEMP_PREFIX, label_exit);
+                        output->emit_l(TEMP_PREFIX, label_temp);
+                        new_loop.var = "1"; // Uses exit label
+                        new_loop.type = 3;  // Condition at top
+                    } else {
+                        new_loop.var = ""; // Doesn't use exit label (yet)
+                        new_loop.type = 4;  // Condition at bottom
+                    }
+					new_loop.step = NULL;
+					new_loop.final = NULL;
+					new_loop.label_loop = label_loop;
+                    new_loop.label_exit = label_exit;
+                    loops.push_front(new_loop);
+                } else if (name == "LOOP") {
+                    get_lex();
+                    if (loops.size() == 0) {
+                        emit_error("LOOP without DO");
+                    } else if (loops.front().type == 3) {
+                        output->emit_a(N_B, TEMP_PREFIX, loops.front().label_loop);
+                        output->emit_l(TEMP_PREFIX, loops.front().label_exit);
+                        loops.pop_front();
+                    } else if (loops.front().type == 4) {
+                        enum lexical_component type;
+                        
+                        if (lex == C_NAME && name == "WHILE") {
+                            int label_temp = next_local++;
+                            
+                            get_lex();
+                            type = eval_expr(0, label_temp);
+                            if (!optimized) {
+                                output->emit_r(N_TSTR, 0);
+                                output->emit_a(N_BEQ, TEMP_PREFIX, label_temp);
+                            }
+                            // Let optimizer to solve this =P
+                            output->emit_a(N_B, TEMP_PREFIX, loops.front().label_loop);
+                            output->emit_l(TEMP_PREFIX, label_temp);
+                        } else if (lex == C_NAME && name == "UNTIL") {
+                            get_lex();
+                            type = eval_expr(0, loops.front().label_loop);
+                            if (!optimized) {
+                                output->emit_r(N_TSTR, 0);
+                                output->emit_a(N_BEQ, TEMP_PREFIX, loops.front().label_loop);
+                            }
+                        } else {
+                            emit_error("LOOP without condition");
+                        }
+                        if (loops.front().var == "1")  // Uses exit label?
+                            output->emit_l(TEMP_PREFIX, loops.front().label_exit);
+                        loops.pop_front();
+                    } else {
+                        emit_error("bad nested LOOP");
+                    }
+                } else if (name == "EXIT") {
                     get_lex();
                     
                     // Avoid IF blocks
@@ -3498,7 +3580,7 @@ private:
                         emit_error("nowhere to EXIT");
                     } else {
                         if (lex != C_NAME) {
-                            emit_error("missing type of EXIT, WHILE/FOR");
+                            emit_error("missing type of EXIT, WHILE/FOR/DO");
                         } else if (name == "FOR") {
                             get_lex();
                             if (loops.size() == 0 || loop_explorer->type != 0) {
@@ -3515,8 +3597,16 @@ private:
                             } else {
                                 output->emit_a(N_B, TEMP_PREFIX, loop_explorer->label_exit);
                             }
+                        } else if (name == "DO") {
+                            get_lex();
+                            if (loops.size() == 0 || (loop_explorer->type != 3 && loop_explorer->type != 4)) {
+                                emit_error("EXIT DO without DO");
+                            } else {
+                                loop_explorer->var = "1";
+                                output->emit_a(N_B, TEMP_PREFIX, loop_explorer->label_exit);
+                            }
                         } else {
-                            emit_error("only supported EXIT WHILE/FOR");
+                            emit_error("only supported EXIT WHILE/FOR/DO");
                             get_lex();
                         }
                     }

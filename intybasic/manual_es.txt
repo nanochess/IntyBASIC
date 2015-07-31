@@ -32,8 +32,9 @@ en inglés.
 
 v1.2   31-jul-2015  o Nueva opción -w para desactivar advertencias de compilación.
                     o Se admiten cadenas en DEF FN y como argumentos para macro.
-                    o Nueva sentencia EXIT, utilice como EXIT FOR o EXIT WHILE.
                     o Se agrega soporte para bloque IF/ELSEIF/ELSE/END IF.
+                    o Nueva sentencia DO/LOOP.
+                    o Nueva sentencia EXIT, use como EXIT FOR, EXIT WHILE o EXIT DO.
                     o Nueva función LEN()
                     o Nueva función POS()
                     o Error o advertencia dentro de INCLUDE indica archivo.
@@ -395,13 +396,41 @@ Las siguientes sentencias están disponibles:
   
      Sentencia de bucle mientras la expresión se evalúe a un valor diferente de cero.
 
+  DO WHILE expr:[sentencia]:LOOP
+  DO WHILE expr
+  [sentencia]
+  LOOP
+
+  DO UNTIL expr:[sentencia]:LOOP
+  DO UNTIL expr
+  [sentencia]
+  LOOP
+  
+  DO:[sentencia]:LOOP WHILE expr
+  DO
+  [sentencia]
+  LOOP WHILE expr
+  
+  DO:[sentencia]:LOOP UNTIL expr
+  DO
+  [sentencia]
+  LOOP UNTIL expr
+  
+     Sentencia de bucle mientras (WHILE) la expresión se evalúa a un valor
+     diferente de cero, o hasta que (UNTIL) la expresión se evalúa a un valor
+     diferente de cero.
+     
   EXIT FOR
     
-     Sale de la sentencia FOR actual justo después del NEXT
+     Sale de la sentencia FOR actual, salta justo después del NEXT.
      
   EXIT WHILE
-  
-     Sale de la sentencia WHILE actual justo después del WEND
+
+     Sale de la sentencia WHILE actual, salta justo después del WEND.
+
+  EXIT DO
+     
+     Sale de la sentencia DO actual, salta justo después del LOOP.
 
   IF expr GOTO [etiqueta]
   IF expr THEN [sentencia]

@@ -25,8 +25,9 @@ All trademarks are property of their respective owners.
 
 v1.2   Jul/31/2015  o New option -w for disabling compilation warnings.
                     o Strings now allowed in DEF FN and as arguments to macro.
-                    o Added statement EXIT, use as EXIT FOR or EXIT WHILE.
                     o Added support for block IF/ELSEIF/ELSE/END IF.
+                    o Added statement DO/LOOP
+                    o Added statement EXIT, use as EXIT FOR, EXIT WHILE or EXIT DO.
                     o New LEN() function.
                     o New POS() function.
                     o Error or warning inside INCLUDE indicates file.
@@ -370,6 +371,29 @@ Following statements are available:
   
      Looping statement while expression evaluates to non-zero.
      
+  DO WHILE expr:[statement]:LOOP
+  DO WHILE expr
+  [statement]
+  LOOP
+
+  DO UNTIL expr:[statement]:LOOP
+  DO UNTIL expr
+  [statement]
+  LOOP
+  
+  DO:[statement]:LOOP WHILE expr
+  DO
+  [statement]
+  LOOP WHILE expr
+  
+  DO:[statement]:LOOP UNTIL expr
+  DO
+  [statement]
+  LOOP UNTIL expr
+  
+     Looping statement WHILE expression evaluates to non-zero, or UNTIL
+     expression evaluates to non-zero.
+     
   EXIT FOR
     
      Exits current FOR loop, jumps exactly after NEXT.
@@ -377,6 +401,10 @@ Following statements are available:
   EXIT WHILE
   
      Exits current WHILE loop, jumps exactly after WEND.
+     
+  EXIT DO
+     
+     Exits current DO loop, jumps exactly after LOOP.
 
   IF expr GOTO [label]
   IF expr THEN [statement]
