@@ -144,7 +144,8 @@
 //                         Reversed push order for macro replacement so it now
 //                         works properly with nested macros.
 //  Revision: Jul/31/2015. Added POS() function. Shows file when error or warning
-//                         inside INCLUDE. New function emit_warning().
+//                         inside INCLUDE. New function emit_warning(). Added
+//                         support for EXIT FOR and EXIT WHILE.
 //
 
 //  TODO:
@@ -2084,7 +2085,8 @@ struct loop {
     class node *step;
     class node *final;
     string var;
-    int label;
+    int label_loop;
+    int label_exit;
 };
 
 //
@@ -3308,7 +3310,8 @@ private:
 					new_loop.step = step;
 					new_loop.final = final;
 					new_loop.var = loop;
-					new_loop.label = label1;
+					new_loop.label_loop = label1;
+                    new_loop.label_exit = 0;
                     loops.push_front(new_loop);
                 } else if (name == "NEXT") {
                     get_lex();
@@ -3317,7 +3320,8 @@ private:
                     } else {
                         class node *final = loops.front().final;
                         class node *step = loops.front().step;
-                        int label1 = loops.front().label;
+                        int label1 = loops.front().label_loop;
+                        int label2 = loops.front().label_exit;
                         string loop = loops.front().var;
                         
                         if (loops.front().type != 0) {
@@ -3350,6 +3354,8 @@ private:
                                 delete step;
                                 step = NULL;
                             }
+                            if (label2 != 0)
+                                output->emit_l(TEMP_PREFIX, label2);
                             loops.pop_front();
                         }
                     }
@@ -3368,26 +3374,47 @@ private:
                         output->emit_r(N_TSTR, 0);
                         output->emit_a(N_BEQ, TEMP_PREFIX, label2);
 					}
-                    new_loop.type = label2;
+                    new_loop.type = 1;
 					new_loop.step = NULL;
 					new_loop.final = NULL;
 					new_loop.var = "";
-					new_loop.label = label1;
+					new_loop.label_loop = label1;
+                    new_loop.label_exit = label2;
                     loops.push_front(new_loop);
                 } else if (name == "WEND") {
                     get_lex();
                     if (loops.size() == 0) {
                         emit_error("WEND without WHILE");
+                    } else if (loops.front().type == 0) {
+                        emit_error("bad nested WEND");
                     } else {
-                        int label1 = loops.front().label;
-                        
-                        if (loops.front().type == 0) {
-                            emit_error("bad nested WEND");
+                        output->emit_a(N_B, TEMP_PREFIX, loops.front().label_loop);
+                        output->emit_l(TEMP_PREFIX, loops.front().label_exit);
+                        loops.pop_front();
+                    }
+                } else if (name == "EXIT") {
+                    get_lex();
+                    if (lex != C_NAME) {
+                        emit_error("missing type of EXIT, WHILE/FOR");
+                    } else if (name == "FOR") {
+                        get_lex();
+                        if (loops.size() == 0 || loops.front().type != 0) {
+                            emit_error("EXIT FOR without FOR");
                         } else {
-                            output->emit_a(N_B, TEMP_PREFIX, label1);
-                            output->emit_l(TEMP_PREFIX, loops.front().type);
-                            loops.pop_front();
+                            if (loops.front().label_exit == 0)
+                                loops.front().label_exit = next_local++;
+                            output->emit_a(N_B, TEMP_PREFIX, loops.front().label_exit);
                         }
+                    } else if (name == "WHILE") {
+                        get_lex();
+                        if (loops.size() == 0 || loops.front().type != 1) {
+                            emit_error("EXIT WHILE without WHILE");
+                        } else {
+                            output->emit_a(N_B, TEMP_PREFIX, loops.front().label_exit);
+                        }
+                    } else {
+                        emit_error("only supported EXIT WHILE/FOR");
+                        get_lex();
                     }
                 } else if (name == "POKE") {
                     get_lex();

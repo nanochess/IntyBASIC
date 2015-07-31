@@ -32,6 +32,7 @@ en inglés.
 
 v1.2   31-jul-2015  o Nueva opción -w para desactivar advertencias de compilación.
                     o Se admiten cadenas en DEF FN y como argumentos para macro.
+                    o Nueva sentencia EXIT, utilice como EXIT FOR o EXIT WHILE.
                     o Nueva función LEN()
                     o Nueva función POS()
                     o Error o advertencia dentro de INCLUDE indica archivo.
@@ -392,6 +393,14 @@ Las siguientes sentencias están disponibles:
   WEND
   
      Sentencia de bucle mientras la expresión se evalúe a un valor diferente de cero.
+
+  EXIT FOR
+    
+     Sale de la sentencia FOR actual justo después del NEXT
+     
+  EXIT WHILE
+  
+     Sale de la sentencia WHILE actual justo después del WEND
 
   IF expr GOTO [etiqueta]
   IF expr THEN [sentencia]
