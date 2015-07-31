@@ -145,7 +145,8 @@
 //                         works properly with nested macros.
 //  Revision: Jul/31/2015. Added POS() function. Shows file when error or warning
 //                         inside INCLUDE. New function emit_warning(). Added
-//                         support for EXIT FOR and EXIT WHILE.
+//                         support for EXIT FOR and EXIT WHILE. Support for
+//                         multiline IF and ELSEIF.
 //
 
 //  TODO:
@@ -2193,7 +2194,7 @@ private:
         skip_spaces();
         if (line_pos == line_size)
             return '\0';
-        return line[line_pos];
+        return toupper(line[line_pos]);
     }
     
     //
@@ -2307,30 +2308,37 @@ private:
             line_pos++;
             name = "";
             while (line_pos < line_size && line[line_pos] != '"') {
+                int c;
+                
                 if (line[line_pos] == '\\') {
-                    int c;
-                    
                     line_pos++;
                     if (line_pos < line_size && line[line_pos] == '"') {
                         c = line[line_pos++] - 32;
                         if (c < 0)
                             c = 0;
+                        if (c > 95)
+                            c = 95;
                     } else {
                         c = 0;
                         while (line_pos < line_size && isdigit(line[line_pos])) {
                             c = c * 10 + (line[line_pos] - '0');
                             line_pos++;
                         }
+                        if (c > 382)
+                            c = 382;
+                        if (c >= 127) {
+                            name += 127;
+                            c -= 127;
+                        }
                     }
-                    name += c;
                 } else {
-                    int c;
-                    
                     c = line[line_pos++] - 32;
                     if (c < 0)
                         c = 0;
-                    name += c;
+                    if (c > 95)
+                        c = 95;
                 }
+                name += c;
             }
             if (line_pos < line_size && line[line_pos] == '"') {
                 line_pos++;
@@ -3196,13 +3204,11 @@ private:
     //
     // Process a BASIC statement
     //
-    void compile_statement(void)
+    void compile_statement(bool check_for_else)
     {
         while (1) {
             if (lex == C_NAME) {
                 last_is_return = 0;
-                if (name == "ELSE")
-                    break;
                 if (name == "GOTO") {
                     get_lex();
                     if (lex != C_NAME) {
@@ -3236,6 +3242,8 @@ private:
                     int there_is_else;
                     int label2;
                     enum lexical_component type;
+					struct loop new_loop;
+                    int block;
                     
                     get_lex();
                     label = next_local++;
@@ -3245,12 +3253,30 @@ private:
                         output->emit_a(N_BEQ, TEMP_PREFIX, label);
 					}
                     if (lex == C_NAME && name == "GOTO") {
-                        compile_statement();
+                        compile_statement(false);
+                        block = 0;
                     } else if (lex != C_NAME || name != "THEN") {
-                        emit_error("missing ELSE in IF");
+                        emit_error("missing THEN in IF");
+                        block = 0;
                     } else {
                         get_lex();
-                        compile_statement();
+                        if (lex == C_END) {
+                            block = 1;
+                            new_loop.type = 2;
+                            new_loop.step = NULL;
+                            new_loop.final = NULL;
+                            new_loop.var = "";
+                            new_loop.label_loop = label;
+                            new_loop.label_exit = 0;
+                            loops.push_front(new_loop);
+                        } else {
+                            compile_statement(true);
+                            block = 0;
+                        }
+                    }
+                    if (block) {
+                        last_is_return = 0;  // Solves bug where last internal statement was RETURN
+                        break;
                     }
                     if (lex == C_NAME && name == "ELSE") {
                         there_is_else = 1;
@@ -3262,12 +3288,76 @@ private:
                     }
                     output->emit_l3(TEMP_PREFIX, label);
                     if (there_is_else) {
-                        compile_statement();
+                        compile_statement(true);
                         output->emit_l(TEMP_PREFIX, label2);
                     }
                     last_is_return = 0;  // Solves bug where last internal statement was RETURN
+                } else if (name == "ELSEIF") {  // ELSEIF
+                    enum lexical_component type;
+                    
+                    get_lex();
+                    if (loops.size() == 0) {
+                        emit_error("ELSEIF without IF");
+                    } else if (loops.front().type != 2 || loops.front().label_loop == 0) {
+                        emit_error("bad nested ELSEIF");
+                    } else {
+                        loops.front().var = "1";
+                        output->emit_a(N_B, TEMP_PREFIX, loops.front().label_exit);
+                        output->emit_l(TEMP_PREFIX, loops.front().label_loop);
+                        loops.front().label_loop = next_local++;
+                        type = eval_expr(0, loops.front().label_loop);
+                        if (!optimized) {
+                            output->emit_r(N_TSTR, 0);
+                            output->emit_a(N_BEQ, TEMP_PREFIX, loops.front().label_loop);
+                        }
+                        if (lex == C_NAME && name == "GOTO") {
+                            compile_statement(false);
+                        } else if (lex != C_NAME || name != "THEN") {
+                            emit_error("missing THEN in ELSEIF");
+                        } else {
+                            get_lex();
+                        }
+                    }
+                    if (lex == C_END)
+                        break;
+                    continue;
+                } else if (name == "ELSE") {  // ELSE
+                    if (check_for_else)
+                        break;
+                    get_lex();
+                    if (loops.size() == 0) {
+                        emit_error("ELSE without IF");
+                    } else if (loops.front().type != 2) {
+                        emit_error("bad nested ELSE");
+                    } else if (loops.front().label_loop == 0) {
+                        emit_error("more than one ELSE");
+                    } else {
+                        loops.front().var = "1";
+                        output->emit_a(N_B, TEMP_PREFIX, loops.front().label_exit);
+                        output->emit_l(TEMP_PREFIX, loops.front().label_loop);
+                        loops.front().label_loop = 0;
+                    }
+                    if (lex == C_END)
+                        break;
+                    continue;
+                } else if (name == "END") {  // END IF
+                    get_lex();
+                    if (lex != C_NAME || name != "IF") {
+                        emit_error("wrong END");
+                    } else {
+                        get_lex();
+                        if (loops.size() == 0 || loops.front().type != 2) {
+                            emit_error("Bad nested END IF");
+                        } else {
+                            if (loops.front().var == "1")
+                                output->emit_l(TEMP_PREFIX, loops.front().label_exit);
+                            else
+                                output->emit_l(TEMP_PREFIX, loops.front().label_loop);
+                            loops.pop_front();
+                        }
+                    }
                 } else if (name == "FOR") {  // FOR loop
-                    int label1;
+                    int label_loop;
                     string loop;
                     class node *final = NULL;
                     class node *step = NULL;
@@ -3278,8 +3368,8 @@ private:
                     compile_assignment(0);
                     loop = assigned;
                     read_write[assigned] = (read_write[assigned] | 1);  // Take note it's used
-                    label1 = next_local++;
-                    output->emit_l(TEMP_PREFIX, label1);
+                    label_loop = next_local++;
+                    output->emit_l(TEMP_PREFIX, label_loop);
                     if (lex != C_NAME || name != "TO") {
                         emit_error("missing TO in FOR");
                     } else {
@@ -3310,7 +3400,7 @@ private:
 					new_loop.step = step;
 					new_loop.final = final;
 					new_loop.var = loop;
-					new_loop.label_loop = label1;
+					new_loop.label_loop = label_loop;
                     new_loop.label_exit = 0;
                     loops.push_front(new_loop);
                 } else if (name == "NEXT") {
@@ -3320,8 +3410,8 @@ private:
                     } else {
                         class node *final = loops.front().final;
                         class node *step = loops.front().step;
-                        int label1 = loops.front().label_loop;
-                        int label2 = loops.front().label_exit;
+                        int label_loop = loops.front().label_loop;
+                        int label_exit = loops.front().label_exit;
                         string loop = loops.front().var;
                         
                         if (loops.front().type != 0) {
@@ -3346,7 +3436,7 @@ private:
                             if (final != NULL) {
                                 final->label();
                                 optimized = false;
-                                final->generate(0, label1);
+                                final->generate(0, label_loop);
                                 delete final;
                                 final = NULL;
                             }
@@ -3354,32 +3444,32 @@ private:
                                 delete step;
                                 step = NULL;
                             }
-                            if (label2 != 0)
-                                output->emit_l(TEMP_PREFIX, label2);
+                            if (label_exit != 0)
+                                output->emit_l(TEMP_PREFIX, label_exit);
                             loops.pop_front();
                         }
                     }
                 } else if (name == "WHILE") {  // WHILE loop
-                    int label1;
-                    int label2;
+                    int label_loop;
+                    int label_exit;
                     enum lexical_component type;
 					struct loop new_loop;
                     
                     get_lex();
-                    label1 = next_local++;
-                    label2 = next_local++;
-                    output->emit_l(TEMP_PREFIX, label1);
-                    type = eval_expr(0, label2);
+                    label_loop = next_local++;
+                    label_exit = next_local++;
+                    output->emit_l(TEMP_PREFIX, label_loop);
+                    type = eval_expr(0, label_exit);
 					if (!optimized) {
                         output->emit_r(N_TSTR, 0);
-                        output->emit_a(N_BEQ, TEMP_PREFIX, label2);
+                        output->emit_a(N_BEQ, TEMP_PREFIX, label_exit);
 					}
                     new_loop.type = 1;
 					new_loop.step = NULL;
 					new_loop.final = NULL;
 					new_loop.var = "";
-					new_loop.label_loop = label1;
-                    new_loop.label_exit = label2;
+					new_loop.label_loop = label_loop;
+                    new_loop.label_exit = label_exit;
                     loops.push_front(new_loop);
                 } else if (name == "WEND") {
                     get_lex();
@@ -3697,25 +3787,32 @@ private:
                         if (lex == C_STRING) {
                             int c;
 							int p;
+                            int v;
                             
                             output->emit_lr(N_MVI, "_screen", -1, 4);
 							p = -1;
                             for (c = 0; c < name.length(); c++) {
-								if (name[c] * 8 != p) {
+                                if (name[c] == 127 && c + 1 < name.length()) {
+                                    c++;
+                                    v = ((name[c] & 0xff) + 127) * 8;
+                                } else {
+                                    v = (name[c] & 0xff) * 8;
+                                }
+								if (v != p) {
                                     if (p != -1) {
-                                        if ((p ^ (name[c] * 8)) == 0)
+                                        if ((p ^ v) == 0)
                                             output->emit(N_NOP);
                                         else
-                                            output->emit_nr(N_XORI, "", (p ^ (name[c] * 8)), 0);
+                                            output->emit_nr(N_XORI, "", (p ^ v), 0);
                                     } else {
-                                        if (name[c] == 0) {
+                                        if (v == 0) {
                                             output->emit_lr(N_MVI, "_color", -1, 0);
                                         } else {
-                                            output->emit_nr(N_MVII, "", (name[c] * 8), 0);
+                                            output->emit_nr(N_MVII, "", v, 0);
                                             output->emit_lr(N_XOR, "_color", -1, 0);
                                         }
 									}
-                                    p = name[c] * 8;
+                                    p = v;
 								}
                                 output->emit_rr(N_MVOA, 0, 4);
                             }
@@ -4439,7 +4536,7 @@ private:
                     }
                 } else if (macros[name] != NULL) {  // Function (macro)
                     if (!replace_macro()) {
-                        compile_statement();
+                        compile_statement(check_for_else);
                         return;
                     }
                 } else {
@@ -4587,7 +4684,7 @@ public:
                     inside_proc = 1;
                     last_is_return = 0;
                     output->trash_registers();
-                } else if (name == "END") {
+                } else if (name == "END" && sneak_peek() != 'I') {  // END (and not END IF)
                     if (!inside_proc) {
                         if (warnings)
                             emit_warning("END without PROCEDURE");
@@ -4675,7 +4772,7 @@ public:
                 } else {
                     if (label_exists == 1)
                         asm_output << "\t";
-                    compile_statement();
+                    compile_statement(false);
                     output->dump();
                 }
             }
