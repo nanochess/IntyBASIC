@@ -1,4 +1,4 @@
-IntyBASIC compiler v1.1 (pre-release)
+IntyBASIC compiler v1.2 (pre-release)
 by Oscar Toledo Gutierrez
 http://nanochess.org/
 
@@ -23,6 +23,7 @@ ReadMe.txt     This file.
 Thanks to following members of Atariage for contributing valuable suggestions,
 test programs and even support libraries:
 
+  Albert
   atari2600land
   awhite2600
   carlsson

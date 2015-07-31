@@ -27,6 +27,7 @@ v1.2   Jul/31/2015  o New option -w for disabling compilation warnings.
                     o Strings now allowed in DEF FN and as arguments to macro.
                     o New LEN() function.
                     o New POS() function.
+                    o Error or warning inside INCLUDE indicates file.
                     o Solved bug where nested macros wouldn't work.
 
 v1.1   Jul/14/2015  o New RANDOM() function

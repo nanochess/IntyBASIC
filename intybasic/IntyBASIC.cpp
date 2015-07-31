@@ -166,7 +166,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.2 Jul/25/2015";      // Compiler version
+const string VERSION = "v1.2 Jul/31/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
