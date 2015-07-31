@@ -26,6 +26,7 @@ All trademarks are property of their respective owners.
 v1.2   Jul/31/2015  o New option -w for disabling compilation warnings.
                     o Strings now allowed in DEF FN and as arguments to macro.
                     o Added statement EXIT, use as EXIT FOR or EXIT WHILE.
+                    o Added support for block IF/ELSEIF/ELSE/END IF.
                     o New LEN() function.
                     o New POS() function.
                     o Error or warning inside INCLUDE indicates file.
@@ -361,19 +362,52 @@ Following statements are available:
      
      There is a small quirk if you're using 8-bits variables and the TO expression
      is pretty complex and reachs 0 or 255, the loop can be infinite.
-
+     
   WHILE expr:[statement]:WEND
   WHILE expr
   [statement]
   WEND
   
      Looping statement while expression evaluates to non-zero.
+     
+  EXIT FOR
+    
+     Exits current FOR loop, jumps exactly after NEXT.
+
+  EXIT WHILE
+  
+     Exits current WHILE loop, jumps exactly after WEND.
 
   IF expr GOTO [label]
   IF expr THEN [statement]
   IF expr THEN [statement] ELSE [statement]
+
+  IF expr THEN
+    [statement]
+  END IF
   
+  IF expr THEN
+    [statement]
+  ELSE
+    [statement]
+  END IF
+  
+  IF expr THEN
+    [statement]
+  ELSEIF expr THEN
+    [statement]
+  END IF
+
+  IF expr THEN
+    [statement]
+  ELSEIF expr THEN
+    [statement]
+  ELSE
+    [statement]
+  END IF
+
      Decision statement
+
 
   ON expr GOTO [label],[label],[label]
   ON expr GOTO [label],,[label]
