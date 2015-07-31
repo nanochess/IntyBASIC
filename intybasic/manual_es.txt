@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 25-jul-2015
+Última revisión: 31-jul-2015
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,9 +30,10 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2   25-jul-2015  o Nueva opción -w para desactivar advertencias de compilación.
+v1.2   31-jul-2015  o Nueva opción -w para desactivar advertencias de compilación.
                     o Se admiten cadenas en DEF FN y como argumentos para macro.
                     o Nueva función LEN()
+                    o Nueva función POS()
                     o Se soluciona bug en que macros anidadas no funcionaban.
 
 v1.1   14-jul-2015  o Nueva función RANDOM()
@@ -1082,6 +1083,10 @@ la resta tienen menos prioridad que la multiplicación y la división)
     Devuelve la longitud de la cadena. Muy útil en combinación con DEF FN.
     Por ejemplo para crear texto centrado en la pantalla.
 
+  POS(expr)
+    Devuelve la posición actual en la pantalla (útil para PRINT AT)
+    La expresión es analizada pero no genera ningún código.
+
   FRAME
     Obtiene el número de cuadro actual (0-65535, y vuelve a cero)
     
@@ -1317,6 +1322,7 @@ Emulador Intellivision Nostalgia
 Gracias a los siguientes miembros de AtariAge por contribuir sugerencias valiosas,
 programas de prueba e incluso librerías de apoyo:
 
+  Albert 
   atari2600land
   awhite2600
   carlsson

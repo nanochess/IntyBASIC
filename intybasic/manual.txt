@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jul/25/2015.
+Last revision: Jul/31/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,9 +23,10 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2   Jul/25/2015  o New option -w for disabling compilation warnings.
+v1.2   Jul/31/2015  o New option -w for disabling compilation warnings.
                     o Strings now allowed in DEF FN and as arguments to macro.
                     o New LEN() function.
+                    o New POS() function.
                     o Solved bug where nested macros wouldn't work.
 
 v1.1   Jul/14/2015  o New RANDOM() function
@@ -1028,6 +1029,10 @@ lesser priority than multiplication and division)
   LEN(string)
     Gives you length of a string. Very useful in combination with DEF FN
     For example for creating strings centered on screen.
+    
+  POS(expr)
+    Gives you the current screen position (useful for PRINT AT)
+    The expression is analyzed but no code generated.
 
   FRAME
     Obtains current frame number (0-65535, it cycles over itself)
@@ -1263,6 +1268,7 @@ Intellivision Nostalgia emulator
 Thanks to following members of Atariage for contributing valuable suggestions,
 test programs and even support libraries:
 
+  Albert 
   atari2600land
   awhite2600
   carlsson

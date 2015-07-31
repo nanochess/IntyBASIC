@@ -143,6 +143,8 @@
 //                         replacement now works with strings. New LEN function.
 //                         Reversed push order for macro replacement so it now
 //                         works properly with nested macros.
+//  Revision: Jul/31/2015. Added POS() function. Shows file when error or warning
+//                         inside INCLUDE. New function emit_warning().
 //
 
 //  TODO:
@@ -1320,6 +1322,8 @@ public:
                     output->emit_a(N_BNE, "", 4);   // two words of jump and two words of MVI
                     output->emit_lr(N_MVI, "_cnt2_key", -1, reg);
                 }
+                if (value == 15)
+                    output->emit_lr(N_MVI, "_screen", -1, reg);
                 break;
             case C_PEEK:    // PEEK()
                 if (left->type == C_NUM) {  // Peek directly from memory location
@@ -2147,6 +2151,9 @@ private:
     int next_label;
     int next_var;
     
+    char path[4096];  // For Windows and Linux
+    //char path[PATH_MAX];  // Only works in Mac OS X :/
+
     enum lexical_component lex;
     int value;
     string name;
@@ -2239,14 +2246,14 @@ private:
                 value = (value * 10) + line[line_pos++] - '0';
             if (value > 65535) {
                 if (warnings)
-                    std::cerr << "Warning: Number exceeds 16 bits in line " << line_number << "\n";
+                    emit_warning("number exceeds 16 bits");
                 err_code = 1;
             }
             if (line_pos < line_size && line[line_pos] == '.'
                 && line_pos + 1 < line_size && isdigit(line[line_pos + 1])) {
                 if (value > 255) {
                     if (warnings)
-                        std::cerr << "Warning: Fixed number exceeds basic 8 bits in line " << line_number << "\n";
+                        emit_warning("fixed number exceeds basic 8 bits");
                     err_code = 1;
                 }
                 line_pos++;
@@ -2940,6 +2947,21 @@ private:
                 else
                     get_lex();
                 return new node(C_NUM, c, NULL, NULL);
+            } else if (name == "POS") { // Access to current screen position
+                class node *tree;
+                
+                get_lex();
+                if (lex != C_LPAREN)
+                    emit_error("missing left parenthesis in POS");
+                else
+                    get_lex();
+                tree = eval_level0();
+                delete tree;
+                if (lex != C_RPAREN)
+                    emit_error("missing right parenthesis in POS");
+                else
+                    get_lex();
+                return new node(C_MINUS, 0, new node(C_VAR, 15, NULL, NULL), new node(C_NUM, 512, NULL, NULL));
             } else if (macros[name] != NULL) {  // Function (macro)
                 if (replace_macro())
                     return new node(C_NUM, 0, NULL, NULL);
@@ -2997,7 +3019,22 @@ private:
     //
     void emit_error(string message)
     {
-        std::cerr << "Error: " << message << " in line " << line_number << "\n";
+        std::cerr << "Error: " << message << " in line " << line_number;
+        if (active_include)
+            std::cerr << ", file \"" << path << "\"";
+        std::cerr << "\n";
+        err_code = 1;
+    }
+    
+    //
+    // Generates a warning message
+    //
+    void emit_warning(string message)
+    {
+        std::cerr << "Warning: " << message << " in line " << line_number;
+        if (active_include)
+            std::cerr << ", file \"" << path << "\"";
+        std::cerr << "\n";
         err_code = 1;
     }
     
@@ -4399,9 +4436,7 @@ public:
         int used_space;
         int available_vars;
         int inside_proc;
-        char path[4096];  // For Windows and Linux
         char *p;
-        //char path[PATH_MAX];  // Only works in Mac OS X :/
         
 		line_number = 0;
 		next_label = 1;
@@ -4516,7 +4551,7 @@ public:
                 if (name == "PROCEDURE") {
                     if (inside_proc) {
                         if (warnings)
-                            std::cerr << "Warning: starting PROCEDURE without ENDing previous PROCEDURE in line " << line_number << "\n";
+                            emit_warning("starting PROCEDURE without ENDing previous PROCEDURE");
                         err_code = 1;
                     }
                     // as1600 requires that label and PROC are on same line
@@ -4528,7 +4563,7 @@ public:
                 } else if (name == "END") {
                     if (!inside_proc) {
                         if (warnings)
-                            std::cerr << "Warning: END without PROCEDURE in line " << line_number << "\n";
+                            emit_warning("END without PROCEDURE");
                         err_code = 1;
                     }
                     get_lex();
@@ -4542,10 +4577,10 @@ public:
                     int quotes;
                     
                     if (next_include == 50) {  // No more than 50 INCLUDE
-                        std::cerr << "Error: more than 50 INCLUDE used at line " << line_number << "\n";
+                        emit_error("more than 50 INCLUDE used");
                         err_code = 1;
                     } else if (active_include) {  // No nested INCLUDE
-                        std::cerr << "Error: trying to use INCLUDE inside INCLUDE in line " << line_number << "\n";
+                        emit_error("trying to use INCLUDE inside INCLUDE");
                         err_code = 1;
                     } else {
                         while (line_pos < line_size && isspace(line[line_pos]))
@@ -4566,7 +4601,7 @@ public:
                         }
                         if (quotes) {
                             if (line_pos >= line_size || line[line_pos] != '"')
-                                std::cerr << "Error: missing quotes in INCLUDE in line " << line_number << "\n";
+                                emit_error("missing quotes in INCLUDE");
                             else
                                 line_pos++;
                         } else {
@@ -4592,14 +4627,14 @@ public:
                             strcat(path, path2);
                             // This needed because of bug in Visual C++ 2008 Express Edition
                             if (++next_include == 50) {
-                                std::cerr << "Error: too many INCLUDE used at line " << line_number << "\n";
+                                emit_error("too many INCLUDE used");
                                 err_code = 1;
                             } else {
                                 include[next_include].open(path);
                             }
                         }
                         if (!include[next_include].is_open()) {
-                            std::cerr << "Error: INCLUDE not successful in line " << line_number << "\n";
+                            emit_error("INCLUDE not successful");
                             err_code = 2;
                             next_include++;
                         } else {
@@ -4619,7 +4654,7 @@ public:
             }
             if (lex != C_END) {
                 if (warnings)
-                    std::cerr << "Warning: Invalid extra characters in line " << line_number << "\n";
+                    emit_warning("invalid extra characters");
                 err_code = 1;
             }
             
