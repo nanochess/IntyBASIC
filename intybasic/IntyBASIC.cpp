@@ -14,7 +14,7 @@
 //                         Added COL0-7, FRAME, RAND, RESTORE, READ and DATA.
 //  Revision: Jan/27/2014. Added SOUND, SPRITE, PRINT, ASM, BITMAP. Integrated constant
 //                         expression optimization. Further debugging of statements.
-//	Revision: Jan/28/2014. Modified to be compilable under Visual C++ 2008. Relational
+//  Revision: Jan/28/2014. Modified to be compilable under Visual C++ 2008. Relational
 //                         expression optimization in IF. Support for 16-bits variables
 //                         using hashtag as start of name. Solved bug where name was
 //                         wrongly taken as label.
@@ -149,6 +149,7 @@
 //                         multiline IF and ELSEIF. Solved bug in processing of
 //                         constants for GRAM characters. Added DO/LOOP with
 //                         support for WHILE/UNTIL in both sides, also EXIT DO.
+//                         Removed Tab from source code, Github disrupted it.
 //
 
 //  TODO:
@@ -1473,68 +1474,68 @@ public:
                         else if (left->type != C_AND && left->type != C_OR && left->type != C_XOR
                                  && left->type != C_PLUS && left->type != C_MINUS)
                             output->emit_r(N_TSTR, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BNE, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BEQ, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_NOTEQUAL) {
                         if ((right->value) & 0xffff)
                             output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
                         else if (left->type != C_AND && left->type != C_OR && left->type != C_XOR
                               && left->type != C_PLUS && left->type != C_MINUS)
                             output->emit_r(N_TSTR, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BEQ, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BNE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_LESS) {
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BGE, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BLT, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_LESSEQUAL) {
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BGT, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_GREATER) {
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BLE, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_GREATEREQUAL) {
                         output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BLT, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BGE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_MUL) {
                         if ((right->value & 0xffff) == 0) {
                             output->emit_r(N_CLRR, reg);
@@ -1726,64 +1727,64 @@ public:
                         output->emit_lr(N_XOR, VAR_PREFIX, right->value, reg);
                     } else if (type == C_EQUAL) {
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BNE, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BEQ, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_NOTEQUAL) {
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
-   						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BEQ, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BNE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_LESS) {
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BGE, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BLT, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_LESSEQUAL) {
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BGT, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_GREATER) {
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BLE, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_GREATEREQUAL) {
                         output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BLT, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BGE, "", 3);   // two words of jump and one word of INCR
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_MUL) {
                         if (jlp_used) {
                             output->emit_lr(N_MVI, VAR_PREFIX, right->value, 4);
@@ -1910,64 +1911,64 @@ public:
                         output->emit_rr(N_XORR, reg + 1, reg);
                     } else if (type == C_EQUAL) {
                         output->emit_rr(N_CMPR, reg + 1, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BNE, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BEQ, "", 3);
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_NOTEQUAL) {
                         output->emit_rr(N_CMPR, reg + 1, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(N_BEQ, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(N_BNE, "", 3);
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_LESS) {
                         output->emit_rr(N_CMPR, reg + 1, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(reversed ? N_BLE : N_BGE, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(reversed ? N_BGT : N_BLT, "", 3);
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_LESSEQUAL) {
                         output->emit_rr(N_CMPR, reg + 1, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(reversed ? N_BLT : N_BGT, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(reversed ? N_BGE : N_BLE, "", 3);
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_GREATER) {
                         output->emit_rr(N_CMPR, reg + 1, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(reversed ? N_BGE : N_BLE, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(reversed ? N_BLT : N_BGT, "", 3);
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_GREATEREQUAL) {
                         output->emit_rr(N_CMPR, reg + 1, reg);
-						if (decision) {
+                        if (decision) {
                             output->emit_a(reversed ? N_BGT : N_BLT, TEMP_PREFIX, decision);
-							optimized = true;
-						} else {
+                            optimized = true;
+                        } else {
                             output->emit_nr(N_MVII, "", -1, reg);
                             output->emit_a(reversed ? N_BLE : N_BGE, "", 3);
                             output->emit_r(N_INCR, reg);
-						}
+                        }
                     } else if (type == C_MUL) {
                         if (jlp_used) {
                             output->emit_rl(N_MVO, reg, "", 0x9f86);
@@ -2133,13 +2134,13 @@ class compiler {
 private:
     ifstream input;
     ifstream included;
-	ifstream included2;
+    ifstream included2;
     int saved_line_number;
     int active_include;
     int next_include;
     ifstream include[50];
     string line;
-	int line_start;
+    int line_start;
     string assigned;
     size_t line_pos;
     size_t line_size;
@@ -2224,10 +2225,10 @@ private:
             lex = C_END;
             return;
         }
-		if (isalpha(line[line_pos]) || line[line_pos] == '#') {  // Name or label
+        if (isalpha(line[line_pos]) || line[line_pos] == '#') {  // Name or label
             name = "";
-			name += toupper(line[line_pos]);
-			line_pos++;
+            name += toupper(line[line_pos]);
+            line_pos++;
             while (line_pos < line_size
              && (isalnum(line[line_pos]) || line[line_pos] == '_' || line[line_pos] == '#')) {
                 name += toupper(line[line_pos]);
@@ -2241,7 +2242,7 @@ private:
             } else {
                 lex = C_NAME;
             }
-			line_start = 0;
+            line_start = 0;
             return;
         }
         if (isdigit(line[line_pos])) {  // Decimal number
@@ -2275,7 +2276,7 @@ private:
                 value += (int) (fraction * (256.0 / 1000.0) + 0.5) * 256;
             }
             lex = C_NUM;
-			line_start = 0;
+            line_start = 0;
             return;
         }
         if (line[line_pos] == '$' && line_pos + 1 < line_size
@@ -2292,7 +2293,7 @@ private:
                 line_pos++;
             }
             lex = C_NUM;
-			line_start = 0;
+            line_start = 0;
             return;
         }
         if (line[line_pos] == '&' && line_pos + 1 < line_size
@@ -2304,7 +2305,7 @@ private:
                 line_pos++;
             }
             lex = C_NUM;
-			line_start = 0;
+            line_start = 0;
             return;
         }
         if (line[line_pos] == '"') {  // String
@@ -2349,10 +2350,10 @@ private:
                 emit_error("unfinished string");
             }
             lex = C_STRING;
-			line_start = 0;
+            line_start = 0;
             return;
         }
-   		line_start = 0;
+        line_start = 0;
         switch (line[line_pos]) {
             case '=':
                 line_pos++;
@@ -2449,7 +2450,7 @@ private:
         
         tree = eval_level0();
         tree->label();
-		optimized = false;
+        optimized = false;
         tree->generate(reg, decision);
         c = tree->node_type();
         delete tree;
@@ -3245,16 +3246,16 @@ private:
                     int there_is_else;
                     int label2;
                     enum lexical_component type;
-					struct loop new_loop;
+                    struct loop new_loop;
                     int block;
                     
                     get_lex();
                     label = next_local++;
                     type = eval_expr(0, label);
-					if (!optimized) {
+                    if (!optimized) {
                         output->emit_r(N_TSTR, 0);
                         output->emit_a(N_BEQ, TEMP_PREFIX, label);
-					}
+                    }
                     if (lex == C_NAME && name == "GOTO") {
                         compile_statement(false);
                         block = 0;
@@ -3364,7 +3365,7 @@ private:
                     string loop;
                     class node *final = NULL;
                     class node *step = NULL;
-					struct loop new_loop;
+                    struct loop new_loop;
                     bool positive;
                     
                     get_lex();
@@ -3400,10 +3401,10 @@ private:
                         final = new node(positive ? C_GREATER : C_LESS, 0, new node(C_NAME, variables[loop], 0, 0), final);
                     }
                     new_loop.type = 0;
-					new_loop.step = step;
-					new_loop.final = final;
-					new_loop.var = loop;
-					new_loop.label_loop = label_loop;
+                    new_loop.step = step;
+                    new_loop.final = final;
+                    new_loop.var = loop;
+                    new_loop.label_loop = label_loop;
                     new_loop.label_exit = 0;
                     loops.push_front(new_loop);
                 } else if (name == "NEXT") {
@@ -3456,22 +3457,22 @@ private:
                     int label_loop;
                     int label_exit;
                     enum lexical_component type;
-					struct loop new_loop;
+                    struct loop new_loop;
                     
                     get_lex();
                     label_loop = next_local++;
                     label_exit = next_local++;
                     output->emit_l(TEMP_PREFIX, label_loop);
                     type = eval_expr(0, label_exit);
-					if (!optimized) {
+                    if (!optimized) {
                         output->emit_r(N_TSTR, 0);
                         output->emit_a(N_BEQ, TEMP_PREFIX, label_exit);
-					}
+                    }
                     new_loop.type = 1;
-					new_loop.step = NULL;
-					new_loop.final = NULL;
-					new_loop.var = "";
-					new_loop.label_loop = label_loop;
+                    new_loop.step = NULL;
+                    new_loop.final = NULL;
+                    new_loop.var = "";
+                    new_loop.label_loop = label_loop;
                     new_loop.label_exit = label_exit;
                     loops.push_front(new_loop);
                 } else if (name == "WEND") {
@@ -3489,7 +3490,7 @@ private:
                     int label_loop;
                     int label_exit;
                     enum lexical_component type;
-					struct loop new_loop;
+                    struct loop new_loop;
                     
                     get_lex();
                     label_loop = next_local++;
@@ -3522,9 +3523,9 @@ private:
                         new_loop.var = ""; // Doesn't use exit label (yet)
                         new_loop.type = 4;  // Condition at bottom
                     }
-					new_loop.step = NULL;
-					new_loop.final = NULL;
-					new_loop.label_loop = label_loop;
+                    new_loop.step = NULL;
+                    new_loop.final = NULL;
+                    new_loop.label_loop = label_loop;
                     new_loop.label_exit = label_exit;
                     loops.push_front(new_loop);
                 } else if (name == "LOOP") {
@@ -3890,11 +3891,11 @@ private:
                         start = 0;
                         if (lex == C_STRING) {
                             int c;
-							int p;
+                            int p;
                             int v;
                             
                             output->emit_lr(N_MVI, "_screen", -1, 4);
-							p = -1;
+                            p = -1;
                             for (c = 0; c < name.length(); c++) {
                                 if (name[c] == 127 && c + 1 < name.length()) {
                                     c++;
@@ -3902,7 +3903,7 @@ private:
                                 } else {
                                     v = (name[c] & 0xff) * 8;
                                 }
-								if (v != p) {
+                                if (v != p) {
                                     if (p != -1) {
                                         if ((p ^ v) == 0)
                                             output->emit(N_NOP);
@@ -3915,9 +3916,9 @@ private:
                                             output->emit_nr(N_MVII, "", v, 0);
                                             output->emit_lr(N_XOR, "_color", -1, 0);
                                         }
-									}
+                                    }
                                     p = v;
-								}
+                                }
                                 output->emit_rr(N_MVOA, 0, 4);
                             }
                             get_lex();
@@ -4261,15 +4262,15 @@ private:
                             get_lex();
                             notes = 0xfe;
                             break;
-						} else if (arg == 3) {
-							if (name[0] != 'M' || name[1] < '1' || name[1] > '3') {
-								emit_error("bad syntax for drum in MUSIC");
-								break;
-							}
+                        } else if (arg == 3) {
+                            if (name[0] != 'M' || name[1] < '1' || name[1] > '3') {
+                                emit_error("bad syntax for drum in MUSIC");
+                                break;
+                            }
                             notes |= (name[1] - '0') << (arg * 8);
                         } else if (name == "S") {
                             notes |= 0x3f << (arg * 8);
-						} else {
+                        } else {
                             notes |= previous[arg] << (arg * 8);
                             c = 0;
                             switch (name[c++]) {
@@ -4666,9 +4667,9 @@ public:
         int inside_proc;
         char *p;
         
-		line_number = 0;
-		next_label = 1;
-		next_var = 1;
+        line_number = 0;
+        next_label = 1;
+        next_var = 1;
         scroll_used = 0;
         keypad_used = 0;
         music_used = 0;
@@ -4687,13 +4688,13 @@ public:
         err_code = 0;
         input.open(input_file);
         if (!input.is_open()) {
-			std::cerr << "Unable to open input file: " << input_file << "\n";
+            std::cerr << "Unable to open input file: " << input_file << "\n";
             return 2;
         }
         output = new code;
         asm_output.open(output_file);
         if (!asm_output.is_open()) {
-			std::cerr << "Unable to open output file: " << output_file << "\n";
+            std::cerr << "Unable to open output file: " << output_file << "\n";
             input.close();
             return 2;
         }
@@ -4727,8 +4728,8 @@ public:
                 }
             }
             included.close();
-		} else {
-			std::cerr << "Error: unable to include: " << path << "\n";
+        } else {
+            std::cerr << "Error: unable to include: " << path << "\n";
             err_code = 2;
         }
         asm_output << "\t;FILE " << input_file << "\n";
@@ -4753,10 +4754,10 @@ public:
                     break;
             }
             line_number++;
-			line_start = 1;
+            line_start = 1;
             line_pos = 0;
             line_size = line.length();
-			asm_output << "\t;[" << line_number << "] " << line << "\n";
+            asm_output << "\t;[" << line_number << "] " << line << "\n";
             asm_output << "\tSRCFILE \"" << (active_include ? path : input_file) << "\"," << line_number << "\n";
             get_lex();
             if (lex == C_LABEL) {
@@ -4916,7 +4917,7 @@ public:
             strcat(path, "/");
 #endif
         strcat(path, "intybasic_epilogue.asm");
-		// For some reason using 'included' in Visual C++ 2008 causes following to not work ???
+        // For some reason using 'included' in Visual C++ 2008 causes following to not work ???
         included2.open(path);
         if (included2.is_open()) {
             while (getline(included2, line)) {
@@ -4928,10 +4929,10 @@ public:
                 }
             }
             included2.close();
-		} else {
-			std::cerr << "Error: unable to include: " << path << "\n";
+        } else {
+            std::cerr << "Error: unable to include: " << path << "\n";
             err_code = 2;
-		}
+        }
         
         // Warns of read but non-assigned variables
         for (access = read_write.begin(); access != read_write.end(); access++) {
@@ -4947,7 +4948,7 @@ public:
         // Dumps 8-bits variables
         used_space = 0;
         for (access = variables.begin(); access != variables.end(); access++) {
-			if (access->first[0] != '#') {
+            if (access->first[0] != '#') {
                 int size;
                 
                 size = 1;
@@ -4957,7 +4958,7 @@ public:
             }
         }
         for (access = arrays.begin(); access != arrays.end(); access++) {
-			if (access->first[0] != '#' && access->second != 0) {
+            if (access->first[0] != '#' && access->second != 0) {
                 int size;
                 int label;
                 
@@ -4995,7 +4996,7 @@ public:
         // Dumps 16-bits variables
         used_space = 0;
         for (access = variables.begin(); access != variables.end(); access++) {
-			if (access->first[0] == '#') {
+            if (access->first[0] == '#') {
                 int size;
                 
                 size = 1;
@@ -5005,7 +5006,7 @@ public:
             }
         }
         for (access = arrays.begin(); access != arrays.end(); access++) {
-			if (access->first[0] == '#' && access->second != 0) {
+            if (access->first[0] == '#' && access->second != 0) {
                 int size;
                 int label;
                 
@@ -5037,7 +5038,7 @@ public:
             std::cerr << used_space << " used 16-bit variables of " << available_vars << " available\n";
         }
         
-		asm_output << "_SYSTEM:\tEQU $\n";
+        asm_output << "_SYSTEM:\tEQU $\n";
 
         // Dumps functions reference
         for (access = functions.begin(); access != functions.end(); access++) {
