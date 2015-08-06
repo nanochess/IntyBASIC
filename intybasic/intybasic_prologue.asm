@@ -9,6 +9,9 @@
 	;                        by James Pujals.
 	; Revision: Jan/25/2015. Added marker for automatic title replacement.
 	;                        (option --title of IntyBASIC)
+	; Revision: Aug/06/2015. Turns off ECS sound. Seed random generator using
+	;                        trash in 16-bit RAM. Solved bugs and optimized
+	;                        macro for constant multiplication.
 	; 
 
         ROMW 16
@@ -71,9 +74,26 @@ _MAIN0:
         ;
         ; Clean memory
         ;
+        MVII #$00e,R1           ; 14 of sound (ECS)
+        MVII #$0f0,R4           ; ECS PSG
+        CALL FILLZERO
         MVII #$0fe,R1           ; 240 words of 8 bits plus 14 of sound
         MVII #$100,R4           ; 8-bit scratch RAM
         CALL FILLZERO
+
+	; Seed random generator using 16 bit RAM (not cleared by EXEC)
+	CLRR R0
+	MVII #$02F0,R4
+	MVII #$0110/4,R1
+_MAIN4:
+	ADD@ R4,R0
+	ADD@ R4,R0
+	ADD@ R4,R0
+	ADD@ R4,R0
+	DECR R1
+	BNE _MAIN4
+	MVO R0,_rand
+
         MVII #$058,R1           ; 88 words of 16 bits
         MVII #$308,R4           ; 16-bit scratch RAM
         CALL FILLZERO
@@ -110,6 +130,7 @@ _MAIN3: MVO R0,_ntsc
         MVO R0,_mode_select
         MVII #$038,R0
         MVO R0,$01F8            ; Configures sound
+        MVO R0,$00F8            ; Configures sound (ECS)
         CALL _wait
 
 ;* ======================================================================== *;
@@ -117,6 +138,12 @@ _MAIN3: MVO R0,_ntsc
 ;*  copyright rights are hereby relinquished on the routines and data in    *;
 ;*  this file.  -- James Pujals (DZ-Jay), 2014                              *;
 ;* ======================================================================== *;
+
+; Modified by Oscar Toledo G. (nanochess), Aug/06/2015
+; * Tested all multiplications with automated test.
+; * Accelerated multiplication by 7,14,15,28,31,60,62,63,112,120,124
+; * Solved bug in multiplication by 23,39,46,47,55,71,78,79,87,92,93,94,95,103,110,111,119
+; * Improved sequence of instructions to be more interruptible.
 
 ;; ======================================================================== ;;
 ;;  MULT reg, tmp, const                                                    ;;
@@ -201,11 +228,10 @@ _mul.done       QSET    -1
         ; Multiply by $07 (7)
         IF (_mul.const = $07)
 _mul.done       QSET    -1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $08 (8)
@@ -266,21 +292,19 @@ _mul.done       QSET    -1
         IF (_mul.const = $0E)
 _mul.done       QSET    -1
                 SLL     %reg%,  1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $0F (15)
         IF (_mul.const = $0F)
 _mul.done       QSET    -1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $10 (16)
@@ -353,11 +377,12 @@ _mul.done       QSET    -1
         ; Multiply by $17 (23)
         IF (_mul.const = $17)
 _mul.done       QSET    -1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+                SUBR    %reg%,  %tmp%
+                SLL     %reg%,  1
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $18 (24)
@@ -408,11 +433,10 @@ _mul.done       QSET    -1
         IF (_mul.const = $1C)
 _mul.done       QSET    -1
                 SLL     %reg%,  2
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $1D (29)
@@ -430,22 +454,20 @@ _mul.done       QSET    -1
         IF (_mul.const = $1E)
 _mul.done       QSET    -1
                 SLL     %reg%,  1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $1F (31)
         IF (_mul.const = $1F)
 _mul.done       QSET    -1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+		ADDR	%reg%,	%reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $20 (32)
@@ -453,7 +475,7 @@ _mul.done       QSET    -1
 _mul.done       QSET    -1
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                SLL     %reg%,  1
+		ADDR	%reg%,	%reg%
         ENDI
 
         ; Multiply by $21 (33)
@@ -462,7 +484,7 @@ _mul.done       QSET    -1
                 MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                SLL     %reg%,  1
+		ADDR	%reg%,	%reg%
                 ADDR    %tmp%,  %reg%
         ENDI
 
@@ -523,12 +545,12 @@ _mul.done       QSET    -1
         ; Multiply by $27 (39)
         IF (_mul.const = $27)
 _mul.done       QSET    -1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %reg%,  %tmp%
+                SUBR    %reg%,  %tmp%
                 SLL     %reg%,  2
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $28 (40)
@@ -602,21 +624,23 @@ _mul.done       QSET    -1
         IF (_mul.const = $2E)
 _mul.done       QSET    -1
                 SLL     %reg%,  1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+                SUBR    %reg%,  %tmp%
+                SLL     %reg%,  1
+		SUBR	%tmp%,  %reg%
         ENDI
 
         ; Multiply by $2F (47)
         IF (_mul.const = $2F)
 _mul.done       QSET    -1
-                CLRR    %tmp%
+                MOVR    %reg%,  %tmp%
+                SLL     %reg%,  2
+                SLL     %reg%,  2
                 SUBR    %reg%,  %tmp%
-                SLL     %reg%,  2
-                SLL     %reg%,  2
-                ADDR    %tmp%,  %reg%
+                SLL     %reg%,  1
+		SUBR	%tmp%,  %reg%
         ENDI
 
         ; Multiply by $30 (48)
@@ -704,12 +728,13 @@ _mul.done       QSET    -1
         ; Multiply by $37 (55)
         IF (_mul.const = $37)
 _mul.done       QSET    -1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
                 ADDR    %reg%,  %tmp%
                 SLL     %reg%,  2
+		SLL	%reg%,	1
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $38 (56)
@@ -717,11 +742,10 @@ _mul.done       QSET    -1
 _mul.done       QSET    -1
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $39 (57)
@@ -765,11 +789,10 @@ _mul.done       QSET    -1
         IF (_mul.const = $3C)
 _mul.done       QSET    -1
                 SLL     %reg%,  2
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $3D (61)
@@ -787,23 +810,21 @@ _mul.done       QSET    -1
         IF (_mul.const = $3E)
 _mul.done       QSET    -1
                 SLL     %reg%,  1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+		ADDR	%reg%,	%reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $3F (63)
         IF (_mul.const = $3F)
 _mul.done       QSET    -1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $40 (64)
@@ -831,7 +852,7 @@ _mul.done       QSET    -1
                 MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                SLL     %reg%,  1
+		ADDR	%reg%,	%reg%
                 ADDR    %tmp%,  %reg%
         ENDI
 
@@ -843,7 +864,7 @@ _mul.done       QSET    -1
                 ADDR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                SLL     %reg%,  1
+		ADDR	%reg%,	%reg%
                 ADDR    %tmp%,  %reg%
         ENDI
 
@@ -883,13 +904,13 @@ _mul.done       QSET    -1
         ; Multiply by $47 (71)
         IF (_mul.const = $47)
 _mul.done       QSET    -1
-                CLRR    %tmp%
+                MOVR    %reg%,  %tmp%
+                SLL     %reg%,  2
+                SLL     %reg%,  1
                 SUBR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %reg%,  %tmp%
-                SLL     %reg%,  2
-                SLL     %reg%,  1
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $48 (72)
@@ -969,23 +990,23 @@ _mul.done       QSET    -1
         IF (_mul.const = $4E)
 _mul.done       QSET    -1
                 SLL     %reg%,  1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %reg%,  %tmp%
+                SUBR    %reg%,  %tmp%
                 SLL     %reg%,  2
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $4F (79)
         IF (_mul.const = $4F)
 _mul.done       QSET    -1
-                CLRR    %tmp%
+                MOVR    %reg%,  %tmp%
+                SLL     %reg%,  2
+                SLL     %reg%,  2
                 SUBR    %reg%,  %tmp%
                 SLL     %reg%,  2
-                SLL     %reg%,  2
-                ADDR    %reg%,  %tmp%
-                SLL     %reg%,  2
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $50 (80)
@@ -1073,13 +1094,14 @@ _mul.done       QSET    -1
         ; Multiply by $57 (87)
         IF (_mul.const = $57)
 _mul.done       QSET    -1
-                CLRR    %tmp%
+                MOVR    %reg%,  %tmp%
+                SLL     %reg%,  2
+                SLL     %reg%,  1
                 SUBR    %reg%,  %tmp%
-                SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %reg%,  %tmp%
+		SUBR    %reg%,	%tmp%
                 SLL     %reg%,  2
-                SLL     %reg%,  1
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $58 (88)
@@ -1138,44 +1160,49 @@ _mul.done       QSET    -1
         IF (_mul.const = $5C)
 _mul.done       QSET    -1
                 SLL     %reg%,  2
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+                SUBR    %reg%,  %tmp%
+                SLL     %reg%,  1
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $5D (93)
         IF (_mul.const = $5D)
 _mul.done       QSET    -1
-                MOVR    %reg%,  %tmp%
+		MOVR	%reg%,	%tmp%
+                SLL     %reg%,  1
+                ADDR    %reg%,  %tmp%
+                SLL     %reg%,  2
                 SLL     %reg%,  2
                 SUBR    %reg%,  %tmp%
-                SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $5E (94)
         IF (_mul.const = $5E)
 _mul.done       QSET    -1
                 SLL     %reg%,  1
-                CLRR    %tmp%
+                MOVR    %reg%,  %tmp%
+                SLL     %reg%,  2
+                SLL     %reg%,  2
                 SUBR    %reg%,  %tmp%
-                SLL     %reg%,  2
-                SLL     %reg%,  2
-                ADDR    %tmp%,  %reg%
+                SLL     %reg%,  1
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $5F (95)
         IF (_mul.const = $5F)
 _mul.done       QSET    -1
-                CLRR    %tmp%
+                MOVR    %reg%,  %tmp%
+                ADDR	%reg%,	%reg%
+                SLL     %reg%,  2
+                SLL     %reg%,  2
                 SUBR    %reg%,  %tmp%
-                SLL     %reg%,  2
-                SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $60 (96)
@@ -1183,7 +1210,7 @@ _mul.done       QSET    -1
 _mul.done       QSET    -1
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                SLL     %reg%,  1
+		ADDR	%reg%,	%reg%
                 MOVR    %reg%,  %tmp%
                 SLL     %reg%,  1
                 ADDR    %tmp%,  %reg%
@@ -1268,15 +1295,14 @@ _mul.done       QSET    -1
         ; Multiply by $67 (103)
         IF (_mul.const = $67)
 _mul.done       QSET    -1
-                CLRR    %tmp%
+                MOVR    %reg%,  %tmp%
+                SLL     %reg%,  2
+                SLL     %reg%,  1
                 SUBR    %reg%,  %tmp%
                 SLL     %reg%,  2
+                SUBR    %reg%,  %tmp%
                 SLL     %reg%,  1
-                ADDR    %reg%,  %tmp%
-                SLL     %reg%,  2
-                MOVR    %reg%,  %tmp%
-                SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $68 (104)
@@ -1362,23 +1388,25 @@ _mul.done       QSET    -1
         IF (_mul.const = $6E)
 _mul.done       QSET    -1
                 SLL     %reg%,  1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
                 ADDR    %reg%,  %tmp%
                 SLL     %reg%,  2
+                SLL     %reg%,  1
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $6F (111)
         IF (_mul.const = $6F)
 _mul.done       QSET    -1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
                 ADDR    %reg%,  %tmp%
                 SLL     %reg%,  2
+                SLL     %reg%,  1
+		SUBR	%tmp%,	%reg%
         ENDI
 
         ; Multiply by $70 (112)
@@ -1386,11 +1414,10 @@ _mul.done       QSET    -1
 _mul.done       QSET    -1
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $71 (113)
@@ -1474,15 +1501,13 @@ _mul.done       QSET    -1
         ; Multiply by $77 (119)
         IF (_mul.const = $77)
 _mul.done       QSET    -1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  1
                 ADDR    %reg%,  %tmp%
                 SLL     %reg%,  2
-                MOVR    %reg%,  %tmp%
-                SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+                SLL     %reg%,  2
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $78 (120)
@@ -1490,11 +1515,10 @@ _mul.done       QSET    -1
 _mul.done       QSET    -1
                 SLL     %reg%,  2
                 SLL     %reg%,  1
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                ADDR    %tmp%,  %reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $79 (121)
@@ -1538,12 +1562,11 @@ _mul.done       QSET    -1
         IF (_mul.const = $7C)
 _mul.done       QSET    -1
                 SLL     %reg%,  2
-                CLRR    %tmp%
-                SUBR    %reg%,  %tmp%
+                MOVR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                SLL     %reg%,  1
-                ADDR    %tmp%,  %reg%
+		ADDR	%reg%,	%reg%
+                SUBR    %tmp%,  %reg%
         ENDI
 
         ; Multiply by $7D (125)
@@ -1554,7 +1577,7 @@ _mul.done       QSET    -1
                 SUBR    %reg%,  %tmp%
                 SLL     %reg%,  2
                 SLL     %reg%,  2
-                SLL     %reg%,  1
+		ADDR	%reg%,	%reg%
                 ADDR    %tmp%,  %reg%
         ENDI
 
@@ -1564,7 +1587,7 @@ _mul.done       QSET    -1
                 MOVR    %reg%,  %tmp%
                 SWAP    %reg%,  1
                 SLR     %reg%,  1
-                SLL     %tmp%,  1
+		ADDR    %tmp%,  %tmp%
                 SUBR    %tmp%,  %reg%
         ENDI
 

@@ -30,15 +30,23 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2   31-jul-2015  o Nueva opción -w para desactivar advertencias de compilación.
+v1.2   06-ago-2015  o Nueva opción -w para desactivar advertencias de compilación.
                     o Se admiten cadenas en DEF FN y como argumentos para macro.
                     o Se agrega soporte para bloque IF/ELSEIF/ELSE/END IF.
                     o Nueva sentencia DO/LOOP.
                     o Nueva sentencia EXIT, use como EXIT FOR, EXIT WHILE o EXIT DO.
                     o Nueva función LEN()
                     o Nueva función POS()
+                    o Se agrega semilla para generador pseudoaleatorio con basura RAM.
+                    o Inicializa el procesador de sonido del ECS.
                     o Error o advertencia dentro de INCLUDE indica archivo.
                     o Se soluciona bug en que macros anidadas no funcionaban.
+                    o Se solucionan varios bug en macros para multiplicación por const.
+                    o Nueva contribución (tcg.bas) por catsfolly.
+                    o Muchas mejoras en la utilidad IntyColor
+                      o Opción -m para crear MOB (para tercer o cuarto color en mismo bloque)
+                      o Opción -c para no incluir constants.c (opción -m)
+                      o Opcion -r para generar BMP de reporte coloreado (error/GRAM/GROM)
 
 v1.1   14-jul-2015  o Nueva función RANDOM()
                     o Nueva sentencia DEF FN para expresiones tipo macro.
@@ -280,6 +288,7 @@ Los siguientes programas de ejemplo están incluídos:
   contrib/hello.bas           Hello World por DZ-Jay
   contrib/intro.bas           Introducción a IntyBASIC por Tarzilla
   contrib/keypad.bas          Keypad test por GroovyBee
+  contrib/tcg.bas             Generador de comentarios tipo troll por catsfolly.
 
 Se incluyen las siguientes utilidades:
 
@@ -1287,6 +1296,9 @@ Necesita compilar su programa de esta forma:
   jzintv -d salida.bin --src-map=salida.smap --sym-file=salida.sym  
 
 Después de esto puede usar normalmente las órdenes de depuración de jzintv.
+
+Note para Windows que su ventana principal debe ser de 160 columnas o más ancha,
+utilice la orden de jzintv >160 para expandir la ventana si es necesario.
 
 
 >>>>>>>>>>>>>>  Permisos en Mac OS X y Linux

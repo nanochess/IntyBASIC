@@ -23,15 +23,23 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2   Jul/31/2015  o New option -w for disabling compilation warnings.
+v1.2   Aug/06/2015  o New option -w for disabling compilation warnings.
                     o Strings now allowed in DEF FN and as arguments to macro.
                     o Added support for block IF/ELSEIF/ELSE/END IF.
                     o Added statement DO/LOOP
                     o Added statement EXIT, use as EXIT FOR, EXIT WHILE or EXIT DO.
                     o New LEN() function.
                     o New POS() function.
+                    o Added automatic seed of pseudorandom generator with RAM trash.
+                    o Initializes ECS PSG sound.
                     o Error or warning inside INCLUDE indicates file.
                     o Solved bug where nested macros wouldn't work.
+                    o Solved several bugs in macros for constant multiplication.
+                    o Added new contribution (tcg.bas) by catsfolly.
+                    o Many enhancements for the IntyColor utility.
+                      o Option -m for creating MOB (for third/fourth color in same block)
+                      o Option -c to not include constants.c (option -m)
+                      o Option -r to create BMP report colored (error/GRAM/GROM)
 
 v1.1   Jul/14/2015  o New RANDOM() function
                     o New DEF FN statement for macro expressions.
@@ -258,6 +266,7 @@ Following sample programs are included:
   contrib/hello.bas           Hello World by DZ-Jay
   contrib/intro.bas           Intro to IntyBASIC by Tarzilla
   contrib/keypad.bas          Keypad test by GroovyBee
+  contrib/tcg.bas             Trollish Comment Generator by catsfolly
 
 Following utilities are included:
 
@@ -1234,6 +1243,9 @@ You need to compile your program in this way:
   jzintv -d output.bin --src-map=output.smap --sym-file=output.sym  
 
 After this you can use normally the jzintv debug commands.
+
+Note for Windows that your main window must be 160 columns or wider, use the
+jzintv command >160 to expand window if necessary.
 
 
 >>>>>>>>>>>>>>  Permissions in Mac OS X and Linux
