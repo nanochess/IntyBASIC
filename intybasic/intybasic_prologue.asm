@@ -84,8 +84,8 @@ _MAIN0:
 	; Seed random generator using 16 bit RAM (not cleared by EXEC)
 	CLRR R0
 	MVII #$02F0,R4
-	MVII #$0110/4,R1
-_MAIN4:
+	MVII #$0110/4,R1        ; Includes phantom memory for extra randomness
+_MAIN4:                         ; This loop is courtesy of GroovyBee
 	ADD@ R4,R0
 	ADD@ R4,R0
 	ADD@ R4,R0

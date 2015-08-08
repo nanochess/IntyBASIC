@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jul/31/2015.
+Last revision: Aug/08/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2   Aug/06/2015  o New option -w for disabling compilation warnings.
+v1.2   Aug/08/2015  o New option -w for disabling compilation warnings.
                     o Strings now allowed in DEF FN and as arguments to macro.
                     o Added support for block IF/ELSEIF/ELSE/END IF.
                     o Added statement DO/LOOP
@@ -40,6 +40,7 @@ v1.2   Aug/06/2015  o New option -w for disabling compilation warnings.
                       o Option -m for creating MOB (for third/fourth color in same block)
                       o Option -c to not include constants.c (option -m)
                       o Option -r to create BMP report colored (error/GRAM/GROM)
+                      o Option -g to indicate how to use the MOB (use with -m)
 
 v1.1   Jul/14/2015  o New RANDOM() function
                     o New DEF FN statement for macro expressions.
