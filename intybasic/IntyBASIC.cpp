@@ -150,6 +150,8 @@
 //                         constants for GRAM characters. Added DO/LOOP with
 //                         support for WHILE/UNTIL in both sides, also EXIT DO.
 //                         Removed Tab from source code, Github disrupted it.
+//  Revision: Aug/11/2015. Avoids bug of getting stuck in DEF FN when macro had
+//                         unbalanced parenthesis.
 //
 
 //  TODO:
@@ -3086,6 +3088,8 @@ private:
                 while (1) {
                     if (level == 0 && (lex == C_RPAREN || lex == C_COMMA))
                         break;
+                    if (lex == C_END)   // Avoid possibility of being stuck
+                        break;
                     if (lex == C_LPAREN)
                         level++;
                     if (lex == C_RPAREN)
@@ -4753,6 +4757,7 @@ public:
                 if (!getline(input, line))
                     break;
             }
+//            std::cerr << line << "\n";
             line_number++;
             line_start = 1;
             line_pos = 0;
