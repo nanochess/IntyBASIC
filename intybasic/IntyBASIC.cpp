@@ -154,7 +154,7 @@
 //                         unbalanced parenthesis.
 //  Revision: Aug/19/2015. Solves bug where exit label for block IF was always 0.
 //                         Optimized POKE code generation. Optimized plus + minus
-//                         constant.
+//                         constant. Added #BACKTAB array.
 //
 
 //  TODO:
@@ -4764,6 +4764,7 @@ public:
         bitmap_byte = 0;
         inside_proc = 0;
         arrays["#MOBSHADOW"] = 24 | (next_label++ << 16);  // #MOBSHADOW array
+        arrays["#BACKTAB"] = 240 | (next_label++ << 16);  // #MOBSHADOW array
         while (1) {
             int label_exists;
             
@@ -5042,6 +5043,8 @@ public:
                 label = access->second >> 16;
                 if (access->first == "#MOBSHADOW") {
                     asm_output << LABEL_PREFIX << label << ":\tEQU _mobs\n";
+                } else if (access->first == "#BACKTAB") {
+                    asm_output << LABEL_PREFIX << label << ":\tEQU $0200\n";
                 } else {
                     size = access->second & 0xffff;
                     asm_output << LABEL_PREFIX << label << ":\tRMB "
