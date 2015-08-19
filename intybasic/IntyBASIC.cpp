@@ -152,6 +152,8 @@
 //                         Removed Tab from source code, Github disrupted it.
 //  Revision: Aug/11/2015. Avoids bug of getting stuck in DEF FN when macro had
 //                         unbalanced parenthesis.
+//  Revision: Aug/19/2015. Solves bug where exit label for block IF was always 0.
+//                         Optimized POKE code generation.
 //
 
 //  TODO:
@@ -173,7 +175,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.2 Aug/06/2015";      // Compiler version
+const string VERSION = "v1.2 Aug/19/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -3309,7 +3311,10 @@ private:
                     } else if (loops.front().type != 2 || loops.front().label_loop == 0) {
                         emit_error("bad nested ELSEIF");
                     } else {
-                        loops.front().var = "1";
+                        if (loops.front().var != "1") {
+                            loops.front().label_exit = next_local++;
+                            loops.front().var = "1";
+                        }
                         output->emit_a(N_B, TEMP_PREFIX, loops.front().label_exit);
                         output->emit_l(TEMP_PREFIX, loops.front().label_loop);
                         loops.front().label_loop = next_local++;
@@ -3340,7 +3345,10 @@ private:
                     } else if (loops.front().label_loop == 0) {
                         emit_error("more than one ELSE");
                     } else {
-                        loops.front().var = "1";
+                        if (loops.front().var != "1") {
+                            loops.front().label_exit = next_local++;
+                            loops.front().var = "1";
+                        }
                         output->emit_a(N_B, TEMP_PREFIX, loops.front().label_exit);
                         output->emit_l(TEMP_PREFIX, loops.front().label_loop);
                         loops.front().label_loop = 0;
@@ -3616,17 +3624,20 @@ private:
                         }
                     }
                 } else if (name == "POKE") {  // POKE
+                    class node *tree;
+                    
                     get_lex();
-                    eval_expr(0, 0);
-                    output->emit_r(N_PSHR, 0);
+                    tree = eval_level0();
                     if (lex != C_COMMA)
                         emit_error("missing comma in POKE");
                     else
                         get_lex();
-                    eval_expr(0, 0);
-                    output->emit_r(N_PULR, 4);
-                    output->emit_rr(N_MVOA, 0, 4);
-                    
+                    tree = new node(C_ASSIGN, 1, eval_level0(), tree);
+                    tree->label();
+                    optimized = false;
+                    tree->generate(0, 0);
+                    delete tree;
+                    tree = NULL;
                 } else if (name == "REM") {  // REM (comment)
                     line_pos = line_size;
                     get_lex();
