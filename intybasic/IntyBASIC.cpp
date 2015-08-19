@@ -153,7 +153,8 @@
 //  Revision: Aug/11/2015. Avoids bug of getting stuck in DEF FN when macro had
 //                         unbalanced parenthesis.
 //  Revision: Aug/19/2015. Solves bug where exit label for block IF was always 0.
-//                         Optimized POKE code generation.
+//                         Optimized POKE code generation. Optimized plus + minus
+//                         constant.
 //
 
 //  TODO:
@@ -916,6 +917,14 @@ public:
         this->right = right;
         
         // Optimizes trees of addition/substraction operators
+        if (type == C_MINUS && right->type == C_NUM && left->type == C_PLUS && left->right->type == C_NUM) {
+            right->value = left->right->value - right->value;
+            this->left = left->left;
+            left->left = NULL;
+            delete left;
+            left = this->left;
+            this->type = C_PLUS;
+        }
         if (type == C_PLUS && right->type == C_NUM && left->type == C_MINUS && left->right->type == C_NUM) {
             right->value -= left->right->value;
             this->left = left->left;
@@ -1443,11 +1452,15 @@ public:
                     if (type == C_PLUS) {
                         if ((right->value & 0xffff) == 1)
                             output->emit_r(N_INCR, reg);
+                        else if ((right->value & 0xffff) == 0xffff)
+                            output->emit_r(N_DECR, reg);
                         else if ((right->value & 0xffff) != 0)
                             output->emit_nr(N_ADDI, "", right->value & 0xffff, reg);
                     } else if (type == C_MINUS) {
                         if ((right->value & 0xffff) == 1)
                             output->emit_r(N_DECR, reg);
+                        else if ((right->value & 0xffff) == 0xffff)
+                            output->emit_r(N_INCR, reg);
                         else if ((right->value & 0xffff) != 0)
                             output->emit_nr(N_SUBI, "", right->value & 0xffff, reg);
                     } else if (type == C_PLUSF) {
