@@ -2300,6 +2300,124 @@ IV_SAYNUM16 PROC
 
     ENDI
 
+        IF DEFINED intybasic_flash
+
+;; ======================================================================== ;;
+;;  JLP "Save Game" support                                                 ;;
+;; ======================================================================== ;;
+JF.first    EQU     $8023
+JF.last     EQU     $8024
+JF.addr     EQU     $8025
+JF.row      EQU     $8026
+                   
+JF.wrcmd    EQU     $802D
+JF.rdcmd    EQU     $802E
+JF.ercmd    EQU     $802F
+JF.wrkey    EQU     $C0DE
+JF.rdkey    EQU     $DEC0
+JF.erkey    EQU     $BEEF
+
+JF.write:   DECLE   JF.wrcmd,   JF.wrkey    ; Copy JLP RAM to flash row  
+JF.read:    DECLE   JF.rdcmd,   JF.rdkey    ; Copy flash row to JLP RAM  
+JF.erase:   DECLE   JF.ercmd,   JF.erkey    ; Erase flash sector 
+
+;; ======================================================================== ;;
+;;  JF.INIT         Copy JLP save-game support routine to System RAM        ;;
+;; ======================================================================== ;;
+JF.INIT     PROC
+            PSHR    R5            
+            MVII    #@@__code,  R5
+            MVII    #JF.SYSRAM, R4
+            REPEAT  5       
+            MVI@    R5,         R0      ; \_ Copy code fragment to System RAM
+            MVO@    R0,         R4      ; /
+            ENDR
+            PULR    PC
+
+            ;; === start of code that will run from RAM
+@@__code:   MVO@    R0,         R1      ; JF.SYSRAM + 0: initiate command
+            ADD@    R1,         PC      ; JF.SYSRAM + 1: Wait for JLP to return
+            JR      R5                  ; JF.SYSRAM + 2:
+            MVO@    R2,         R2      ; JF.SYSRAM + 3: \__ simple ISR
+            JR      R5                  ; JF.SYSRAM + 4: /
+            ;; === end of code that will run from RAM
+            ENDP
+
+;; ======================================================================== ;;
+;;  JF.CMD          Issue a JLP Flash command                               ;;
+;;                                                                          ;;
+;;  INPUT                                                                   ;;
+;;      R0  Slot number to operate on                                       ;;
+;;      R1  Address to copy to/from in JLP RAM                              ;;
+;;      @R5 Command to invoke:                                              ;;
+;;                                                                          ;;
+;;              JF.write -- Copy JLP RAM to Flash                           ;;
+;;              JF.read  -- Copy Flash to JLP RAM                           ;;
+;;              JF.erase -- Erase flash sector                              ;;
+;;                                                                          ;;
+;;  OUTPUT                                                                  ;;
+;;      R0 - R4 not modified.  (Saved and restored across call)             ;;
+;;      JLP command executed                                                ;;
+;;                                                                          ;;
+;;  NOTES                                                                   ;;
+;;      This code requires two short routines in the console's System RAM.  ;;
+;;      It also requires that the system stack reside in System RAM.        ;;
+;;      Because an interrupt may occur during the code's execution, there   ;;
+;;      must be sufficient stack space to service the interrupt (8 words).  ;;
+;;                                                                          ;;
+;;      The code also relies on the fact that the EXEC ISR dispatch does    ;;
+;;      not modify R2.  This allows us to initialize R2 for the ISR ahead   ;;
+;;      of time, rather than in the ISR.                                    ;;
+;; ======================================================================== ;;
+JF.CMD      PROC
+
+            MVO     R4,         JF.SV.R4    ; \
+            MVII    #JF.SV.R0,  R4          ;  |
+            MVO@    R0,         R4          ;  |- Save registers, but not on
+            MVO@    R1,         R4          ;  |  the stack.  (limit stack use)
+            MVO@    R2,         R4          ; /
+
+            MVI@    R5,         R4          ; Get command to invoke
+
+            MVO     R5,         JF.SV.R5    ; save return address
+
+            DIS
+            MVO     R1,         JF.addr     ; \_ Save SG arguments in JLP
+            MVO     R0,         JF.row      ; /
+                                          
+            MVI@    R4,         R1          ; Get command address
+            MVI@    R4,         R0          ; Get unlock word
+                                          
+            MVII    #$100,      R4          ; \
+            SDBD                            ;  |_ Save old ISR in save area
+            MVI@    R4,         R2          ;  |
+            MVO     R2,         JF.SV.ISR   ; /
+                                          
+            MVII    #JF.SYSRAM + 3, R2      ; \
+            MVO     R2,         $100        ;  |_ Set up new ISR in RAM
+            SWAP    R2                      ;  |
+            MVO     R2,         $101        ; / 
+                                          
+            MVII    #$20,       R2          ; Address of STIC handshake
+            JSRE    R5,  JF.SYSRAM          ; Invoke the command
+                                          
+            MVI     JF.SV.ISR,  R2          ; \
+            MVO     R2,         $100        ;  |_ Restore old ISR 
+            SWAP    R2                      ;  |
+            MVO     R2,         $101        ; /
+                                          
+            MVII    #JF.SV.R0,  R5          ; \
+            MVI@    R5,         R0          ;  |
+            MVI@    R5,         R1          ;  |- Restore registers
+            MVI@    R5,         R2          ;  |
+            MVI@    R5,         R4          ; /
+            MVI@    R5,         PC          ; Return
+
+            ENDP
+
+
+        ENDI
+
 	IF DEFINED intybasic_fastmult
 
 ; Quarter Square Multiplication

@@ -30,6 +30,10 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
+v1.4   21-ago-2015  o Nueva sentencia FLASH que permite el uso de la memoria
+                      Flash en los cartuchos JLP.
+                    o Nuevas variables FLASH.FIRST y FLASH.LAST de solo lectura.
+
 v1.2.1 16-ago-2015  o Se agrega arreglo #BACKTAB (acceso directo a pantalla)
                     o Generación de código optimizada para POKE.
                     o Optimiza suma de constante seguida por resta de constante.
@@ -953,7 +957,50 @@ label:
         KK2, KK3, LL, MM, NG1, NN1, NN2, OR2, OW, OY, PP, RR1, RR2, SH, SS
         TH, TT1, TT2, UH, UW1, UW2, VV, WH, WW, XR2, YR, YY1, YY2, ZH, ZZ
 
+
+  FLASH INIT
+  
+    Esta debe ser la primera sentencia utilizada si desea utilizar las
+    funciones FLASH.
     
+    Sólo tiene que ponerse una vez al principio del programa.
+
+  FLASH ERASE linea
+
+    Borra el número de línea dado por la expresión. El número de línea puede
+    ir desde FLASH.FIRST hasta FLASH.LAST
+
+    Esta operación borra un sector completo, un sector se compone de un
+    múltiplo de 8 líneas. Así que borrar cualquier línea dentro de un múltiplo
+    de 8 borrará las 8 líneas contenidas.
+    
+    Necesita invocar IntyBASIC con la opción --jlp
+
+  FLASH READ linea,VARPTR #arreglo(0)
+  
+    Lee el número de línea dado por la expresión y pone el contenido dentro
+    del arreglo (debe ser de 16 bits y 96 elementos). El número de línea
+    puede ir desde FLASH.FIRST hasta FLASH.LAST
+
+    Necesita invocar IntyBASIC con la opción --jlp
+
+  FLASH WRITE linea,VARPTR #arreglo(0)
+  
+    Escribe el número de línea dado por la expresión y pone el contenido
+    del arreglo (debe ser de 16 bits y 96 elementos). El número de línea
+    puede ir desde FLASH.FIRST hasta FLASH.LAST
+
+    Observe que solo puede escribir una línea >borrada<, esto significa que
+    una vez escrita una línea no puede ser reescrita de nuevo hasta que se
+    borre su sector.
+
+    Necesita invocar IntyBASIC con la opción --jlp
+
+    ADVERTENCIA: SU PROGRAMA INTYBASIC PONDRA LA PANTALLA EN NEGRO Y SE
+    DETENDRA POR UNOS POCOS MILISEGUNDOS MIENTRAS SE COMPLETAN LAS OPERACIONES
+    JLP FLASH, ESTO INCLUYE LA MUSICA DE FONDO.
+
+
   DEF FN func = RAND % 10
   DEF FN screen_off(linea, columna) = (linea * 20 + columna)
   DEF FN resetsprite(number) = SPRITE number,0
@@ -1180,6 +1227,12 @@ la resta tienen menos prioridad que la multiplicación y la división)
     
   #BACKTAB(x)
     Accede elementos del buffer de pantalla (ubicado en $0200-$02EF)
+
+  FLASH.FIRST
+    Primer línea que puede ser leer/escrita de la memoria Flash JLP.
+
+  FLASH.LAST
+    Última línea que puede ser leer/escrita de la memoria Flash JLP.
 
 
 Los números fijos son útiles para mover elementos del juego en pasos fraccionales, el

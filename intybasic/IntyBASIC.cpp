@@ -155,7 +155,8 @@
 //  Revision: Aug/19/2015. Solves bug where exit label for block IF was always 0.
 //                         Optimized POKE code generation. Optimized plus + minus
 //                         constant. Added #BACKTAB array.
-//  Revision: Aug/21/2015. Now keeps stack in internal memory.
+//  Revision: Aug/21/2015. Now keeps stack in internal memory. Added support for
+//                         JLP Flash with FLASH statement.
 //
 
 //  TODO:
@@ -177,7 +178,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.2 Aug/19/2015";      // Compiler version
+const string VERSION = "v1.4 Aug/21/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -201,7 +202,8 @@ enum opcode {
     N_B, N_BC, N_BEQ, N_BGE, N_BGT, N_BLE, N_BLT, N_BNC, N_BNE, N_BPL,
     N_CALL, N_CLRC, N_CLRR, N_CMP, N_CMPA, N_CMPI, N_CMPR, N_COMR, N_DECLE, N_DECR,
     N_INCR, N_MOVR, N_MVI, N_MVIA, N_MVII, N_MVO, N_MVOA, N_MULT, N_NEGR, N_NOP,
-    N_PSHR, N_PULR, N_RRC, N_RETURN, N_SARC, N_SLL, N_SLR, N_SUB, N_SUBA, N_SUBI, N_SUBR, N_SWAP,
+    N_PSHR, N_PULR, N_RRC, N_RETURN,
+    N_SARC, N_SLL, N_SLR, N_SUB, N_SUBA, N_SUBI, N_SUBR, N_SWAP,
     N_TSTR, N_XOR, N_XORA, N_XORI, N_XORR,
 };
 
@@ -210,7 +212,8 @@ static const char *opcode_list[] = {
     "B", "BC", "BEQ", "BGE", "BGT", "BLE", "BLT", "BNC", "BNE", "BPL",
     "CALL", "CLRC", "CLRR", "CMP", "CMP@", "CMPI", "CMPR", "COMR", "DECLE", "DECR",
     "INCR", "MOVR", "MVI", "MVI@", "MVII", "MVO", "MVO@", "MULT", "NEGR", "NOP",
-    "PSHR", "PULR", "RRC", "RETURN", "SARC", "SLL", "SLR", "SUB", "SUB@", "SUBI", "SUBR", "SWAP",
+    "PSHR", "PULR", "RRC", "RETURN",
+    "SARC", "SLL", "SLR", "SUB", "SUB@", "SUBI", "SUBR", "SWAP",
     "TSTR", "XOR", "XOR@", "XORI", "XORR",
 };
 
@@ -1343,6 +1346,10 @@ public:
                 }
                 if (value == 15)
                     output->emit_lr(N_MVI, "_screen", -1, reg);
+                if (value == 16)    // FLASH.FIRST
+                    output->emit_lr(N_MVI, "", 0x8023, reg);
+                if (value == 17)    // FLASH.LAST
+                    output->emit_lr(N_MVI, "", 0x8024, reg);
                 break;
             case C_PEEK:    // PEEK()
                 if (left->type == C_NUM) {  // Peek directly from memory location
@@ -2188,13 +2195,14 @@ private:
     int bitmap_byte;
     int frame_drive;    // Label for frame-driven game (ON FRAME GOSUB)
     int last_is_return; // Indicates if last statement processed was a RETURN
-    int scroll_used;    // Indicates if scroll used
-    int keypad_used;    // Indicates if keypad used
-    int music_used;     // Indicates if music used
-    int stack_used;     // Indicates if stack check used
-    int numbers_used;   // Indicates if numbers used (PRINT)
-    int voice_used;     // Indicates if Intellivoice used (VOICE)
+    bool scroll_used;   // Indicates if scroll used
+    bool keypad_used;   // Indicates if keypad used
+    bool music_used;    // Indicates if music used
+    bool stack_used;    // Indicates if stack check used
+    bool numbers_used;  // Indicates if numbers used (PRINT)
+    bool voice_used;    // Indicates if Intellivoice used (VOICE)
     bool ecs_used;      // Indicates if ECS used (SOUND, CONT3, CONT4)
+    bool flash_used;    // Indicates if JLP Flash is used (FLASH)
     
     //
     // Avoid spaces
@@ -2797,7 +2805,7 @@ private:
                                 tree = new node(C_VAR, 14, NULL, NULL);
                             else
                                 tree = new node(C_VAR, (c == 0x01ff) ? 10 : 11, NULL, NULL);
-                            keypad_used = 1;
+                            keypad_used = true;
                         }
                     } else {
                         emit_error("wrong name for CONT? syntax");
@@ -2994,6 +3002,25 @@ private:
                 else
                     get_lex();
                 return new node(C_MINUS, 0, new node(C_VAR, 15, NULL, NULL), new node(C_NUM, 512, NULL, NULL));
+            } else if (name == "FLASH") {  // Access to JLP Flash parameters
+                get_lex();
+                if (!jlp_used)
+                    emit_error("Using FLASH expression without using --jlp option");
+                flash_used = true;
+                if (lex != C_PERIOD)
+                    emit_error("missing period in FLASH");
+                else
+                    get_lex();
+                if (lex == C_NAME && name == "FIRST") {
+                    get_lex();
+                    return new node(C_VAR, 16, NULL, NULL);
+                }
+                if (lex == C_NAME && name == "LAST") {
+                    get_lex();
+                    return new node(C_VAR, 17, NULL, NULL);
+                }
+                emit_error("syntax error in FLASH");
+                return new node(C_NUM, 0, NULL, NULL);
             } else if (macros[name] != NULL) {  // Function (macro)
                 if (replace_macro())
                     return new node(C_NUM, 0, NULL, NULL);
@@ -3993,7 +4020,7 @@ private:
                                 output->emit_a(N_CALL, "PRNUM16.b", -1);
                             else if (type == 2)
                                 output->emit_a(N_CALL, "PRNUM16.z", -1);
-                            numbers_used = 1;
+                            numbers_used = true;
                         } else {
                             eval_expr(0, 0);
                             output->emit_lr(N_MVI, "_screen", -1, 4);
@@ -4026,7 +4053,7 @@ private:
                     }
                 } else if (name == "SCROLL") {
                     get_lex();
-                    scroll_used = 1;
+                    scroll_used = true;
                     if (lex != C_COMMA) {
                         eval_expr(0, 0);
                         output->emit_rl(N_MVO, 0, "_scroll_x", -1);
@@ -4240,7 +4267,7 @@ private:
                         emit_error("bad syntax for PLAY");
                         break;
                     }
-                    music_used = 1;
+                    music_used = true;
                     if (name == "OFF") {
                         output->emit_r(N_CLRR, 0);
                         output->emit_a(N_CALL, "_play_music", -1);
@@ -4438,7 +4465,7 @@ private:
                     
                     get_lex();
                     if (lex == C_NAME && name == "PLAY") {
-                        voice_used = 1;
+                        voice_used = true;
                         get_lex();
                         if (lex == C_NAME && name == "WAIT") {
                             get_lex();
@@ -4475,15 +4502,15 @@ private:
                             get_lex();
                         }
                     } else if (lex == C_NAME && name == "INIT") {
-                        voice_used = 1;
+                        voice_used = true;
                         get_lex();
                         output->emit_a(N_CALL, "IV_INIT", -1);
                     } else if (lex == C_NAME && name == "WAIT") {
-                        voice_used = 1;
+                        voice_used = true;
                         get_lex();
                         output->emit_a(N_CALL, "IV_WAIT", -1);
                     } else if (lex == C_NAME && name == "NUMBER") {
-                        voice_used = 1;
+                        voice_used = true;
                         get_lex();
                         eval_expr(0, 0);
                         output->emit_a(N_CALL, "IV_SAYNUM16", -1);
@@ -4592,9 +4619,53 @@ private:
                             get_lex();
                         }
                     }
+                } else if (name == "FLASH") {
+                    get_lex();
+                    if (!jlp_used)
+                        emit_error("Using FLASH statement without using --jlp option");
+                    if (lex != C_NAME) {
+                        emit_error("Syntax error in FLASH statement");
+                    } else if (name == "INIT") {
+                        get_lex();
+                        output->emit_a(N_CALL, "JF.INIT", -1);
+                    } else if (name == "ERASE") {
+                        get_lex();
+                        eval_expr(0, 0);
+                        output->emit_a(N_CALL, "JF.CMD", -1);
+                        output->emit_dl(N_DECLE, "JF.erase", -1);
+                    } else if (name == "READ") {
+                        get_lex();
+                        eval_expr(0, 0);
+                        if (lex != C_COMMA)
+                            emit_error("Missing comma in FLASH statement");
+                        else
+                            get_lex();
+                        if (lex == C_NAME && name == "VARPTR") {
+                            eval_expr(1, 0);
+                        } else {
+                            emit_error("Only VARPTR can be used in FLASH READ");
+                        }
+                        output->emit_a(N_CALL, "JF.CMD", -1);
+                        output->emit_dl(N_DECLE, "JF.read", -1);
+                    } else if (name == "WRITE") {
+                        get_lex();
+                        eval_expr(0, 0);
+                        if (lex != C_COMMA)
+                            emit_error("Missing comma in FLASH statement");
+                        else
+                            get_lex();
+                        if (lex == C_NAME && name == "VARPTR") {
+                            eval_expr(1, 0);
+                        } else {
+                            emit_error("Only VARPTR can be used in FLASH WRITE");
+                        }
+                        output->emit_a(N_CALL, "JF.CMD", -1);
+                        output->emit_dl(N_DECLE, "JF.write", -1);
+                    }
+                    flash_used = true;
                 } else if (name == "STACK_CHECK") {  // Stack overflow check
                     get_lex();
-                    stack_used = 1;
+                    stack_used = true;
                 } else if (name == "ASM") {         // ASM statement for inserting assembly code
                     size_t c;
                     
@@ -4699,13 +4770,14 @@ public:
         line_number = 0;
         next_label = 1;
         next_var = 1;
-        scroll_used = 0;
-        keypad_used = 0;
-        music_used = 0;
-        stack_used = 0;
-        numbers_used = 0;
-        voice_used = 0;
+        scroll_used = false;
+        keypad_used = false;
+        music_used = false;
+        stack_used = false;
+        numbers_used = false;
+        voice_used = false;
         ecs_used = false;
+        flash_used = false;
         jlp_used = ((flags & 1) != 0);
         cc3_used = ((flags & 2) != 0);
         warnings = ((flags & 4) == 0);
@@ -4728,14 +4800,10 @@ public:
             return 2;
         }
         asm_output << "\t; IntyBASIC compiler " << VERSION << "\n";
-        if (jlp_used || voice_used) {
+        if (jlp_used) {
             asm_output << "\tIF DEFINED __FEATURE.CFGVAR\n";
             if (jlp_used)
-                asm_output << "\t\tCFGVAR \"jlp\" = 1\n";
-            if (voice_used)
-                asm_output << "\t\tCFGVAR \"voice\" = 1\n";
-            if (ecs_used)
-                asm_output << "\t\tCFGVAR \"ecs\" = 1\n";
+                asm_output << "\t\tCFGVAR \"jlp\" = 3\n";
             asm_output << "\tENDI\n";
         }
         strcpy(path, library_path);
@@ -4921,6 +4989,16 @@ public:
         }
         asm_output << "\t;ENDFILE\n";
         asm_output << "\tSRCFILE \"\",0\n";
+        if (voice_used || ecs_used || flash_used) {
+            asm_output << "\tIF DEFINED __FEATURE.CFGVAR\n";
+            if (voice_used)
+                asm_output << "\t\tCFGVAR \"voice\" = 1\n";
+            if (ecs_used)
+                asm_output << "\t\tCFGVAR \"ecs\" = 1\n";
+            if (flash_used)
+                asm_output << "\t\tCFGVAR \"jlpflash\" = 100\n";  // Currently hard-coded 100 sectors
+            asm_output << "\tENDI\n";
+        }
         if (scroll_used)
             asm_output << "intybasic_scroll:\tequ 1\t; Forces to include scroll library\n";
         if (keypad_used)
@@ -4939,6 +5017,8 @@ public:
             asm_output << "intybasic_fastmult:\tequ 1\t; Forces to include fast multiplication\n";
         if (fastdiv_used)
             asm_output << "intybasic_fastdiv:\tequ 1\t; Forces to include fast division/remainder\n";
+        if (flash_used)
+            asm_output << "intybasic_flash:\tequ 1\t; Forces to include Flash memory library\n";
         strcpy(path, library_path);
 #ifdef _WIN32
         if (strlen(path) > 0 && path[strlen(path) - 1] != '\\')
@@ -5020,11 +5100,27 @@ public:
         // Arranges stack
         asm_output << "\nSYSTEM:\tORG $2F0, $2F0, \"-RWBN\"\n";
         asm_output << "STACK:\tRMB 24\n";
-        if (jlp_used || cc3_used)
-            asm_output << "\nORG $8040, $8040, \"-RWBN\"\n";
-
+        if (flash_used) {
+            asm_output << "JF.SYSRAM:\tRMB 5\t; 5 words in Intv for support routine\n";
+        }
+        if (jlp_used || cc3_used) {
+            asm_output << "\tORG $8040, $8040, \"-RWBN\"\n";
+            used_space = 0;
+        }
+        
+        if (flash_used) {
+            asm_output << "JF.SV:\tRMB 6\t; Space for saving Intv registers\n";
+            asm_output << "JF.SV.ISR   EQU     JF.SV + 0\n";
+            asm_output << "JF.SV.R0    EQU     JF.SV + 1\n";
+            asm_output << "JF.SV.R1    EQU     JF.SV + 2\n";
+            asm_output << "JF.SV.R2    EQU     JF.SV + 3\n";
+            asm_output << "JF.SV.R4    EQU     JF.SV + 4\n";
+            asm_output << "JF.SV.R5    EQU     JF.SV + 5\n";
+            
+            used_space += 6;
+        }
+        
         // Dumps 16-bits variables
-        used_space = 0;
         for (access = variables.begin(); access != variables.end(); access++) {
             if (access->first[0] == '#') {
                 int size;

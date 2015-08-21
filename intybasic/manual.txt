@@ -23,6 +23,10 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
+v1.4   Aug/21/2015  o New FLASH statement allowing access of Flash memory
+                      available in JLP cartridges.
+                    o New FLASH.FIRST and FLASH.LAST read-only variables.
+
 v1.2.1 Aug/16/2015  o Added #BACKTAB array (direct access to screen)
                     o Optimized code generation for POKE.
                     o Optimized plus constant followed by minus constant.
@@ -909,7 +913,48 @@ label:
         KK2, KK3, LL, MM, NG1, NN1, NN2, OR2, OW, OY, PP, RR1, RR2, SH, SS
         TH, TT1, TT2, UH, UW1, UW2, VV, WH, WW, XR2, YR, YY1, YY2, ZH, ZZ
 
+
+  FLASH INIT
+  
+    This should be the first thing called if you're using the FLASH
+    functions.
     
+    It only needs to be put one time at start of program.
+
+  FLASH ERASE row
+  
+    Erases the row number given by the expression. The row number can
+    run from FLASH.FIRST to FLASH.LAST
+        
+    It erases a full >sector< a multiple of 8 rows. So erasing any row inside
+    in a multiple of 8 will erase the 8 consecutive rows.
+
+    You need to invoke IntyBASIC with --jlp command line option
+
+  FLASH READ row,VARPTR #array(0)
+  
+    Reads the row number given by the expression and puts content inside array
+    (must be 16 bits and 96 elements). The row number can be from FLASH.FIRST
+    to FLASH.LAST
+
+    You need to invoke IntyBASIC with --jlp command line option
+
+  FLASH WRITE row,VARPTR #array(0)
+  
+    Writes the row number given by the expression with content from array
+    (must be 16 bits and 96 elements at least). The row number can be from
+    FLASH.FIRST to FLASH.LAST.
+
+    Note that it can write only a >erased< row, this means that once written
+    a row it cannot be written again until its sector is erased.
+
+    You need to invoke IntyBASIC with --jlp command line option
+    
+    WARNING: YOUR INTYBASIC PROGRAM WILL TURN THE SCREEN BLACK AND STOP FOR A
+    FEW MILLISECONDS WHILE THE JLP FLASH OPERATIONS COMPLETE, THIS INCLUDES
+    MUSIC IN BACKGROUND.
+
+
   DEF FN func = RAND % 10
   DEF FN screen_off(row, col) = (row * 20 + col)
   DEF FN resetsprite(number) = SPRITE number,0
@@ -1127,6 +1172,12 @@ lesser priority than multiplication and division)
 
   #BACKTAB(x)
     Access elements from the screen buffer (located at $0200-$02EF)
+    
+  FLASH.FIRST
+    First readable/writable row of JLP Flash memory
+
+  FLASH.LAST
+    Last readable/writable row of JLP Flash memory
 
 
 The fixed numbers are useful to move game elements in fractional steps, the trick is
