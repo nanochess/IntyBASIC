@@ -35,6 +35,8 @@
 	;                        didn't started with white.
 	; Revision: Aug/20/2015. Moved ECS mapper disable code so nothing gets
 	;                        after it (GroovyBee 42K sample code)
+	; Revision: Aug/21/2015. Added Joseph Zbiciak routines for JLP Flash
+	;                        handling.
 
 	;
 	; Avoids empty programs to crash

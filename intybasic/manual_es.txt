@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 16-ago-2015
+Última revisión: 21-ago-2015
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -33,6 +33,7 @@ en inglés.
 v1.4   21-ago-2015  o Nueva sentencia FLASH que permite el uso de la memoria
                       Flash en los cartuchos JLP.
                     o Nuevas variables FLASH.FIRST y FLASH.LAST de solo lectura.
+                    o Añadido nuevo ejemplo: flash.bas
 
 v1.2.1 16-ago-2015  o Se agrega arreglo #BACKTAB (acceso directo a pantalla)
                     o Generación de código optimizada para POKE.
@@ -280,6 +281,7 @@ Los siguientes programas de ejemplo están incluídos:
 
   samples/constants.bas       Librería de constantes (usada por todos los ejemplos)
   samples/controller.bas      Prueba de los controladores Intellivision
+  samples/flash.bas           Ejemplo de como utilizar memoria Flash de cartuchos JLP
   samples/frame.bas           Muestra de ON FRAME GOSUB
   samples/game1.bas           Un juego sencillo de dispara a la letra.
   samples/game2.bas           Un juego sencillo de laberinto con enemigos.
