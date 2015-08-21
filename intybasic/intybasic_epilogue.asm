@@ -33,6 +33,8 @@
 	; Revision: Jul/25/2015. Added infinite loop at start to avoid crashing
 	;                        with empty programs. Solved bug where _color
 	;                        didn't started with white.
+	; Revision: Aug/20/2015. Moved ECS mapper disable code so nothing gets
+	;                        after it (GroovyBee 42K sample code)
 
 	;
 	; Avoids empty programs to crash
@@ -2298,21 +2300,6 @@ IV_SAYNUM16 PROC
 
     ENDI
 
-	IF DEFINED intybasic_ecs
-	ORG $4800	; Available up to $4FFF
-
-        ; Disable ECS ROMs so that they don't conflict with us
-        MVII    #$2A5F, R0
-        MVO     R0,     $2FFF
-        MVII    #$7A5F, R0
-        MVO     R0,     $7FFF
-        MVII    #$EA5F, R0
-        MVO     R0,     $EFFF
-
-        B       $1041       ; resume boot
-
-	ENDI
-
 	IF DEFINED intybasic_fastmult
 
 ; Quarter Square Multiplication
@@ -2641,6 +2628,21 @@ uf_udiv16:	PROC
 	JR R5
 	
 	ENDP
+
+	ENDI
+
+	IF DEFINED intybasic_ecs
+	ORG $4800	; Available up to $4FFF
+
+        ; Disable ECS ROMs so that they don't conflict with us
+        MVII    #$2A5F, R0
+        MVO     R0,     $2FFF
+        MVII    #$7A5F, R0
+        MVO     R0,     $7FFF
+        MVII    #$EA5F, R0
+        MVO     R0,     $EFFF
+
+        B       $1041       ; resume boot
 
 	ENDI
 

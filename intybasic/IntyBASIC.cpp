@@ -155,10 +155,11 @@
 //  Revision: Aug/19/2015. Solves bug where exit label for block IF was always 0.
 //                         Optimized POKE code generation. Optimized plus + minus
 //                         constant. Added #BACKTAB array.
+//  Revision: Aug/21/2015. Now keeps stack in internal memory.
 //
 
 //  TODO:
-//  Nothing :)
+//  * ASM doesn't work with DEF FN
 
 //  Development notes:
 //  * Careful with everything.back(), behavior not defined when list is empty so
@@ -5017,11 +5018,10 @@ public:
         asm_output << "_SCRATCH:\tEQU $\n";
         
         // Arranges stack
+        asm_output << "\nSYSTEM:\tORG $2F0, $2F0, \"-RWBN\"\n";
+        asm_output << "STACK:\tRMB 24\n";
         if (jlp_used || cc3_used)
             asm_output << "\nSYSTEM:\tORG $8040, $8040, \"-RWBN\"\n";
-        else
-            asm_output << "\nSYSTEM:\tORG $2F0, $2F0, \"-RWBN\"\n";
-        asm_output << "STACK:\tRMB 24\n";
 
         // Dumps 16-bits variables
         used_space = 0;
@@ -5054,7 +5054,7 @@ public:
             }
         }
         if (jlp_used || cc3_used) {
-            available_vars = 0x9f80 - 0x8040 - 24;
+            available_vars = 0x9f80 - 0x8040;
         } else {
             if (voice_used)
                 available_vars = 0x319 - 0x2f0 - 24;
@@ -5159,9 +5159,9 @@ int main(int argc, const char * argv[])
         std::cerr << "    The library path is where the intybasic_prologue.asm and\n";
         std::cerr << "    intybasic_epilogue.asm files are searched for inclusion.\n";
         std::cerr << "\n";
-        std::cerr << "Many thanks to atari2600land, awhite2600, carlsson, catsfolly, ckblackm,\n";
-        std::cerr << "CrazyBoss, Cybearg, DZ-Jay, First Spear, freewheel, GroovyBee, intvnut,\n";
-        std::cerr << "Jess Ragan, Kiwi, RevEng, SpiceWare and Tarzilla.\n";
+        std::cerr << "Many thanks to Albert, atari2600land, awhite2600, carlsson, catsfolly,\n";
+        std::cerr << "ckblackm, CrazyBoss, Cybearg, DZ-Jay, First Spear, freewheel, GroovyBee,\n";
+        std::cerr << "intvnut, Jess Ragan, Kiwi, RevEng, SpiceWare and Tarzilla.\n";
         std::cerr << "\n";
         return 0;
     }

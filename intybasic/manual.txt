@@ -267,6 +267,7 @@ Following sample programs are included:
   samples/title.bas           Animated tile for title screen
   samples/voice.bas           Simple example of Intellivoice
 
+  contrib/42k.bas             Example of how to use the 42K words maximum memory map
   contrib/constants.bas       Constants library (same as samples)
   contrib/AppleCatcher.bas    Game Apple Catcher by Kiwi
   contrib/clowns.bas          Game Clowns & Ballons by catsfolly

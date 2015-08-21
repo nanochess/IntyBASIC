@@ -289,6 +289,7 @@ Los siguientes programas de ejemplo están incluídos:
   samples/title.bas           Caracter gráfico animado para pantalla de título
   samples/voice.bas           Ejemplo sencillo del uso de Intellivoice
 
+  contrib/42k.bas             Ejemplo de como usar el mapa máximo de 42K palabras
   contrib/constants.bas       Librería de constantes (misma de samples)
   contrib/AppleCatcher.bas    Juego Apple Catcher por Kiwi
   contrib/clowns.bas          Juego Clowns & Ballons por catsfolly
