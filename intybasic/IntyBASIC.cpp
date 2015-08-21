@@ -5021,7 +5021,7 @@ public:
         asm_output << "\nSYSTEM:\tORG $2F0, $2F0, \"-RWBN\"\n";
         asm_output << "STACK:\tRMB 24\n";
         if (jlp_used || cc3_used)
-            asm_output << "\nSYSTEM:\tORG $8040, $8040, \"-RWBN\"\n";
+            asm_output << "\nORG $8040, $8040, \"-RWBN\"\n";
 
         // Dumps 16-bits variables
         used_space = 0;
