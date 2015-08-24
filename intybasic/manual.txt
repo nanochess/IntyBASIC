@@ -27,10 +27,20 @@ v1.2.2 Aug/24/2015  o New FLASH statement allowing access of Flash memory
                       available in JLP cartridges.
                     o New FLASH.FIRST and FLASH.LAST read-only variables.
                     o Added new sample: flash.bas
-                    o Generates warning if variable bigger than 8 bits
-                      assigned to 8 bits variable.
-                    o Generates warning if TO value is bigger than 8 bits
-                      when using with 8 bits variable.
+                    o Added new contribution: 42k.bas (GroovyBee) it shows
+                      how to create a maximum size IntyBASIC program.
+                    o When using --jlp option the stack is now keep in internal
+                      system RAM.
+                    o Generates warning if value bigger than 8 bits assigned
+                      to 8 bits variable. Note this is a warning instead of an
+                      error because sometimes are used negative values in
+                      8-bits variables that can be used for arithmetic purposes
+                      with another 8-bits variables and doesn't cause any harm.
+                    o Generates error if TO value is bigger than 8 bits when
+                      using with 8 bits variable.
+                    o Generates warning for defined but unused labels.
+                    o Generates error for undefined labels.
+                    o Generates error for redefined labels.
 
 v1.2.1 Aug/16/2015  o Added #BACKTAB array (direct access to screen)
                     o Optimized code generation for POKE.
@@ -227,7 +237,6 @@ Platforms available:
 
 Current limitations are:
   o Division and remainder (modulus) operators treat numbers as unsigned.
-  o Doesn't detect undefined/redefined labels (anyway assembler catchs it)
 
 Usage:
 

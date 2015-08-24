@@ -158,7 +158,8 @@
 //  Revision: Aug/21/2015. Now keeps stack in internal memory. Added support for
 //                         JLP Flash with FLASH statement.
 //  Revision: Aug/24/2015. Generates warnings for assigning values bigger than 8
-//                         bits to variables and also for TO values.
+//                         bits to variables and also for TO values. Now warns of
+//                         unused, undefined and redefined labels.
 //
 
 //  TODO:
@@ -1237,7 +1238,7 @@ public:
             return;
         }
         switch (type) {
-            default:        // Non-defined node, never should happen
+            default:        // Undefined node, never should happen
                 output->emit_literal("\t; >>> Houston, we have a problem <<<");
                 break;
             case C_NUM:     // Number
@@ -2177,6 +2178,7 @@ private:
     map <string, int> constants;
     map <string, int> functions;
     map <string, int> read_write;
+    map <string, int> label_used;
     map <string, macro *> macros;
     map <string, int>::iterator access;
     list <struct loop> loops;
@@ -2943,8 +2945,10 @@ private:
                         temp = arrays[name] >> 16;
                     } else if (labels[name] != 0) {
                         temp = labels[name];
+                        label_used[name] |= 1;
                     } else {
                         labels[name] = temp = next_label++;
+                        label_used[name] |= 1;
                     }
                     get_lex();
                     if (lex != C_LPAREN)
@@ -3035,8 +3039,10 @@ private:
                     temp = arrays[name] >> 16;
                 } else if (labels[name] != 0) {
                     temp = labels[name];
+                    label_used[name] |= 1;
                 } else {
                     labels[name] = temp = next_label++;
+                    label_used[name] |= 1;
                 }
                 get_lex();
                 if (lex != C_LPAREN)
@@ -3281,6 +3287,7 @@ private:
                             labels[name] = next_label;
                             next_label++;
                         }
+                        label_used[name] |= 1;
                         output->emit_a(N_B, LABEL_PREFIX, labels[name]);
                         get_lex();
                     }
@@ -3293,6 +3300,7 @@ private:
                             labels[name] = next_label;
                             next_label++;
                         }
+                        label_used[name] |= 1;
                         output->emit_a(N_CALL, LABEL_PREFIX, labels[name]);
                         get_lex();
                     }
@@ -3713,6 +3721,7 @@ private:
                             labels[name] = next_label;
                             next_label++;
                         }
+                        label_used[name] |= 1;
                         output->emit_nr(N_MVII, LABEL_PREFIX, labels[name], 4);
                         output->emit_rl(N_MVO, 4, "_read", -1);
                         get_lex();
@@ -3771,8 +3780,10 @@ private:
                                 } else if (labels[name] == 0) {
                                     label = labels[name] = next_label;
                                     next_label++;
+                                    label_used[name] |= 1;
                                 } else {
                                     label = labels[name];
+                                    label_used[name] |= 1;
                                 }
                                 output->emit_nr(N_MVII, LABEL_PREFIX, label, 0);
                             }
@@ -3803,8 +3814,10 @@ private:
                                 } else if (labels[name] == 0) {
                                     label = labels[name] = next_label;
                                     next_label++;
+                                    label_used[name] |= 1;
                                 } else {
                                     label = labels[name];
+                                    label_used[name] |= 1;
                                 }
                                 output->emit_nr(N_MVII, LABEL_PREFIX, label, 0);
                             }
@@ -4232,8 +4245,10 @@ private:
                     } else if (labels[name] == 0) {
                         label = labels[name] = next_label;
                         next_label++;
+                        label_used[name] |= 1;
                     } else {
                         label = labels[name];
+                        label_used[name] |= 1;
                     }
                     get_lex();
                     if (lex == C_COMMA) {
@@ -4300,8 +4315,10 @@ private:
                         } else if (labels[name] == 0) {
                             label = labels[name] = next_label;
                             next_label++;
+                            label_used[name] |= 1;
                         } else {
                             label = labels[name];
+                            label_used[name] |= 1;
                         }
                         output->emit_nr(N_MVII, LABEL_PREFIX, label, 0);
                         output->emit_a(N_CALL, "_play_music", -1);
@@ -4422,6 +4439,7 @@ private:
                             labels[name] = next_label;
                             next_label++;
                         }
+                        label_used[name] |= 1;
                         frame_drive = labels[name];
                         get_lex();
                     } else {
@@ -4446,6 +4464,7 @@ private:
                                     labels[name] = next_label;
                                     next_label++;
                                 }
+                                label_used[name] |= 1;
                                 options[max_value++] = labels[name];
                                 get_lex();
                             } else {
@@ -4492,8 +4511,10 @@ private:
                             } else if (labels[name] == 0) {
                                 label = labels[name] = next_label;
                                 next_label++;
+                                label_used[name] |= 1;
                             } else {
                                 label = labels[name];
+                                label_used[name] |= 1;
                             }
                             output->emit_nr(N_MVII, LABEL_PREFIX, label, 0);
                             output->emit_a(N_CALL, "IV_PLAYW.1", -1);
@@ -4508,8 +4529,10 @@ private:
                             } else if (labels[name] == 0) {
                                 label = labels[name] = next_label;
                                 next_label++;
+                                label_used[name] |= 1;
                             } else {
                                 label = labels[name];
+                                label_used[name] |= 1;
                             }
                             output->emit_nr(N_MVII, LABEL_PREFIX, label, 0);
                             output->emit_a(N_CALL, "IV_PLAY.1", -1);
@@ -4875,11 +4898,15 @@ public:
             get_lex();
             if (lex == C_LABEL) {
                 if (labels.find(name) != labels.end()) {
-//                    string temp = "already defined '" + name + "' label";
-//                    emit_error(temp);
+                    if (label_used[name] & 2) {
+                        string temp = "already defined '" + name + "' label";
+                        
+                        emit_error(temp);
+                    }
                 } else {
                     labels[name] = next_label;
                 }
+                label_used[name] |= 2;
                 asm_output << "\t; " << name << "\n";
                 asm_output << LABEL_PREFIX << labels[name] << ":";
                 next_label++;
@@ -5067,6 +5094,16 @@ public:
             } else if (access->second == 2) {
                 if (warnings)
                     std::cerr << "Warning: variable '" << access->first << "' assigned but never read\n";
+            }
+        }
+        
+        // Warns of unused or undefined labels
+        for (access = label_used.begin(); access != label_used.end(); access++) {
+            if (access->second == 1) {
+                std::cerr << "Error: label '" << access->first << "' undefined\n";
+            } else if (access->second == 2) {
+                if (warnings)
+                    std::cerr << "Warning: label '" << access->first << "' defined but never used\n";
             }
         }
         

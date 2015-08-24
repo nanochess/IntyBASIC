@@ -34,10 +34,20 @@ v1.2.2 24-ago-2015  o Nueva sentencia FLASH que permite el uso de la memoria
                       Flash en los cartuchos JLP.
                     o Nuevas variables FLASH.FIRST y FLASH.LAST de solo lectura.
                     o Añadido nuevo ejemplo: flash.bas
-                    o Genera advertencia si se asigna valor mayor de 8 bits a 
-                      variable de 8 bits.
-                    o Genera advertencia si el TO tiene un valor mayor de 8 bits
+                    o Nueva contribución: 42k.bas (GroovyBee) muestra como crear
+                      un programa IntyBASIC del tamaño máximo.
+                    o Cuando se usa la opción --jlp la pila ahora se pone en la
+                      RAM interna.
+                    o Genera advertencia si se asigna valor mayor de 8 bits a
+                      variable de 8 bits. Note que es advertencia en lugar de
+                      error, ya que en ocasiones se utilizan valores negativos
+                      en variables de 8 bits y no ocasiona ningún problema
+                      usarlos para aritmética con otras variables de 8 bits.
+                    o Genera error si el TO tiene un valor mayor de 8 bits
                       cuando se usa con variable de 8 bits.
+                    o Genera advertencia para etiquetas definidas pero sin usar.
+                    o Genera error para etiquetas redefinidas.
+                    o Genera error para etiquetas indefinidas.
 
 v1.2.1 16-ago-2015  o Se agrega arreglo #BACKTAB (acceso directo a pantalla)
                     o Generación de código optimizada para POKE.
@@ -248,7 +258,6 @@ Plataformas disponibles:
 
 Las limitaciones actuales son:
   o La división y resto (módulo) tratan los números como sin signo.
-  o No detecta etiquetas indefinidas o redefinidas (el ensamblador lo hace)
 
 Forma de uso:
 
