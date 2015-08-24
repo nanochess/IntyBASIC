@@ -157,6 +157,8 @@
 //                         constant. Added #BACKTAB array.
 //  Revision: Aug/21/2015. Now keeps stack in internal memory. Added support for
 //                         JLP Flash with FLASH statement.
+//  Revision: Aug/24/2015. Generates warnings for assigning values bigger than 8
+//                         bits to variables and also for TO values.
 //
 
 //  TODO:
@@ -178,7 +180,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.4 Aug/21/2015";      // Compiler version
+const string VERSION = "v1.2 Aug/24/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -3181,25 +3183,26 @@ private:
     //
     void compile_assignment(int is_read)
     {
+        class node *tree2;
+        int bits;
+        
         if (lex != C_NAME) {
             emit_error("name required for assignment");
             return;
         }
+        if (name[0] == '#')
+            bits = 1;
+        else
+            bits = 0;
         if (sneak_peek() == '(') {
             class node *tree;
-            class node *tree2;
             int temp;
-            int bits;
             
             if (arrays[name] == 0) {
                 emit_error("using array without previous DIM, autoassigning DIM(10)");
                 arrays[name] = 10 | (next_label++ << 16);
             }
             temp = arrays[name] >> 16;
-            if (name[0] == '#')
-                bits = 1;
-            else
-                bits = 0;
             get_lex();
             if (lex != C_LPAREN)
                 emit_error("missing left parenthesis in array access");
@@ -3219,6 +3222,8 @@ private:
                     get_lex();
                 tree2 = eval_level0();
             }
+            if (bits == 0 && tree2->node_type() == C_NUM && (tree2->node_value() & 0xffff) > 255)
+                emit_warning("assigning value bigger than 8-bits");
             tree = new node(C_ASSIGN, bits, tree2,
                             new node(C_PLUS, 0,
                                         new node(C_NAME_RO, temp, NULL, NULL), tree));
@@ -3244,9 +3249,16 @@ private:
                 return;
             }
             get_lex();
-            eval_expr(0, 0);
+            tree2 = eval_level0();
+            if (bits == 0 && tree2->node_type() == C_NUM && (tree2->node_value() & 0xffff) > 255)
+                emit_warning("assigning value bigger than 8-bits");
+            tree2->label();
+            optimized = false;
+            tree2->generate(0, 0);
+            delete tree2;
+            tree2 = NULL;
         }
-        if (assigned[0] == '#')
+        if (bits == 1)
             output->emit_rl(N_MVO, 0, VAR_PREFIX, variables[assigned]);
         else
             output->emit_rlo8(N_MVO, 0, VAR_PREFIX, variables[assigned], 0);
@@ -3432,6 +3444,8 @@ private:
                     } else {
                         get_lex();
                         final = eval_level0();
+                        if (assigned[0] != '#' && final->node_type() == C_NUM && (final->node_value() & 0xffff) > 255)
+                            emit_warning("TO value is bigger than 8-bits");
                         positive = true;
                         if (lex == C_NAME && name == "STEP") {
                             get_lex();

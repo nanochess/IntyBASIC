@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Aug/21/2015.
+Last revision: Aug/24/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,10 +23,14 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4   Aug/21/2015  o New FLASH statement allowing access of Flash memory
+v1.2.2 Aug/24/2015  o New FLASH statement allowing access of Flash memory
                       available in JLP cartridges.
                     o New FLASH.FIRST and FLASH.LAST read-only variables.
                     o Added new sample: flash.bas
+                    o Generates warning if variable bigger than 8 bits
+                      assigned to 8 bits variable.
+                    o Generates warning if TO value is bigger than 8 bits
+                      when using with 8 bits variable.
 
 v1.2.1 Aug/16/2015  o Added #BACKTAB array (direct access to screen)
                     o Optimized code generation for POKE.

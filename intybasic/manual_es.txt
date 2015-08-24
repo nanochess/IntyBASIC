@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 21-ago-2015
+Última revisión: 24-ago-2015
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,10 +30,14 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.4   21-ago-2015  o Nueva sentencia FLASH que permite el uso de la memoria
+v1.2.2 24-ago-2015  o Nueva sentencia FLASH que permite el uso de la memoria
                       Flash en los cartuchos JLP.
                     o Nuevas variables FLASH.FIRST y FLASH.LAST de solo lectura.
                     o Añadido nuevo ejemplo: flash.bas
+                    o Genera advertencia si se asigna valor mayor de 8 bits a 
+                      variable de 8 bits.
+                    o Genera advertencia si el TO tiene un valor mayor de 8 bits
+                      cuando se usa con variable de 8 bits.
 
 v1.2.1 16-ago-2015  o Se agrega arreglo #BACKTAB (acceso directo a pantalla)
                     o Generación de código optimizada para POKE.
