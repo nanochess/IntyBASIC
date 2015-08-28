@@ -965,6 +965,8 @@ label:
 
     You need to invoke IntyBASIC with --jlp command line option
     
+    Don't forget to use the option --jlp in jzintv and --jlp-savegame=file
+
     WARNING: YOUR INTYBASIC PROGRAM WILL TURN THE SCREEN BLACK AND STOP FOR A
     FEW MILLISECONDS WHILE THE JLP FLASH OPERATIONS COMPLETE, THIS INCLUDES
     MUSIC IN BACKGROUND.

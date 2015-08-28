@@ -160,6 +160,8 @@
 //  Revision: Aug/24/2015. Generates warnings for assigning values bigger than 8
 //                         bits to variables and also for TO values. Now warns of
 //                         unused, undefined and redefined labels.
+//  Revision: Aug/28/2015. Solved a couple of small bugs where error code was
+//                         set wrongly for warnings or not set for errors.
 //
 
 //  TODO:
@@ -3102,7 +3104,6 @@ private:
         if (active_include)
             std::cerr << ", file \"" << path << "\"";
         std::cerr << "\n";
-        err_code = 1;
     }
     
     //
@@ -5101,6 +5102,7 @@ public:
         for (access = label_used.begin(); access != label_used.end(); access++) {
             if (access->second == 1) {
                 std::cerr << "Error: label '" << access->first << "' undefined\n";
+                err_code = 1;
             } else if (access->second == 2) {
                 if (warnings)
                     std::cerr << "Warning: label '" << access->first << "' defined but never used\n";

@@ -1011,6 +1011,8 @@ label:
 
     Necesita invocar IntyBASIC con la opción --jlp
 
+    No olvide usar la opción --jlp de jzintv y --jlp-savegame=archivo
+
     ADVERTENCIA: SU PROGRAMA INTYBASIC PONDRA LA PANTALLA EN NEGRO Y SE
     DETENDRA POR UNOS POCOS MILISEGUNDOS MIENTRAS SE COMPLETAN LAS OPERACIONES
     JLP FLASH, ESTO INCLUYE LA MUSICA DE FONDO.
