@@ -1235,7 +1235,7 @@ public:
     //
     void generate(int reg, int decision) {
         if (reg >= 4) {
-            std::cerr << "Too complex expression\n";
+            std::cerr << "Error: Too complex expression\n";
             err_code = 1;
             return;
         }
@@ -1646,7 +1646,7 @@ public:
                         }
                     } else if (type == C_DIV) {
                         if ((right->value & 0xffff) == 0) {
-                            std::cerr << "division by zero in expression\n";
+                            std::cerr << "Error: Division by zero in expression\n";
                             err_code = 1;
                         } else if ((right->value & 0xffff) == 1) {
                             // Nada que hacer
@@ -1695,7 +1695,7 @@ public:
                         }
                     } else if (type == C_MOD) {
                         if ((right->value & 0xffff) == 0) {
-                            std::cerr << "modulus by zero in expression\n";
+                            std::cerr << "Error: Modulus by zero in expression\n";
                             err_code = 1;
                         } else if ((right->value & 0xffff) == 1) {
                             output->emit_r(N_CLRR, reg);
@@ -4827,13 +4827,13 @@ public:
         err_code = 0;
         input.open(input_file);
         if (!input.is_open()) {
-            std::cerr << "Unable to open input file: " << input_file << "\n";
+            std::cerr << "Error: Unable to open input file: " << input_file << "\n";
             return 2;
         }
         output = new code;
         asm_output.open(output_file);
         if (!asm_output.is_open()) {
-            std::cerr << "Unable to open output file: " << output_file << "\n";
+            std::cerr << "Error: Unable to open output file: " << output_file << "\n";
             input.close();
             return 2;
         }
@@ -4864,7 +4864,7 @@ public:
             }
             included.close();
         } else {
-            std::cerr << "Error: unable to include: " << path << "\n";
+            std::cerr << "Error: Unable to include prologue: " << path << "\n";
             err_code = 2;
         }
         asm_output << "\t;FILE " << input_file << "\n";
@@ -5083,7 +5083,7 @@ public:
             }
             included2.close();
         } else {
-            std::cerr << "Error: unable to include: " << path << "\n";
+            std::cerr << "Error: Unable to include epilogue: " << path << "\n";
             err_code = 2;
         }
         
