@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 24-ago-2015
+Última revisión: 30-ago-2015
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -29,6 +29,9 @@ en inglés.
 
 
 >>>>>>>>>>>>>>  Cambios en esta versión
+
+v1.2.3 30-ago-2015  o Se agrega sentencia SIGNED para indicar arreglos y
+                      variables de 8 bits con signo.
 
 v1.2.2 24-ago-2015  o Nueva sentencia FLASH que permite el uso de la memoria
                       Flash en los cartuchos JLP.
@@ -372,6 +375,17 @@ Las siguientes sentencias están disponibles:
   ' comentario
   
      Todo desde REM hasta el final de la línea es un comentario
+
+  SIGNED name[,name]
+  
+     Indica que los nombres son variables o arreglos de 8 bits con signo.
+
+     Por defecto las variables de 8 bits no tienen signo.
+
+     Note que esto agrega dos instrucciones para extender el signo a cada
+     lectura de variable de 8-bits con signo. Por lo general puede
+     desarrollar sus programas sin usar esta palabra clave, pero está
+     disponible si se requiere.
 
   CONST [nombre]=[expresión constante]
   

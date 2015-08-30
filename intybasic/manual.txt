@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Aug/24/2015.
+Last revision: Aug/30/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -22,6 +22,9 @@ All trademarks are property of their respective owners.
 
 
 >>>>>>>>>>>>>>  Changes in this version
+
+v1.2.3 Aug/30/2015  o Added SIGNED statement to indicate arrays or variables
+                      of 8-bits signed.
 
 v1.2.2 Aug/24/2015  o New FLASH statement allowing access of Flash memory
                       available in JLP cartridges.
@@ -349,6 +352,16 @@ Following statements are available:
   
      Everything since REM to end of line is a comment
     
+  SIGNED name[,name]
+  
+     Indicates the names are 8-bits variables/arrays with sign.
+     
+     By default the 8-bits variables are unsigned.
+     
+     Note this adds two instructions to extend sign to each 8-bit signed
+     variable read. Usually you can develop your programs without using
+     this keyword, but it's available if you require it.
+
   CONST [name]=[constant expression]
   
      Assigns a name to a constant expression. The compiler will replace this

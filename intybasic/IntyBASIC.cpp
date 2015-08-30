@@ -162,6 +162,9 @@
 //                         unused, undefined and redefined labels.
 //  Revision: Aug/28/2015. Solved a couple of small bugs where error code was
 //                         set wrongly for warnings or not set for errors.
+//  Revision: Aug/30/2015. Doesn't warn for assignment of -128 to -1 to 8 bits.
+//                         Added support for signed 8-bit variables (SIGNED
+//                         statement)
 //
 
 //  TODO:
@@ -183,7 +186,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.2 Aug/24/2015";      // Compiler version
+const string VERSION = "v1.2 Aug/30/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -207,7 +210,7 @@ enum opcode {
     N_B, N_BC, N_BEQ, N_BGE, N_BGT, N_BLE, N_BLT, N_BNC, N_BNE, N_BPL,
     N_CALL, N_CLRC, N_CLRR, N_CMP, N_CMPA, N_CMPI, N_CMPR, N_COMR, N_DECLE, N_DECR,
     N_INCR, N_MOVR, N_MVI, N_MVIA, N_MVII, N_MVO, N_MVOA, N_MULT, N_NEGR, N_NOP,
-    N_PSHR, N_PULR, N_RRC, N_RETURN,
+    N_PSHR, N_PULR, N_RRC, N_RETURN, N_RSWD,
     N_SARC, N_SLL, N_SLR, N_SUB, N_SUBA, N_SUBI, N_SUBR, N_SWAP,
     N_TSTR, N_XOR, N_XORA, N_XORI, N_XORR,
 };
@@ -217,7 +220,7 @@ static const char *opcode_list[] = {
     "B", "BC", "BEQ", "BGE", "BGT", "BLE", "BLT", "BNC", "BNE", "BPL",
     "CALL", "CLRC", "CLRR", "CMP", "CMP@", "CMPI", "CMPR", "COMR", "DECLE", "DECR",
     "INCR", "MOVR", "MVI", "MVI@", "MVII", "MVO", "MVO@", "MULT", "NEGR", "NOP",
-    "PSHR", "PULR", "RRC", "RETURN",
+    "PSHR", "PULR", "RRC", "RETURN", "RSWD",
     "SARC", "SLL", "SLR", "SUB", "SUB@", "SUBI", "SUBR", "SWAP",
     "TSTR", "XOR", "XOR@", "XORI", "XORR",
 };
@@ -875,11 +878,11 @@ public:
     }
 };
 
-// Lexical components
+// Lexical components mixed with expression tree node types
 enum lexical_component {C_END, C_NAME, C_NAME_R, C_NAME_RO,
     C_STRING, C_LABEL, C_NUM,
     C_OR, C_XOR, C_AND, C_NOT, C_NEG, C_PEEK, C_ABS, C_SGN,
-    C_READ, C_VAR, C_USR, C_RAND, C_RANDOM,
+    C_READ, C_VAR, C_USR, C_RAND, C_RANDOM, C_EXTEND,
     C_ASSIGN,
     C_EQUAL, C_NOTEQUAL, C_LESS, C_LESSEQUAL, C_GREATER, C_GREATEREQUAL,
     C_PLUS, C_MINUS, C_PLUSF, C_MINUSF, C_MUL, C_DIV, C_MOD,
@@ -1304,6 +1307,11 @@ public:
                     fastmult_used = true;
                 }
                 break;
+            case C_EXTEND:  // Extend 8-bits sign (assumes value in range 0x00-0xff)
+                left->generate(reg, 0);
+                output->emit_nr(N_XORI, "", 0x80, reg);
+                output->emit_nr(N_SUBI, "", 0x80, reg);
+                break;
             case C_NOT:     // NOT
                 left->generate(reg, 0);
                 output->emit_r(N_COMR, reg);
@@ -1385,14 +1393,24 @@ public:
                 }
                 break;
             case C_ABS:    // ABS()
-                left->generate(reg, 0);
-                output->emit_r(N_TSTR, reg);
+                if (left->type == C_EXTEND) {
+                    left->left->generate(reg, 0);
+                    output->emit_r(N_RSWD, reg);
+                } else {
+                    left->generate(reg, 0);
+                    output->emit_r(N_TSTR, reg);
+                }
                 output->emit_a(N_BPL, "", 3);  // two words of jump and one word of NEGR
                 output->emit_r(N_NEGR, reg);
                 break;
             case C_SGN:    // SGN()
-                left->generate(reg, 0);
-                output->emit_r(N_TSTR, reg);
+                if (left->type == C_EXTEND) {
+                    left->left->generate(reg, 0);
+                    output->emit_s(N_SWAP, reg, 2); // Trick, duplicate byte in register
+                } else {
+                    left->generate(reg, 0);
+                    output->emit_r(N_TSTR, reg);
+                }
                 output->emit_a(N_BEQ, "", 7);  // 2 two words of jump and two words of MVI
                 output->emit_nr(N_MVII, "", 1, reg);    // 2
                 output->emit_a(N_BPL, "", 3);   // 2 two words of jump and one word of NEGR
@@ -1461,46 +1479,55 @@ public:
                     output->emit_rr(N_MVOA, 0, 3);
                 // Optimize right side when it's constant
                 } else if (right->type == C_NUM && type != C_ASSIGN) {
-                    left->generate(reg, 0);
+                    int val = right->value & 0xffff;
+                    
+                    if (left->type == C_EXTEND && (type == C_EQUAL || type == C_NOTEQUAL)) {
+                        left->left->generate(reg, 0);
+                        if (val >= 0x0080 && val <= 0xff7f)
+                            std::cerr << "Warning: comparing equality of 8-bit signed variable with value " << val << " out of range";
+                        val &= 0xff;
+                    } else {
+                        left->generate(reg, 0);
+                    }
                     if (type == C_PLUS) {
-                        if ((right->value & 0xffff) == 1)
+                        if (val == 1)
                             output->emit_r(N_INCR, reg);
-                        else if ((right->value & 0xffff) == 0xffff)
+                        else if (val == 0xffff)
                             output->emit_r(N_DECR, reg);
-                        else if ((right->value & 0xffff) != 0)
-                            output->emit_nr(N_ADDI, "", right->value & 0xffff, reg);
+                        else if (val != 0)
+                            output->emit_nr(N_ADDI, "", val, reg);
                     } else if (type == C_MINUS) {
-                        if ((right->value & 0xffff) == 1)
+                        if (val == 1)
                             output->emit_r(N_DECR, reg);
-                        else if ((right->value & 0xffff) == 0xffff)
+                        else if (val == 0xffff)
                             output->emit_r(N_INCR, reg);
-                        else if ((right->value & 0xffff) != 0)
-                            output->emit_nr(N_SUBI, "", right->value & 0xffff, reg);
+                        else if (val != 0)
+                            output->emit_nr(N_SUBI, "", val, reg);
                     } else if (type == C_PLUSF) {
-                        if ((right->value & 0xffff) != 0) {
-                            output->emit_nr(N_ADDI, "", right->value & 0xffff, reg);
+                        if (val != 0) {
+                            output->emit_nr(N_ADDI, "", val, reg);
                             output->emit_r(N_ADCR, reg);
                         }
                     } else if (type == C_MINUSF) {
-                        if ((right->value & 0xffff) != 0) {
-                            output->emit_nr(N_SUBI, "", right->value & 0xffff, reg);
+                        if (val != 0) {
+                            output->emit_nr(N_SUBI, "", val, reg);
                             output->emit_r(N_ADCR, reg);
                             output->emit_r(N_DECR, reg);
                         }
                     } else if (type == C_AND) {
-                        if ((right->value & 0xffff) != 0xffff)
-                            output->emit_nr(N_ANDI, "", right->value & 0xffff, reg);
+                        if (val != 0xffff)
+                            output->emit_nr(N_ANDI, "", val, reg);
                     } else if (type == C_XOR) {
-                        if ((right->value & 0xffff) != 0x0000)
-                            output->emit_nr(N_XORI, "", right->value & 0xffff, reg);
+                        if (val != 0x0000)
+                            output->emit_nr(N_XORI, "", val, reg);
                     } else if (type == C_OR) {
-                        if ((right->value & 0xffff) != 0x0000) {
-                            output->emit_nr(N_ANDI, "", ~right->value & 0xffff, reg);
-                            output->emit_nr(N_XORI, "", right->value & 0xffff, reg);
+                        if (val != 0x0000) {
+                            output->emit_nr(N_ANDI, "", ~val, reg);
+                            output->emit_nr(N_XORI, "", val, reg);
                         }
                     } else if (type == C_EQUAL) {
                         if ((right->value) & 0xffff)
-                            output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
+                            output->emit_nr(N_CMPI, "", val, reg);
                         else if (left->type != C_AND && left->type != C_OR && left->type != C_XOR
                                  && left->type != C_PLUS && left->type != C_MINUS)
                             output->emit_r(N_TSTR, reg);
@@ -1514,7 +1541,7 @@ public:
                         }
                     } else if (type == C_NOTEQUAL) {
                         if ((right->value) & 0xffff)
-                            output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
+                            output->emit_nr(N_CMPI, "", val, reg);
                         else if (left->type != C_AND && left->type != C_OR && left->type != C_XOR
                               && left->type != C_PLUS && left->type != C_MINUS)
                             output->emit_r(N_TSTR, reg);
@@ -1527,7 +1554,7 @@ public:
                             output->emit_r(N_INCR, reg);
                         }
                     } else if (type == C_LESS) {
-                        output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
+                        output->emit_nr(N_CMPI, "", val, reg);
                         if (decision) {
                             output->emit_a(N_BGE, TEMP_PREFIX, decision);
                             optimized = true;
@@ -1537,7 +1564,7 @@ public:
                             output->emit_r(N_INCR, reg);
                         }
                     } else if (type == C_LESSEQUAL) {
-                        output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
+                        output->emit_nr(N_CMPI, "", val, reg);
                         if (decision) {
                             output->emit_a(N_BGT, TEMP_PREFIX, decision);
                             optimized = true;
@@ -1547,7 +1574,7 @@ public:
                             output->emit_r(N_INCR, reg);
                         }
                     } else if (type == C_GREATER) {
-                        output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
+                        output->emit_nr(N_CMPI, "", val, reg);
                         if (decision) {
                             output->emit_a(N_BLE, TEMP_PREFIX, decision);
                             optimized = true;
@@ -1557,7 +1584,7 @@ public:
                             output->emit_r(N_INCR, reg);
                         }
                     } else if (type == C_GREATEREQUAL) {
-                        output->emit_nr(N_CMPI, "", right->value & 0xffff, reg);
+                        output->emit_nr(N_CMPI, "", val, reg);
                         if (decision) {
                             output->emit_a(N_BLT, TEMP_PREFIX, decision);
                             optimized = true;
@@ -1567,67 +1594,67 @@ public:
                             output->emit_r(N_INCR, reg);
                         }
                     } else if (type == C_MUL) {
-                        if ((right->value & 0xffff) == 0) {
+                        if (val == 0) {
                             output->emit_r(N_CLRR, reg);
-                        } if ((right->value & 0xffff) == 1) {
+                        } if (val == 1) {
                             // Nothing to do
-                        } if ((right->value & 0xffff) == 2) {
+                        } if (val == 2) {
                             output->emit_s(N_SLL, reg, 1);
-                        } else if ((right->value & 0xffff) == 4) {
+                        } else if (val == 4) {
                             output->emit_s(N_SLL, reg, 2);
-                        } else if ((right->value & 0xffff) == 8) {
-                            output->emit_s(N_SLL, reg, 2);
-                            output->emit_rr(N_ADDR, reg, reg);
-                        } else if ((right->value & 0xffff) == 16) {
-                            output->emit_s(N_SLL, reg, 2);
-                            output->emit_s(N_SLL, reg, 2);
-                        } else if ((right->value & 0xffff) == 32) {
-                            output->emit_s(N_SLL, reg, 2);
+                        } else if (val == 8) {
                             output->emit_s(N_SLL, reg, 2);
                             output->emit_rr(N_ADDR, reg, reg);
-                        } else if ((right->value & 0xffff) == 64) {
+                        } else if (val == 16) {
                             output->emit_s(N_SLL, reg, 2);
                             output->emit_s(N_SLL, reg, 2);
-                            output->emit_s(N_SLL, reg, 2);
-                        } else if ((right->value & 0xffff) == 128) {
-                            output->emit_s(N_SLL, reg, 2);
+                        } else if (val == 32) {
                             output->emit_s(N_SLL, reg, 2);
                             output->emit_s(N_SLL, reg, 2);
                             output->emit_rr(N_ADDR, reg, reg);
-                        } else if ((right->value & 0xffff) == 256) {
+                        } else if (val == 64) {
+                            output->emit_s(N_SLL, reg, 2);
+                            output->emit_s(N_SLL, reg, 2);
+                            output->emit_s(N_SLL, reg, 2);
+                        } else if (val == 128) {
+                            output->emit_s(N_SLL, reg, 2);
+                            output->emit_s(N_SLL, reg, 2);
+                            output->emit_s(N_SLL, reg, 2);
+                            output->emit_rr(N_ADDR, reg, reg);
+                        } else if (val == 256) {
                             output->emit_r(N_SWAP, reg);
                             output->emit_nr(N_ANDI, "", 0xff00, reg);
-                        } else if ((right->value & 0xffff) == 512) {
+                        } else if (val == 512) {
                             output->emit_s(N_SLL, reg, 1);
                             output->emit_r(N_SWAP, reg);
                             output->emit_nr(N_ANDI, "", 0xfe00, reg);
-                        } else if ((right->value & 0xffff) == 1024) {
+                        } else if (val == 1024) {
                             output->emit_s(N_SLL, reg, 2);
                             output->emit_r(N_SWAP, reg);
                             output->emit_nr(N_ANDI, "", 0xfc00, reg);
-                        } else if ((right->value & 0xffff) == 2048) {
+                        } else if (val == 2048) {
                             output->emit_rr(N_ADDR, reg, reg);
                             output->emit_s(N_SLL, reg, 2);
                             output->emit_r(N_SWAP, reg);
                             output->emit_nr(N_ANDI, "", 0xf800, reg);
-                        } else if ((right->value & 0xffff) == 4096) {
+                        } else if (val == 4096) {
                             output->emit_s(N_SLL, reg, 2);
                             output->emit_s(N_SLL, reg, 2);
                             output->emit_r(N_SWAP, reg);
                             output->emit_nr(N_ANDI, "", 0xf000, reg);
                         } else {
                             if (jlp_used) {
-                                output->emit_nr(N_MVII, "", right->value & 0xffff, 4);
+                                output->emit_nr(N_MVII, "", val, 4);
                                 output->emit_rl(N_MVO, reg, "", 0x9f86);
                                 output->emit_rl(N_MVO, 4, "", 0x9f87);
                                 output->emit_lr(N_MVI, "", 0x9f8e, reg);
-                            } else if ((right->value & 0xffff) <= 127) {  // DZ-Jay's macro
-                                output->emit_m(N_MULT, reg, 4, right->value & 0xffff);
+                            } else if (val <= 127) {  // DZ-Jay's macro
+                                output->emit_m(N_MULT, reg, 4, val);
                             } else {
                                 int label = next_local++;
                                 int label2 = next_local++;
                         
-                                output->emit_nr(N_MVII, "", right->value & 0xffff, 5);
+                                output->emit_nr(N_MVII, "", val, 5);
                                 output->emit_r(N_CLRR, 4);
                                 output->emit(N_CLRC);
                                 output->emit_s(N_RRC, reg, 1);
@@ -1645,40 +1672,40 @@ public:
                             }
                         }
                     } else if (type == C_DIV) {
-                        if ((right->value & 0xffff) == 0) {
+                        if (val == 0) {
                             std::cerr << "Error: Division by zero in expression\n";
                             err_code = 1;
-                        } else if ((right->value & 0xffff) == 1) {
+                        } else if (val == 1) {
                             // Nada que hacer
-                        } else if ((right->value & 0xffff) == 2) {
+                        } else if (val == 2) {
                             output->emit_s(N_SLR, reg, 1);
-                        } else if ((right->value & 0xffff) == 4) {
+                        } else if (val == 4) {
                             output->emit_s(N_SLR, reg, 2);
-                        } else if ((right->value & 0xffff) == 8) {
-                            output->emit_s(N_SLR, reg, 2);
-                            output->emit_s(N_SLR, reg, 1);
-                        } else if ((right->value & 0xffff) == 16) {
-                            output->emit_s(N_SLR, reg, 2);
-                            output->emit_s(N_SLR, reg, 2);
-                        } else if ((right->value & 0xffff) == 32) {
-                            output->emit_s(N_SLR, reg, 2);
+                        } else if (val == 8) {
                             output->emit_s(N_SLR, reg, 2);
                             output->emit_s(N_SLR, reg, 1);
-                        } else if ((right->value & 0xffff) == 64) {
+                        } else if (val == 16) {
+                            output->emit_s(N_SLR, reg, 2);
+                            output->emit_s(N_SLR, reg, 2);
+                        } else if (val == 32) {
+                            output->emit_s(N_SLR, reg, 2);
+                            output->emit_s(N_SLR, reg, 2);
+                            output->emit_s(N_SLR, reg, 1);
+                        } else if (val == 64) {
                             output->emit_s(N_SLR, reg, 2);
                             output->emit_s(N_SLR, reg, 2);
                             output->emit_s(N_SLR, reg, 2);
-                        } else if ((right->value & 0xffff) == 128) {
+                        } else if (val == 128) {
                             output->emit_r(N_SWAP, reg);
                             output->emit_rr(N_ADDR, reg, reg);
                             output->emit_r(N_ADCR, reg);
                             output->emit_nr(N_ANDI, "", 0x01ff, reg);
-                        } else if ((right->value & 0xffff) == 256) {
+                        } else if (val == 256) {
                             output->emit_r(N_SWAP, reg);
                             output->emit_nr(N_ANDI, "", 0x00ff, reg);
                         } else {
                             if (jlp_used) {
-                                output->emit_nr(N_MVII, "", right->value & 0xffff, 4);
+                                output->emit_nr(N_MVII, "", val, 4);
                                 output->emit_rl(N_MVO, reg, "", 0x9f8a);
                                 output->emit_rl(N_MVO, 4, "", 0x9f8b);
                                 output->emit_lr(N_MVI, "", 0x9f8e, reg);
@@ -1688,36 +1715,36 @@ public:
                                 output->emit_nr(N_MVII, "", -1, 4);
                                 output->emit_l(TEMP_PREFIX, label);
                                 output->emit_r(N_INCR, 4);
-                                output->emit_nr(N_SUBI, "", right->value & 0xffff, reg);
+                                output->emit_nr(N_SUBI, "", val, reg);
                                 output->emit_a(N_BC, TEMP_PREFIX, label);
                                 output->emit_rr(N_MOVR, 4, reg);
                             }
                         }
                     } else if (type == C_MOD) {
-                        if ((right->value & 0xffff) == 0) {
+                        if (val == 0) {
                             std::cerr << "Error: Modulus by zero in expression\n";
                             err_code = 1;
-                        } else if ((right->value & 0xffff) == 1) {
+                        } else if (val == 1) {
                             output->emit_r(N_CLRR, reg);
-                        } else if ((right->value & 0xffff) == 2
-                                || (right->value & 0xffff) == 4
-                                || (right->value & 0xffff) == 8
-                                || (right->value & 0xffff) == 16
-                                || (right->value & 0xffff) == 32
-                                || (right->value & 0xffff) == 64
-                                || (right->value & 0xffff) == 128
-                                || (right->value & 0xffff) == 256
-                                || (right->value & 0xffff) == 512
-                                || (right->value & 0xffff) == 1024
-                                || (right->value & 0xffff) == 2048
-                                || (right->value & 0xffff) == 4096
-                                || (right->value & 0xffff) == 8192
-                                || (right->value & 0xffff) == 16384
-                                || (right->value & 0xffff) == 32768) {
-                            output->emit_nr(N_ANDI, "", (right->value & 0xffff) - 1, reg);
+                        } else if (val == 2
+                                || val == 4
+                                || val == 8
+                                || val == 16
+                                || val == 32
+                                || val == 64
+                                || val == 128
+                                || val == 256
+                                || val == 512
+                                || val == 1024
+                                || val == 2048
+                                || val == 4096
+                                || val == 8192
+                                || val == 16384
+                                || val == 32768) {
+                            output->emit_nr(N_ANDI, "", val - 1, reg);
                         } else {
                             if (jlp_used) {
-                                output->emit_nr(N_MVII, "", right->value & 0xffff, 4);
+                                output->emit_nr(N_MVII, "", val, 4);
                                 output->emit_rl(N_MVO, reg, "", 0x9f8a);
                                 output->emit_rl(N_MVO, 4, "", 0x9f8b);
                                 output->emit_lr(N_MVI, "", 0x9f8f, reg);
@@ -1725,9 +1752,9 @@ public:
                                 int label = next_local++;
                             
                                 output->emit_l(TEMP_PREFIX, label);
-                                output->emit_nr(N_SUBI, "", (right->value & 0xffff), reg);
+                                output->emit_nr(N_SUBI, "", val, reg);
                                 output->emit_a(N_BC, TEMP_PREFIX, label);
-                                output->emit_nr(N_ADDI, "", (right->value & 0xffff), reg);
+                                output->emit_nr(N_ADDI, "", val, reg);
                             }
                         }
                     }
@@ -2174,13 +2201,17 @@ private:
     string assigned;
     size_t line_pos;
     size_t line_size;
-    map <string, int> arrays;
-    map <string, int> labels;
-    map <string, int> variables;
-    map <string, int> constants;
-    map <string, int> functions;
-    map <string, int> read_write;
-    map <string, int> label_used;
+    map <string, int> arrays;       // Arrays (DIM)
+    map <string, int> labels;       // Labels (reference name -> label number)
+    map <string, int> variables;    // Variables (reference name -> label number)
+    map <string, int> constants;    // Constants (reference name -> value)
+    map <string, int> functions;    // Functions (reference USR name -> intermediate label)
+    
+    // Note how following two could be mixed with 'variables' and 'labels' using struct instead of int
+    map <string, int> read_write;   // Variables (reference name -> read/write)
+    map <string, int> label_used;   // Labels (reference name -> used/defined)
+    map <string, int> signedness;   // Variables/array (reference name -> signed/unsigned)
+    
     map <string, macro *> macros;
     map <string, int>::iterator access;
     list <struct loop> loops;
@@ -2706,11 +2737,12 @@ private:
             return new node(C_NUM, temp, NULL, NULL);
         }
         if (lex == C_NAME) {
+            class node *tree;
             int temp;
+            int bits;
+            int sign;
             
             if (name == "PEEK") {
-                class node *tree;
-                
                 get_lex();
                 if (lex != C_LPAREN)
                     emit_error("missing left parenthesis in PEEK");
@@ -2723,8 +2755,6 @@ private:
                     get_lex();
                 return new node(C_PEEK, 0, tree, NULL);
             } else if (name == "ABS") {
-                class node *tree;
-                
                 get_lex();
                 if (lex != C_LPAREN)
                     emit_error("missing left parenthesis in ABS");
@@ -2737,8 +2767,6 @@ private:
                     get_lex();
                 return new node(C_ABS, 0, tree, NULL);
             } else if (name == "SGN") {
-                class node *tree;
-                
                 get_lex();
                 if (lex != C_LPAREN)
                     emit_error("missing left parenthesis in SGN");
@@ -2751,7 +2779,6 @@ private:
                     get_lex();
                 return new node(C_SGN, 0, tree, NULL);
             } else if (name == "CONT" || name == "CONT1" || name == "CONT2") {
-                class node *tree;
                 int c;
                 
                 if (name == "CONT2") {
@@ -2849,7 +2876,6 @@ private:
             } else if (name == "RAND") {
                 get_lex();
                 if (lex == C_LPAREN) {  // RAND with range
-                    class node *tree;
                     int c;
                     
                     get_lex();
@@ -2875,8 +2901,6 @@ private:
                 }
                 return new node(C_VAR, 9, NULL, NULL);
             } else if (name == "RANDOM") {
-                class node *tree;
-                
                 get_lex();
                 if (lex != C_LPAREN)
                     emit_error("missing left parenthesis in RANDOM");
@@ -2892,7 +2916,6 @@ private:
                 get_lex();
                 return new node(C_VAR, 12, NULL, NULL);
             } else if (name == "USR") {  // Call to function written in assembler
-                class node *tree;
                 class node *list;
                 class node *last_list;
                 int c;
@@ -2996,8 +3019,6 @@ private:
                     get_lex();
                 return new node(C_NUM, c, NULL, NULL);
             } else if (name == "POS") { // Access to current screen position
-                class node *tree;
-                
                 get_lex();
                 if (lex != C_LPAREN)
                     emit_error("missing left parenthesis in POS");
@@ -3034,9 +3055,15 @@ private:
                     return new node(C_NUM, 0, NULL, NULL);
                 return eval_level0();
             }
+            
+            // Take note for sign extension
+            if (name[0] == '#')
+                bits = 1;
+            else
+                bits = 0;
+            sign = signedness[name];
+            
             if (sneak_peek() == '(') {  // Indexed access
-                class node *tree;
-                
                 if (arrays[name] != 0) {
                     temp = arrays[name] >> 16;
                 } else if (labels[name] != 0) {
@@ -3056,9 +3083,12 @@ private:
                     emit_error("missing right parenthesis in array access");
                 else
                     get_lex();
-                return new node(C_PEEK, 0,
+                tree = new node(C_PEEK, 0,
                                 new node(C_PLUS, 0,
                                          new node(C_NAME_RO, temp, NULL, NULL), tree), NULL);
+                if (bits == 0 && sign == 1)
+                    tree = new node(C_EXTEND, 0, tree, NULL);
+                return tree;
             }
             if ((constants[name] & 0x10000) != 0) {
                 temp = constants[name] & 0xffff;
@@ -3070,7 +3100,10 @@ private:
                 variables[name] = next_var++;
             temp = variables[name];
             get_lex();
-            return new node(C_NAME, temp, NULL, NULL);
+            tree = new node(C_NAME, temp, NULL, NULL);
+            if (bits == 0 && sign == 1)
+                tree = new node(C_EXTEND, 0, tree, NULL);
+            return tree;
         }
         if (lex == C_NUM) {
             int temp;
@@ -3229,8 +3262,19 @@ private:
                     get_lex();
                 tree2 = eval_level0();
             }
-            if (bits == 0 && tree2->node_type() == C_NUM && (tree2->node_value() & 0xffff) > 255)
-                emit_warning("assigning value bigger than 8-bits");
+            if (bits == 0 && tree2->node_type() == C_NUM) {
+                int c = tree2->node_value() & 0xffff;
+                
+                // Allows -128 to 255, some people were confused by the fact of a = -1
+                if (c >= 0x0100 && c <= 0xff7f) {
+                    string message;
+                    
+                    message = "assigning value ";
+                    message += c;
+                    message += " doesn't fit in 8-bits";
+                    emit_warning(message);
+                }
+            }
             tree = new node(C_ASSIGN, bits, tree2,
                             new node(C_PLUS, 0,
                                         new node(C_NAME_RO, temp, NULL, NULL), tree));
@@ -3257,8 +3301,19 @@ private:
             }
             get_lex();
             tree2 = eval_level0();
-            if (bits == 0 && tree2->node_type() == C_NUM && (tree2->node_value() & 0xffff) > 255)
-                emit_warning("assigning value bigger than 8-bits");
+            if (bits == 0 && tree2->node_type() == C_NUM) {
+                int c = tree2->node_value() & 0xffff;
+                
+                // Allows -128 to 255, some people were confused by the fact of a = -1
+                if (c >= 0x0100 && c <= 0xff7f) {
+                    string message;
+                    
+                    message = "assigning value ";
+                    message += c;
+                    message += " doesn't fit in 8-bits";
+                    emit_warning(message);
+                }
+            }
             tree2->label();
             optimized = false;
             tree2->generate(0, 0);
@@ -4109,6 +4164,34 @@ private:
                         eval_expr(0, 0);
                         output->emit_rl(N_MVO, 0, "_border_mask", -1);
                     }
+                } else if (name == "SIGNED") {
+                    get_lex();
+                    while (1) {
+                        if (lex != C_NAME) {
+                            emit_error("missing name in SIGNED");
+                            break;
+                        }
+                        signedness[name] = 1;
+                        get_lex();
+                        if (lex != C_COMMA)
+                            break;
+                        get_lex();
+                    }
+#if 0   // Someday :)
+                } else if (name == "UNSIGNED") {
+                    get_lex();
+                    while (1) {
+                        if (lex != C_NAME) {
+                            emit_error("missing name in UNSIGNED");
+                            break;
+                        }
+                        signedness[name] = 2;
+                        get_lex();
+                        if (lex != C_COMMA)
+                            break;
+                        get_lex();
+                    }
+#endif
                 } else if (name == "CONST") {
                     get_lex();
                     if (lex != C_NAME) {
