@@ -166,6 +166,7 @@
 //                         Added support for signed 8-bit variables (SIGNED
 //                         statement)
 //  Revision: Aug/31/2015. Further optimization for use of 8-bit signed variables.
+//                         SPRITE now supports expression in MOB index.
 //
 
 //  TODO:
@@ -489,6 +490,11 @@ public:
                 return;
             }
             if (type == N_COMR && c == N_COMR && previous->get_r1() == r1) {
+                everything.pop_back();
+                delete previous;
+                return;
+            }
+            if (type == N_PULR && c == N_PSHR && previous->get_r1() == r1) {
                 everything.pop_back();
                 delete previous;
                 return;
@@ -4001,36 +4007,74 @@ private:
                             output->emit_rl(N_MVO, 0, "", 0x00f8);
                     }
                 } else if (name == "SPRITE") {
+                    class node *tree;
                     int sprite;
+                    int add;
                     
                     get_lex();
-                    if (lex != C_NUM) {
+                    tree = eval_level0();
+                    if (lex != C_COMMA)
                         emit_error("bad syntax for SPRITE");
-                        sprite = 0;
-                    } else {
-                        sprite = value;
+                    else
+                        get_lex();
+                    if (tree->node_type() == C_NUM) {
+                        sprite = tree->node_value();
+                        delete tree;
+                        tree = NULL;
                         if (sprite < 0 || sprite > 7)
                             emit_error("bad number (0-7) for SPRITE");
-                        get_lex();
-                        if (lex != C_COMMA)
-                            emit_error("bad syntax for SPRITE");
-                        else
-                            get_lex();
-                    }
-                    if (lex != C_COMMA) {
-                        eval_expr(0, 0);
-                        output->emit_rlo(N_MVO, 0, "_mobs", -1, 0 + sprite);
-                    }
-                    if (lex == C_COMMA) {
-                        get_lex();
                         if (lex != C_COMMA) {
                             eval_expr(0, 0);
-                            output->emit_rlo(N_MVO, 0, "_mobs", -1, 8 + sprite);
+                            output->emit_rlo(N_MVO, 0, "_mobs", -1, 0 + sprite);
                         }
                         if (lex == C_COMMA) {
                             get_lex();
+                            if (lex != C_COMMA) {
+                                eval_expr(0, 0);
+                                output->emit_rlo(N_MVO, 0, "_mobs", -1, 8 + sprite);
+                            }
+                            if (lex == C_COMMA) {
+                                get_lex();
+                                eval_expr(0, 0);
+                                output->emit_rlo(N_MVO, 0, "_mobs", -1, 16 + sprite);
+                            }
+                        }
+                    } else {
+                        tree = new node(C_PLUS, 0, new node(C_NAME_R, arrays["#MOBSHADOW"] >> 16, 0, 0), tree);
+                        tree->label();
+                        tree->generate(0, 0);
+                        if (lex != C_COMMA) {
+                            output->emit_r(N_PSHR, 0);
                             eval_expr(0, 0);
-                            output->emit_rlo(N_MVO, 0, "_mobs", -1, 16 + sprite);
+                            output->emit_r(N_PULR, 4);
+                            output->emit_rr(N_MVOA, 0, 4);
+                            sprite = 4;
+                            add = 7;
+                        } else {
+                            sprite = 0;
+                            add = 8;
+                        }
+                        if (lex == C_COMMA) {
+                            get_lex();
+                            if (lex != C_COMMA) {
+                                output->emit_r(N_PSHR, sprite);
+                                eval_expr(0, 0);
+                                output->emit_r(N_PULR, 4);
+                                output->emit_nr(N_ADDI, "", add, 4);
+                                output->emit_rr(N_MVOA, 0, 4);
+                                sprite = 4;
+                                add = 7;
+                            } else {
+                                add += 8;
+                            }
+                            if (lex == C_COMMA) {
+                                get_lex();
+                                output->emit_r(N_PSHR, sprite);
+                                eval_expr(0, 0);
+                                output->emit_r(N_PULR, 4);
+                                output->emit_nr(N_ADDI, "", add, 4);
+                                output->emit_rr(N_MVOA, 0, 4);
+                            }
                         }
                     }
                 } else if (name == "PRINT") {

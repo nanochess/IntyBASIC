@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Aug/30/2015.
+Last revision: Aug/31/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,8 +23,9 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.3 Aug/30/2015  o Added SIGNED statement to indicate arrays or variables
+v1.2.3 Aug/31/2015  o Added SIGNED statement to indicate arrays or variables
                       of 8-bits signed.
+                    o SPRITE statement now allows expression on MOB index.
 
 v1.2.2 Aug/24/2015  o New FLASH statement allowing access of Flash memory
                       available in JLP cartridges.
@@ -240,6 +241,8 @@ Platforms available:
 
 Current limitations are:
   o Division and remainder (modulus) operators treat numbers as unsigned.
+  o The constants 32768-65535 don't imply unsigned numbers, if these are used in a
+    comparison are signed (-32768 - -1), all comparisons are 16-bits signed.
 
 Usage:
 
@@ -640,10 +643,10 @@ label:
     If you use the music player the SOUND capabilities are affected, check below
     the statement PLAY.
 
-  SPRITE [0-7],x,y,f
+  SPRITE index,x,y,f
   
-    Only constant (0-7) can be used in first parameter, indicates number of MOB.
-    Sprite (MOB) will be updated in next frame.
+    The first parameter indicates number of MOB (0-7). Note that if you use a constant
+    the generated code will be faster. Sprite (MOB) will be updated in next frame.
     
     X contains coordinate X (0-168)
     bit 8 = Interaction (suggested always 1)
