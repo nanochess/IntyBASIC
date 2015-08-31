@@ -37,17 +37,48 @@
 	;                        after it (GroovyBee 42K sample code)
 	; Revision: Aug/21/2015. Added Joseph Zbiciak routines for JLP Flash
 	;                        handling.
+	; Revision: Aug/31/2015. Added CPYBLK2 for SCREEN fifth argument.
 
 	;
 	; Avoids empty programs to crash
 	; 
 stuck:	B stuck
 
+	;
+	; Copy screen helper for SCREEN wide statement
+	;
+
+CPYBLK2:	PROC
+	MOVR R0,R3		; Offset
+	MOVR R5,R2
+	PULR R0
+	PULR R1
+	PULR R5
+	PULR R4
+	PSHR R2
+	SUBR R1,R3
+
+@@1:    PSHR R3
+	MOVR R1,R3              ; Init line copy
+@@2:    MVI@ R4,R2              ; Copy line
+        MVO@ R2,R5
+        DECR R3
+        BNE @@2
+        PULR R3                 ; Add offset to start in next line
+        ADDR R3,R4
+	SUBR R1,R5
+        ADDI #20,R5
+        DECR R0                 ; Count lines
+        BNE @@1
+
+	RETURN
+	ENDP
+
         ;
         ; Copy screen helper for SCREEN statement
         ;
 CPYBLK: PROC
-        PSHR R5
+        BEGIN
         MOVR R3,R4
         MOVR R2,R5
 
@@ -62,9 +93,7 @@ CPYBLK: PROC
         ADDR R3,R5
         DECR R0                 ; Count lines
         BNE @@1
-
-        PULR R5
-        JR R5
+	RETURN
         ENDP
 
         ;

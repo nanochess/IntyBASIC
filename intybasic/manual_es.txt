@@ -34,6 +34,10 @@ v1.2.3 31-ago-2015  o Se agrega sentencia SIGNED para indicar arreglos y
                       variables de 8 bits con signo.
                     o La sentencia SPRITE ahora admite expresión para el indice
                       de MOB.
+                    o SCREEN permite un sexto argumento para admitir una
+                      pantalla origen ancha, útil para scroll horizontal o
+                      para ilustrar una fracción de un gran mapa.
+                    o DIM AT para poner un arreglo en una dirección de memoria.
 
 v1.2.2 24-ago-2015  o Nueva sentencia FLASH que permite el uso de la memoria
                       Flash en los cartuchos JLP.
@@ -266,6 +270,7 @@ Las limitaciones actuales son:
   o Las constantes 32768-65535 no implican números sin signo, si son utilizadas en
     una comparación son con signo (-32768 - -1), todas las comparaciones son de
     16 bits con signo.
+  o ASM no se puede usar dentro de DEF FN.
 
 Forma de uso:
 
@@ -576,6 +581,16 @@ Las siguientes sentencias están disponibles:
      Esta es una clase de directiva, no genera código y puede aparecer en
      cualquier punto del programa.
 
+  DIM var(tam) AT dirección
+  
+     Crea un arreglo en la dirección de memoria indicada (debe ser una constante)
+     
+     Esto puede ser útil para acceder hardware no previsto en una forma
+     eficiente.
+     
+     No olvide utilizar el tipo correcto de arreglo, un nombre de 8 bits o
+     16 bits (comenzando con #) porque IntyBASIC realiza optimización
+     internamente.
 
   RESTORE label
   READ var
@@ -816,9 +831,10 @@ label:
     mayúsculas) y los caracteres definidos 256-319.
     
   SCREEN etiqueta[,offset_origen,offset_destino,columnas,lineas]
+  SCREEN etiqueta[,offset_origen,offset_destino,columnas,lineas,ancho_origen]
 
     Permite copiar datos de pantalla al video en una forma rápida. Usando solamente
-    "SCREEN etiqeuta" copia una pantalla completa de 20x12 caracteres al video.
+    "SCREEN etiqueta" copia una pantalla completa de 20x12 caracteres al video.
     
     'etiqueta' apunta a una etiqueta dentro de su programa conteniendo los datos para
     la pantalla, similar a esto:
@@ -826,11 +842,15 @@ label:
       mi_pantalla:
         DATA $0007,$000F,$0007,$000F   ' Y así...
         
-    offset_origen es el offset (0-199) dentro de la pantalla origen.
+    offset_origen es el offset (0-199 o más) dentro de la pantalla origen.
     offset_destino es el offset (0-199) dentro de la pantalla de video destino.
     columnas es el tamaño en columnas de la copia.
     lineas es el tamaño en líneas de la copia.
-    
+    ancho_origen es el ancho de la pantalla origen, útil para copiar una ventana
+                 de una gran pantalla gráfica, como un mapa o cuando se hace
+                 scroll horizontal. (por defecto, 20 igual que el tamaño de
+                 horizontal de la pantalla del Intellivision)
+
     Esto puede servir para desplazar elementos grandes en el video, o para mostrar
     hermosas pantallas gráficas.
 

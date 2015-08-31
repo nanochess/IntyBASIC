@@ -166,11 +166,15 @@
 //                         Added support for signed 8-bit variables (SIGNED
 //                         statement)
 //  Revision: Aug/31/2015. Further optimization for use of 8-bit signed variables.
-//                         SPRITE now supports expression in MOB index.
+//                         SPRITE now supports expression in MOB index. SCREEN
+//                         now generates more efficient code and allows fifth
+//                         parameter to choose width of origin screen, useful for
+//                         big maps. Added DIM AT for putting arrays at any
+//                         address in memory, useful for unforeseen hardware.
 //
 
 //  TODO:
-//  * ASM doesn't work with DEF FN
+//  * Debug.
 
 //  Development notes:
 //  * Careful with everything.back(), behavior not defined when list is empty so
@@ -188,7 +192,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.2 Aug/30/2015";      // Compiler version
+const string VERSION = "v1.2 Aug/31/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -1289,7 +1293,7 @@ public:
             case C_NAME_R:    // Access to variable address
                 output->emit_nr(N_MVII, VAR_PREFIX, value, reg);
                 break;
-            case C_NAME_RO: // Access to label
+            case C_NAME_RO: // Access to label or array address
                 output->emit_nr(N_MVII, LABEL_PREFIX, value, reg);
                 break;
             case C_READ:    // Read from DATA
@@ -3298,11 +3302,9 @@ private:
                 
                 // Allows -128 to 255, some people were confused by the fact of a = -1
                 if (c >= 0x0100 && c <= 0xff7f) {
-                    string message;
+                    char message[256];
                     
-                    message = "assigning value ";
-                    message += c;
-                    message += " doesn't fit in 8-bits";
+                    sprintf(message, "value %d doesn't fit in 8-bits array", c);
                     emit_warning(message);
                 }
             }
@@ -3338,11 +3340,9 @@ private:
                     
                     // Allows -128 to 255, some people were confused by the fact of a = -1
                     if (c >= 0x0100 && c <= 0xff7f) {
-                        string message;
+                        char message[256];
                         
-                        message = "assigning value ";
-                        message += c;
-                        message += " doesn't fit in 8-bits";
+                        sprintf(message, "assignment of value %d doesn't fit in 8-bits variable", c);
                         emit_warning(message);
                     }
                 }
@@ -3548,8 +3548,9 @@ private:
                     } else {
                         get_lex();
                         final = eval_level0();
-                        if (assigned[0] != '#' && final->node_type() == C_NUM && (final->node_value() & 0xffff) > 255)
-                            emit_warning("TO value is bigger than 8-bits");
+                        if (assigned[0] != '#' && final->node_type() == C_NUM && (final->node_value() & 0xffff) > 255) {
+                            emit_warning("TO value is larger than 8-bits size of variable");
+                        }
                         positive = true;
                         if (lex == C_NAME && name == "STEP") {
                             get_lex();
@@ -4299,6 +4300,7 @@ private:
                     string array;
                     class node *tree = NULL;
                     int c;
+                    int where;
                     
                     while (1) {
                         get_lex();
@@ -4319,20 +4321,42 @@ private:
                             break;
                         }
                         c = tree->node_value();
-                        if (c <= 0 || c > 65535) {
+                        if (c <= 0 || c >= 65535) {
                             emit_error("invalid dimension in DIM");
                             c = 1;
                         }
-                        if (arrays[array] != 0)
-                            emit_error("already used name for DIM");
-                        else
-                            arrays[array] = c | (next_label++ << 16);
                         delete tree;
                         tree = NULL;
                         if (lex != C_RPAREN) {
                             emit_error("missing right parenthesis in DIM");
                         } else {
                             get_lex();
+                        }
+                        where = -1;
+                        if (lex == C_NAME && name == "AT") {
+                            get_lex();
+                            tree = eval_level0();
+                            if (tree->node_type() != C_NUM) {
+                                emit_error("not a constant expression in DIM AT");
+                                where = 0;
+                            } else {
+                                where = tree->node_value();
+                                if (where <= 0 || where > 65535) {
+                                    emit_error("invalid address in DIM AT");
+                                    where = 0;
+                                }
+                            }
+                            delete tree;
+                            tree = NULL;
+                        }
+                        if (arrays[array] != 0) {
+                            emit_error("already used name for DIM");
+                        } else {
+                            arrays[array] = c | (next_label++ << 16);
+                            if (where >= 0) {
+                                asm_output << LABEL_PREFIX << (arrays[array] >> 16) << ":\tEQU " << where << "\t; " << array << "\n";
+                                arrays[array] = (arrays[array] - c) + 65535;  // Make length 65535
+                            }
                         }
                         if (lex != C_COMMA)
                             break;
@@ -4413,36 +4437,52 @@ private:
                         label_used[name] |= 1;
                     }
                     get_lex();
-                    if (lex == C_COMMA) {
+                    if (lex == C_COMMA) {  // There is a second argument?
+                        class node *final;
+                        
                         get_lex();
-                        eval_expr(0, 0);
-                        output->emit_nr(N_ADDI, LABEL_PREFIX, label, 0);
+                        final = eval_level0();  // Evaluate second argument (origin position)
+                        final = new node(C_PLUS, 0, final, new node(C_NAME_RO, label, NULL, NULL));
+                        final->label();
+                        final->generate(0, 0);
+                        delete final;
                         output->emit_r(N_PSHR, 0);
                         if (lex != C_COMMA) {
                             emit_error("missing comma after second parameter in SCREEN");
                             break;
                         }
                         get_lex();
-                        eval_expr(0, 0);
-                        output->emit_nr(N_ADDI, "", 0x0200, 0);
+                        final = eval_level0();  // Evaluate third argument (target position)
+                        final = new node(C_PLUS, 0, final, new node(C_NUM, 0x200, NULL, NULL));
+                        final->label();
+                        final->generate(0, 0);
+                        delete final;
+                        final = NULL;
                         output->emit_r(N_PSHR, 0);
                         if (lex != C_COMMA) {
                             emit_error("missing comma after third parameter in SCREEN");
                             break;
                         }
                         get_lex();
-                        eval_expr(0, 0);
+                        eval_expr(0, 0);    // Evaluate fourth argument (block width)
                         output->emit_r(N_PSHR, 0);
                         if (lex != C_COMMA) {
                             emit_error("missing comma after fourth parameter in SCREEN");
                             break;
                         }
                         get_lex();
-                        eval_expr(0, 0);
-                        output->emit_r(N_PULR, 1);
-                        output->emit_r(N_PULR, 2);
-                        output->emit_r(N_PULR, 3);
-                        output->emit_a(N_CALL, "CPYBLK", -1);
+                        eval_expr(0, 0);    // Evaluate fifth argument (block height)
+                        if (lex == C_COMMA) {   // Sixth argument for SCREEN
+                            output->emit_r(N_PSHR, 0);
+                            get_lex();
+                            eval_expr(0, 0);    // Evaluate sixth argument (origin width)
+                            output->emit_a(N_CALL, "CPYBLK2", -1);
+                        } else {
+                            output->emit_r(N_PULR, 1);
+                            output->emit_r(N_PULR, 2);
+                            output->emit_r(N_PULR, 3);
+                            output->emit_a(N_CALL, "CPYBLK", -1);
+                        }
                     } else {
                         output->emit_nr(N_MVII, LABEL_PREFIX, label, 3);
                         output->emit_nr(N_MVII, "", 0x200, 2);
@@ -5288,10 +5328,11 @@ public:
                 int label;
                 
                 size = access->second & 0xffff;
-                label = access->second >> 16;
-                asm_output << LABEL_PREFIX << label << ":\tRMB "
-                    << size << "\t; " << access->first << "\n";
-                used_space += size;
+                if (size != 65535) {
+                    label = access->second >> 16;
+                    asm_output << LABEL_PREFIX << label << ":\tRMB " << size << "\t; " << access->first << "\n";
+                    used_space += size;
+                }
             }
         }
         available_vars = 240 - 12;
@@ -5314,8 +5355,10 @@ public:
         // Arranges stack
         asm_output << "\nSYSTEM:\tORG $2F0, $2F0, \"-RWBN\"\n";
         asm_output << "STACK:\tRMB 24\n";
+        used_space = 0;
         if (flash_used) {
             asm_output << "JF.SYSRAM:\tRMB 5\t; 5 words in Intv for support routine\n";
+            used_space += 5;
         }
         if (jlp_used || cc3_used) {
             asm_output << "\tORG $8040, $8040, \"-RWBN\"\n";
@@ -5357,9 +5400,10 @@ public:
                     asm_output << LABEL_PREFIX << label << ":\tEQU $0200\n";
                 } else {
                     size = access->second & 0xffff;
-                    asm_output << LABEL_PREFIX << label << ":\tRMB "
-                        << size << "\t; " << access->first << "\n";
-                    used_space += size;
+                    if (size != 65535) {
+                        asm_output << LABEL_PREFIX << label << ":\tRMB " << size << "\t; " << access->first << "\n";
+                        used_space += size;
+                    }
                 }
             }
         }

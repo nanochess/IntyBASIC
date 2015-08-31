@@ -26,6 +26,10 @@ All trademarks are property of their respective owners.
 v1.2.3 Aug/31/2015  o Added SIGNED statement to indicate arrays or variables
                       of 8-bits signed.
                     o SPRITE statement now allows expression on MOB index.
+                    o SCREEN allows for sixth argument to support a wide
+                      origin screen, useful for horizontal scrolling or to
+                      display a fraction of a big map.
+                    o DIM AT, for setting an array in a memory address.
 
 v1.2.2 Aug/24/2015  o New FLASH statement allowing access of Flash memory
                       available in JLP cartridges.
@@ -243,6 +247,7 @@ Current limitations are:
   o Division and remainder (modulus) operators treat numbers as unsigned.
   o The constants 32768-65535 don't imply unsigned numbers, if these are used in a
     comparison are signed (-32768 - -1), all comparisons are 16-bits signed.
+  o ASM cannot be used inside DEF FN.
 
 Usage:
 
@@ -544,6 +549,14 @@ Following statements are available:
      This is a kind of directive, it doesn't generate code and it can appear
      anywhere in the program.
 
+  DIM var(size) AT address
+  
+     Creates an array at memory address given (must be a constant)
+     
+     This can be useful to access unforeseen hardware in an efficient way.
+     
+     Don't forget to use the right type of array, 8-bit or 16-bit name
+     (starting with #) because IntyBASIC does optimizations internally.
 
   RESTORE label
   READ var
@@ -778,6 +791,7 @@ label:
     defined cards 256-319.
 
   SCREEN label[,origin_offset,target_offset,cols,rows]
+  SCREEN label[,origin_offset,target_offset,cols,rows,origin_width]
 
     Allows to copy screen data to video the fastest way. Using only "SCREEN label"
     copies a full screen 20x12 cards to video.
@@ -788,10 +802,14 @@ label:
       my_screen:
         DATA $0007,$000F,$0007,$000F   ' And so...
         
-    origin_offset is the offset (0-199) inside the origin screen
+    origin_offset is the offset (0-199 or bigger) inside the origin screen
     target_offset is the offset (0-199) inside the target video screen.
     cols is the size in columns of your copy.
     rows is the size in rows of your copy.
+    origin_width is the origin screen width, useful to copy a window of a
+                 big graphic screen, like a map or when scrolling horizontally.
+                 (if not used, by default it's 20 as in Intellivision screen
+                 width)
     
     This can serve to displace large elements in video, or to display beautiful 
     graphics screens.
