@@ -165,6 +165,7 @@
 //  Revision: Aug/30/2015. Doesn't warn for assignment of -128 to -1 to 8 bits.
 //                         Added support for signed 8-bit variables (SIGNED
 //                         statement)
+//  Revision: Aug/31/2015. Further optimization for use of 8-bit signed variables.
 //
 
 //  TODO:
@@ -1001,6 +1002,16 @@ public:
             this->left = right;
             this->right = temp;
         }
+        // Optimize simple signed 8-bits expression
+        if (type == C_ASSIGN && value == 0 && left->type == C_EXTEND) {
+            this->left = left->left;
+        }
+        if (type == C_ASSIGN && value == 0 && (left->type == C_PLUS || left->type == C_MINUS || left->type == C_MUL || left->type == C_AND || left->type == C_OR || left->type == C_XOR)) {
+            if (left->left->type == C_EXTEND)
+                left->left = left->left->left;
+            if (left->right->type == C_EXTEND)
+                left->right = left->right->left;
+        }
         // Optimizes constant expressions
         if (type == C_PLUS && left->type == C_NUM && right->type == C_NUM) {
             this->type = C_NUM;
@@ -1123,6 +1134,20 @@ public:
     //
     int node_value(void) {
         return value;
+    }
+    
+    //
+    // Get node left side
+    //
+    class node *node_left(void) {
+        return left;
+    }
+    
+    //
+    // Get node right side
+    //
+    class node *node_right(void) {
+        return right;
     }
     
     //
@@ -3301,17 +3326,26 @@ private:
             }
             get_lex();
             tree2 = eval_level0();
-            if (bits == 0 && tree2->node_type() == C_NUM) {
-                int c = tree2->node_value() & 0xffff;
-                
-                // Allows -128 to 255, some people were confused by the fact of a = -1
-                if (c >= 0x0100 && c <= 0xff7f) {
-                    string message;
+            if (bits == 0) {
+                if (tree2->node_type() == C_NUM) {
+                    int c = tree2->node_value() & 0xffff;
                     
-                    message = "assigning value ";
-                    message += c;
-                    message += " doesn't fit in 8-bits";
-                    emit_warning(message);
+                    // Allows -128 to 255, some people were confused by the fact of a = -1
+                    if (c >= 0x0100 && c <= 0xff7f) {
+                        string message;
+                        
+                        message = "assigning value ";
+                        message += c;
+                        message += " doesn't fit in 8-bits";
+                        emit_warning(message);
+                    }
+                }
+                if (tree2->node_type() == C_EXTEND) {
+                    tree2 = tree2->node_left();
+                } else if ((tree2->node_type() == C_PLUS || tree2->node_type() == C_MINUS || tree2->node_type() == C_AND || tree2->node_type() == C_OR || tree2->node_type() == C_XOR)) {
+                    tree2 = new node(tree2->node_type(), 0,
+                                     tree2->node_left()->node_type() == C_EXTEND ? tree2->node_left()->node_left() : tree2->node_left(),
+                                     tree2->node_right()->node_type() == C_EXTEND ? tree2->node_right()->node_left() : tree2->node_right());
                 }
             }
             tree2->label();
