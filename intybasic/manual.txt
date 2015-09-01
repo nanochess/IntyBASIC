@@ -30,6 +30,9 @@ v1.2.3 Aug/31/2015  o Added SIGNED statement to indicate arrays or variables
                       origin screen, useful for horizontal scrolling or to
                       display a fraction of a big map.
                     o DIM AT, for setting an array in a memory address.
+                    o Solved bug where warnings were treated as errors for
+                      final return code of command line.
+                    o New sample: landscape.bas (additional SCREEN syntax)
 
 v1.2.2 Aug/24/2015  o New FLASH statement allowing access of Flash memory
                       available in JLP cartridges.
@@ -367,8 +370,10 @@ Following statements are available:
      By default the 8-bits variables are unsigned.
      
      Note this adds two instructions to extend sign to each 8-bit signed
-     variable read. Usually you can develop your programs without using
-     this keyword, but it's available if you require it.
+     variable read, although IntyBASIC will try to optimize them out.
+     
+     Usually you can develop your programs without using this keyword,
+     but it's available if you require it.
 
   CONST [name]=[constant expression]
   
@@ -1458,6 +1463,7 @@ Thanks to following members of Atariage for contributing valuable suggestions,
 test programs and even support libraries:
 
   Albert 
+  artrag
   atari2600land
   awhite2600
   carlsson

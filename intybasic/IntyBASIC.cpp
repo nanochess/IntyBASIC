@@ -5513,9 +5513,10 @@ int main(int argc, const char * argv[])
         std::cerr << "    The library path is where the intybasic_prologue.asm and\n";
         std::cerr << "    intybasic_epilogue.asm files are searched for inclusion.\n";
         std::cerr << "\n";
-        std::cerr << "Many thanks to Albert, atari2600land, awhite2600, carlsson, catsfolly,\n";
-        std::cerr << "ckblackm, CrazyBoss, Cybearg, DZ-Jay, First Spear, freewheel, GroovyBee,\n";
-        std::cerr << "intvnut, Jess Ragan, Kiwi, RevEng, SpiceWare and Tarzilla.\n";
+        std::cerr << "Many thanks to Albert, artrag, atari2600land, awhite2600, carlsson,\n";
+        std::cerr << "catsfolly, ckblackm, CrazyBoss, Cybearg, DZ-Jay, First Spear,\n";
+        std::cerr << "freewheel, GroovyBee, intvnut, Jess Ragan, Kiwi, RevEng, SpiceWare\n";
+        std::cerr << "and Tarzilla.\n";
         std::cerr << "\n";
         return 0;
     }

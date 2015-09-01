@@ -11,7 +11,7 @@ intybasic_prologue.asm    Prologue file needed for compiled programs
 intybasic_epilogue.asm    Epilogue file needed for compiled programs
 
 IntyBASIC.m    A version of IntyBASIC written in Objective-C
-               (not maintained, just for learning purposes)
+               (not maintained, I wrote it for learning purposes)
 
 manual.txt     Manual for IntyBASIC
 manual_es.txt  Spanish manual for IntyBASIC
@@ -24,6 +24,7 @@ Thanks to following members of Atariage for contributing valuable suggestions,
 test programs and even support libraries:
 
   Albert
+  artrag
   atari2600land
   awhite2600
   carlsson
