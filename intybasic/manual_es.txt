@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 31-ago-2015
+Última revisión: 01-sep-2015
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,7 +30,7 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.3 31-ago-2015  o Se agrega sentencia SIGNED para indicar arreglos y
+v1.2.3 01-sep-2015  o Se agrega sentencia SIGNED para indicar arreglos y
                       variables de 8 bits con signo.
                     o La sentencia SPRITE ahora admite expresión para el indice
                       de MOB.
@@ -40,6 +40,8 @@ v1.2.3 31-ago-2015  o Se agrega sentencia SIGNED para indicar arreglos y
                     o Se soluciona un bug donde las advertencias eran tratadas
                       como errores para el código de retorno de la línea de
                       órdenes.
+                    o Se soluciona un bug donde algunas advertencias no podían
+                      ser desactivadas.
                     o Nuevo ejemplo: landscape.bas (sintaxis SCREEN adicional)
 
 v1.2.2 24-ago-2015  o Nueva sentencia FLASH que permite el uso de la memoria

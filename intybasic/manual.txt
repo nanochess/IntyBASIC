@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Aug/31/2015.
+Last revision: Sep/01/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.3 Aug/31/2015  o Added SIGNED statement to indicate arrays or variables
+v1.2.3 Sep/01/2015  o Added SIGNED statement to indicate arrays or variables
                       of 8-bits signed.
                     o SPRITE statement now allows expression on MOB index.
                     o SCREEN allows for sixth argument to support a wide
@@ -31,6 +31,7 @@ v1.2.3 Aug/31/2015  o Added SIGNED statement to indicate arrays or variables
                       display a fraction of a big map.
                     o Solved bug where warnings were treated as errors for
                       final return code of command line.
+                    o Solved bug where some warnings couldn't be disabled.
                     o New sample: landscape.bas (additional SCREEN syntax)
 
 v1.2.2 Aug/24/2015  o New FLASH statement allowing access of Flash memory

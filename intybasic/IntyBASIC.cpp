@@ -173,7 +173,9 @@
 //                         address in memory, useful for unforeseen hardware.
 //  Revision: Sep/01/2015. Corrected bug in access to #MOBSHADOW for SPRITE and
 //                         added optimization for saving of register across
-//                         expressions.
+//                         expressions. Now labels for #MOBSHADOW and #BACKTAB are
+//                         defined outside in intybasic_epilogue.asm. Solved bug
+//                         where warnings could not be disabled.
 //
 
 //  TODO:
@@ -195,7 +197,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.2 Aug/31/2015";      // Compiler version
+const string VERSION = "v1.2 Sep/01/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -843,6 +845,7 @@ public:
         register_memory[r1].valid = 0;
         if (r1 == 3)
             subexpression_valid = false;
+        register_content[r2].valid = 0;  // Not always
         cycles = 0;
     }
     
@@ -2397,16 +2400,12 @@ private:
             while (line_pos < line_size && isdigit(line[line_pos]))
                 value = (value * 10) + line[line_pos++] - '0';
             if (value > 65535) {
-                if (warnings)
-                    emit_warning("number exceeds 16 bits");
-                err_code = 1;
+                emit_warning("number exceeds 16 bits");
             }
             if (line_pos < line_size && line[line_pos] == '.'
                 && line_pos + 1 < line_size && isdigit(line[line_pos + 1])) {
                 if (value > 255) {
-                    if (warnings)
-                        emit_warning("fixed number exceeds basic 8 bits");
-                    err_code = 1;
+                    emit_warning("fixed number exceeds basic 8 bits");
                 }
                 line_pos++;
                 fraction = 0;
@@ -3215,6 +3214,8 @@ private:
     //
     void emit_warning(string message)
     {
+        if (!warnings)
+            return;
         std::cerr << "Warning: " << message << " in line " << line_number;
         if (active_include)
             std::cerr << ", file \"" << path << "\"";
@@ -5125,8 +5126,9 @@ public:
         asm_output << "\t;FILE " << input_file << "\n";
         bitmap_byte = 0;
         inside_proc = 0;
-        arrays["#MOBSHADOW"] = 24 | (next_label++ << 16);  // #MOBSHADOW array
-        arrays["#BACKTAB"] = 240 | (next_label++ << 16);  // #MOBSHADOW array
+        // Must be defined in this order
+        arrays["#MOBSHADOW"] = 24 | (next_label++ << 16);  // #MOBSHADOW array (label Q1)
+        arrays["#BACKTAB"] = 240 | (next_label++ << 16);  // #BACKTAB array (label Q2)
         while (1) {
             int label_exists;
             
@@ -5175,8 +5177,7 @@ public:
             if (lex == C_NAME) {
                 if (name == "PROCEDURE") {
                     if (inside_proc) {
-                        if (warnings)
-                            emit_warning("starting PROCEDURE without ENDing previous PROCEDURE");
+                        emit_warning("starting PROCEDURE without ENDing previous PROCEDURE");
                         err_code = 1;
                     }
                     // as1600 requires that label and PROC are on same line
@@ -5187,8 +5188,7 @@ public:
                     output->trash_registers();
                 } else if (name == "END" && sneak_peek() != 'I') {  // END (and not END IF)
                     if (!inside_proc) {
-                        if (warnings)
-                            emit_warning("END without PROCEDURE");
+                        emit_warning("END without PROCEDURE");
                         err_code = 1;
                     }
                     get_lex();
@@ -5278,8 +5278,7 @@ public:
                 }
             }
             if (lex != C_END) {
-                if (warnings)
-                    emit_warning("invalid extra characters");
+                emit_warning("invalid extra characters");
                 err_code = 1;
             }
             
@@ -5449,9 +5448,15 @@ public:
                 
                 label = access->second >> 16;
                 if (access->first == "#MOBSHADOW") {
-                    asm_output << LABEL_PREFIX << label << ":\tEQU _mobs\n";
+                    // Defined in intybasic_epilogue.asm to avoid as1600 warning
+                    if (label != 1)  // Never should happen
+                        std::cerr << "Error: non-synchronized label number for #MOBSHADOW\n";
+                    // asm_output << LABEL_PREFIX << label << ":\tEQU _mobs\n";
                 } else if (access->first == "#BACKTAB") {
-                    asm_output << LABEL_PREFIX << label << ":\tEQU $0200\n";
+                    // Defined in intybasic_epilogue.asm to avoid as1600 warning
+                    if (label != 2)  // Never should happen
+                        std::cerr << "Error: non-synchronized label number for #BACKTAB\n";
+                    // asm_output << LABEL_PREFIX << label << ":\tEQU $0200\n";
                 } else {
                     size = access->second & 0xffff;
                     if (size != 65535) {
@@ -5563,7 +5568,7 @@ int main(int argc, const char * argv[])
         std::cerr << "    --title \"a\" Selects title of the compiled program.\n";
         std::cerr << "                By default this is \"IntyBASIC program\".\n";
         std::cerr << "                Only appears in emulators/multicarts.\n\n";
-        std::cerr << "    -w          Disables warnings\n\n";
+        std::cerr << "    -w          Disable warnings\n\n";
         std::cerr << "    The library path is where the intybasic_prologue.asm and\n";
         std::cerr << "    intybasic_epilogue.asm files are searched for inclusion.\n";
         std::cerr << "\n";

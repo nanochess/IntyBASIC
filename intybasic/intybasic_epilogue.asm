@@ -38,6 +38,7 @@
 	; Revision: Aug/21/2015. Added Joseph Zbiciak routines for JLP Flash
 	;                        handling.
 	; Revision: Aug/31/2015. Added CPYBLK2 for SCREEN fifth argument.
+	; Revision: Sep/01/2015. Defined labels Q1 and Q2 as alias.
 
 	;
 	; Avoids empty programs to crash
@@ -2795,7 +2796,11 @@ uf_udiv16:	PROC
 
 	ENDI
 
-        ORG $319,$319,"-RWB"
+        ORG $200,$200,"-RWB"
+
+Q2:	; Reserved label for #BACKTAB
+
+	ORG $319,$319,"-RWB"
         ;
         ; 16-bits variables
 	; Note IntyBASIC variables grow up starting in $308.
@@ -2818,7 +2823,10 @@ _gram_bitmap:   RMB 1   ; Bitmap for definition
 _gram2_bitmap:  RMB 1   ; Secondary bitmap for definition
 _screen:    RMB 1       ; Pointer to current screen position
 _color:     RMB 1       ; Current color
+
+Q1:			; Reserved label for #MOBSHADOW
 _mobs:      RMB 3*8     ; MOB buffer
+
 _col0:      RMB 1       ; Collision status for MOB0
 _col1:      RMB 1       ; Collision status for MOB1
 _col2:      RMB 1       ; Collision status for MOB2
