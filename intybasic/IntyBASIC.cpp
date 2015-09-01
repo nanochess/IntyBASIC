@@ -171,6 +171,9 @@
 //                         parameter to choose width of origin screen, useful for
 //                         big maps. Added DIM AT for putting arrays at any
 //                         address in memory, useful for unforeseen hardware.
+//  Revision: Sep/01/2015. Corrected bug in access to #MOBSHADOW for SPRITE and
+//                         added optimization for saving of register across
+//                         expressions.
 //
 
 //  TODO:
@@ -428,6 +431,10 @@ class code {
         int offset;
     } register_memory[8];
     
+    // Envelope for code trying to avoid PUSH/PULR
+    list <class microcode *> subeverything;  // This sounds so deep
+    int push_register;
+    
 public:
     // Startup of class code
     code(void) {
@@ -469,6 +476,42 @@ public:
             cycles = 0;
         }
         cycles += how_many;
+    }
+    
+    // Push register an create subcontext
+    void push(int r)
+    {
+        // Copies 'everything' to 'subeverything' and leaves empty 'everything'
+        while (everything.size() > 0) {
+            subeverything.push_back(everything.front());
+            everything.pop_front();
+        }
+        push_register = r;
+        register_content[4].valid = 2;
+    }
+    
+    // Pop register and restore subcontext trying to optimize out PUSH/PULR, always R4
+    void pop(void)
+    {
+        if (register_content[4].valid == 2) {
+            if (push_register != 4) {
+                // Idea for optimization: going back in code and changing register output, now that
+                // would be something hard!
+                subeverything.push_back(new microcode(M_RR, N_MOVR, push_register, 4, "", 0, 0));
+            }
+        } else {
+            subeverything.push_back(new microcode(M_R, N_PSHR, push_register, 0, "", 0, 0));
+        }
+        // Paste 'subeverything' just before 'everything'
+        while (subeverything.size() > 0) {
+            everything.push_front(subeverything.back());
+            subeverything.pop_back();
+        }
+        // Starting from here 'everything' has been restored and the new code has been added
+        if (register_content[4].valid != 2) {
+            everything.push_back(new microcode(M_R, N_PULR, 4, 0, "", 0, 0));
+        }
+        register_content[4].valid = 0;
     }
     
     // Emits an instruction with no operands
@@ -523,7 +566,7 @@ public:
         }
                                    
         // Common pattern optimization for zero in register (via CLRR)
-        if (type == N_CLRR && register_content[r1].valid != 0 && register_content[r1].prefix == "" && register_content[r1].value == 0 && register_content[r1].offset == 0) {
+        if (type == N_CLRR && register_content[r1].valid == 1 && register_content[r1].prefix == "" && register_content[r1].value == 0 && register_content[r1].offset == 0) {
             // Nothing to do =P
             return;
         }
@@ -575,6 +618,10 @@ public:
             if (r2 == 3)
                 subexpression_valid = false;
         }
+        if (type == N_MVIA && r1 == 4)
+            register_content[r1].valid = 0;
+        if (type == N_MVOA && r2 == 4)
+            register_content[r2].valid = 0;
         if (type == N_MVIA && r2 == 7)  // Jump table
             trash_registers();
     }
@@ -604,7 +651,7 @@ public:
         // Common pattern optimization: constant in register
         for (c = 0; c < 4; c++) {
             d = (r + c) % 4;
-            if (type == N_MVII && register_content[d].valid != 0 && register_content[d].prefix == prefix && register_content[d].value == value && register_content[d].offset == offset) {
+            if (type == N_MVII && register_content[d].valid == 1 && register_content[d].prefix == prefix && register_content[d].value == value && register_content[d].offset == offset) {
                 if (d == r) {
                     // Nothing to do =P
                 } else {
@@ -653,7 +700,7 @@ public:
         // Common optimization case: register just saved to memory and still available
         for (c = 0; c < 4; c++) {
             d = (r + c) % 4;
-            if (register_memory[d].valid != 0 && register_memory[d].prefix == prefix && register_memory[d].value == value && register_memory[d].offset == offset) {
+            if (register_memory[d].valid == 1 && register_memory[d].prefix == prefix && register_memory[d].value == value && register_memory[d].offset == offset) {
                 if (type == N_ADD) {
                     type = N_ADDR;
                     everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
@@ -4041,13 +4088,13 @@ private:
                             }
                         }
                     } else {
-                        tree = new node(C_PLUS, 0, new node(C_NAME_R, arrays["#MOBSHADOW"] >> 16, 0, 0), tree);
+                        tree = new node(C_PLUS, 0, new node(C_NAME_RO, arrays["#MOBSHADOW"] >> 16, 0, 0), tree);
                         tree->label();
                         tree->generate(0, 0);
                         if (lex != C_COMMA) {
-                            output->emit_r(N_PSHR, 0);
+                            output->push(0);
                             eval_expr(0, 0);
-                            output->emit_r(N_PULR, 4);
+                            output->pop();
                             output->emit_rr(N_MVOA, 0, 4);
                             sprite = 4;
                             add = 7;
@@ -4058,9 +4105,9 @@ private:
                         if (lex == C_COMMA) {
                             get_lex();
                             if (lex != C_COMMA) {
-                                output->emit_r(N_PSHR, sprite);
+                                output->push(sprite);
                                 eval_expr(0, 0);
-                                output->emit_r(N_PULR, 4);
+                                output->pop();
                                 output->emit_nr(N_ADDI, "", add, 4);
                                 output->emit_rr(N_MVOA, 0, 4);
                                 sprite = 4;
@@ -4070,9 +4117,9 @@ private:
                             }
                             if (lex == C_COMMA) {
                                 get_lex();
-                                output->emit_r(N_PSHR, sprite);
+                                output->push(sprite);
                                 eval_expr(0, 0);
-                                output->emit_r(N_PULR, 4);
+                                output->pop();
                                 output->emit_nr(N_ADDI, "", add, 4);
                                 output->emit_rr(N_MVOA, 0, 4);
                             }
@@ -4333,6 +4380,12 @@ private:
                             get_lex();
                         }
                         where = -1;
+                        
+                        // Maps an array directly to a memory address.
+                        // Nothing that cannot be done with assembler.
+                        //
+                        // Not included in the docs because pros think there is no need for it.
+                        // And newbies could ask too complicated questions about it. Not enough time ;)
                         if (lex == C_NAME && name == "AT") {
                             get_lex();
                             tree = eval_level0();
@@ -4349,6 +4402,7 @@ private:
                             delete tree;
                             tree = NULL;
                         }
+                        
                         if (arrays[array] != 0) {
                             emit_error("already used name for DIM");
                         } else {

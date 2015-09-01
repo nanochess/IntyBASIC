@@ -37,7 +37,6 @@ v1.2.3 31-ago-2015  o Se agrega sentencia SIGNED para indicar arreglos y
                     o SCREEN permite un sexto argumento para admitir una
                       pantalla origen ancha, útil para scroll horizontal o
                       para ilustrar una fracción de un gran mapa.
-                    o DIM AT para poner un arreglo en una dirección de memoria.
                     o Se soluciona un bug donde las advertencias eran tratadas
                       como errores para el código de retorno de la línea de
                       órdenes.
@@ -275,6 +274,7 @@ Las limitaciones actuales son:
     una comparación son con signo (-32768 - -1), todas las comparaciones son de
     16 bits con signo.
   o ASM no se puede usar dentro de DEF FN.
+  o Usar PRINT para números siempre los muestra como sin signo de 0 a 65535.
 
 Forma de uso:
 
@@ -586,17 +586,6 @@ Las siguientes sentencias están disponibles:
          
      Esta es una clase de directiva, no genera código y puede aparecer en
      cualquier punto del programa.
-
-  DIM var(tam) AT dirección
-  
-     Crea un arreglo en la dirección de memoria indicada (debe ser una constante)
-     
-     Esto puede ser útil para acceder hardware no previsto en una forma
-     eficiente.
-     
-     No olvide utilizar el tipo correcto de arreglo, un nombre de 8 bits o
-     16 bits (comenzando con #) porque IntyBASIC realiza optimización
-     internamente.
 
   RESTORE label
   READ var

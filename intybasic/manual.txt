@@ -29,7 +29,6 @@ v1.2.3 Aug/31/2015  o Added SIGNED statement to indicate arrays or variables
                     o SCREEN allows for sixth argument to support a wide
                       origin screen, useful for horizontal scrolling or to
                       display a fraction of a big map.
-                    o DIM AT, for setting an array in a memory address.
                     o Solved bug where warnings were treated as errors for
                       final return code of command line.
                     o New sample: landscape.bas (additional SCREEN syntax)
@@ -251,6 +250,7 @@ Current limitations are:
   o The constants 32768-65535 don't imply unsigned numbers, if these are used in a
     comparison are signed (-32768 - -1), all comparisons are 16-bits signed.
   o ASM cannot be used inside DEF FN.
+  o Using PRINT for numbers always show numbers as unsigned from 0 to 65535.
 
 Usage:
 
@@ -553,15 +553,6 @@ Following statements are available:
          
      This is a kind of directive, it doesn't generate code and it can appear
      anywhere in the program.
-
-  DIM var(size) AT address
-  
-     Creates an array at memory address given (must be a constant)
-     
-     This can be useful to access unforeseen hardware in an efficient way.
-     
-     Don't forget to use the right type of array, 8-bit or 16-bit name
-     (starting with #) because IntyBASIC does optimizations internally.
 
   RESTORE label
   READ var
