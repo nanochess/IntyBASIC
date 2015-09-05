@@ -1258,6 +1258,16 @@ Example 2:
   test:	PROCEDURE
 		END
         
+If you insert DATA, MUSIC or VOICE data in the middle of the execution sequence,
+the Intellivision processor will do strange things. So you must put your data at
+the end of the program or where the execution doesn't reach it.
+
+Example 3:
+
+    A = 6
+    DATA 5,6,7      ' Bad, this gets executed! move it after the GOTO
+  stop:    GOTO stop
+        
 Display starts in color-stack mode, each card of the 20x12 screen can have the
 bit 13 set to 1 so it avances current pointer to color-stack and changes the
 background color.

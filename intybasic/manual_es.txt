@@ -1317,7 +1317,18 @@ Ejemplo 2:
 
   test:	PROCEDURE
 		END
+
+Si se inserta DATA, MUSIC o datos de VOICE en el medio de la secuencia de ejecución,
+el procesador del Intellivision hará cosas extrañas. Así que ponga sus datos al
+final del programa o donde la ejecución no los alcance.
+
+Ejemplo 3:
+
+    A = 6
+    DATA 5,6,7      ' Mal, ¡esto se ejecuta! mover después del GOTO
+  stop:    GOTO stop
         
+
 El video empieza en modo de color-stack, cada caracter de la pantalla de 20x12 puede
 tener el bit 13 puesto a 1 para que avance el apuntador actual del color-stack y
 cambie el color del fondo.
