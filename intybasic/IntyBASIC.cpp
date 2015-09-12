@@ -176,6 +176,7 @@
 //                         expressions. Now labels for #MOBSHADOW and #BACKTAB are
 //                         defined outside in intybasic_epilogue.asm. Solved bug
 //                         where warnings could not be disabled.
+//  Revision: Sep/11/2015. Optimizes sequences of ANDI/XORI instructions.
 //
 
 //  TODO:
@@ -645,6 +646,27 @@ public:
             previous = everything.back();
             if (previous->get_type() == N_ADDI && previous->get_r1() == r && previous->get_prefix() == "") {
                 value += previous->get_value();
+                everything.pop_back();
+                delete previous;
+            }
+        }
+        // Not so common but possible because of DEF FN
+        if (type == N_ANDI && prefix == "" && everything.size() > 0) {
+            class microcode *previous;
+            
+            previous = everything.back();
+            if (previous->get_type() == N_ANDI && previous->get_r1() == r && previous->get_prefix() == "") {
+                value &= previous->get_value();
+                everything.pop_back();
+                delete previous;
+            }
+        }
+        if (type == N_XORI && prefix == "" && everything.size() > 0) {
+            class microcode *previous;
+            
+            previous = everything.back();
+            if (previous->get_type() == N_XORI && previous->get_r1() == r && previous->get_prefix() == "") {
+                value ^= previous->get_value();
                 everything.pop_back();
                 delete previous;
             }
