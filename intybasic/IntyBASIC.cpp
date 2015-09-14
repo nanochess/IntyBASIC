@@ -177,6 +177,8 @@
 //                         defined outside in intybasic_epilogue.asm. Solved bug
 //                         where warnings could not be disabled.
 //  Revision: Sep/11/2015. Optimizes sequences of ANDI/XORI instructions.
+//  Revision: Sep/14/2015. Launches warning in case of variable assignment to name
+//                         previously used with CONST.
 //
 
 //  TODO:
@@ -3389,8 +3391,15 @@ private:
             return;
         }
         read_write[name] = (read_write[name] | 2);
-        if (variables[name] == 0)
+        if (variables[name] == 0) {
             variables[name] = next_var++;
+            if ((constants[name] & 0x10000) != 0) {
+                string message;
+                
+                message = "variable '" + name + "' assigned but name already used for constant. Constant has priority";
+                emit_warning(message);
+            }
+        }
         assigned = name;
         get_lex();
         if (is_read) {
