@@ -178,7 +178,8 @@
 //                         where warnings could not be disabled.
 //  Revision: Sep/11/2015. Optimizes sequences of ANDI/XORI instructions.
 //  Revision: Sep/14/2015. Launches warning in case of variable assignment to name
-//                         previously used with CONST.
+//                         previously used with CONST. Solved bug where ELSEIF
+//                         should be finished with ELSE.
 //
 
 //  TODO:
@@ -3603,7 +3604,7 @@ private:
                         } else {
                             if (loops.front().var == "1")
                                 output->emit_l(TEMP_PREFIX, loops.front().label_exit);
-                            else
+                            if (loops.front().label_loop != 0)
                                 output->emit_l(TEMP_PREFIX, loops.front().label_loop);
                             loops.pop_front();
                         }
