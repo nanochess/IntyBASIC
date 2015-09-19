@@ -180,6 +180,7 @@
 //  Revision: Sep/14/2015. Launches warning in case of variable assignment to name
 //                         previously used with CONST. Solved bug where ELSEIF
 //                         should be finished with ELSE.
+//  Revision: Sep/19/2015. A few warnings emitted wrongly an error code.
 //
 
 //  TODO:
@@ -201,7 +202,7 @@
 
 using namespace std;
 
-const string VERSION = "v1.2 Sep/01/2015";      // Compiler version
+const string VERSION = "v1.2.4 Sep/19/2015";      // Compiler version
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
@@ -3028,7 +3029,7 @@ private:
                 
                 get_lex();
                 if (lex != C_NAME)
-                    emit_error("missing function name");
+                    emit_error("missing function name in USR");
                 if (functions[name] != 0) {
                     temp = functions[name];
                 } else {
@@ -5208,10 +5209,8 @@ public:
             }
             if (lex == C_NAME) {
                 if (name == "PROCEDURE") {
-                    if (inside_proc) {
+                    if (inside_proc)
                         emit_warning("starting PROCEDURE without ENDing previous PROCEDURE");
-                        err_code = 1;
-                    }
                     // as1600 requires that label and PROC are on same line
                     get_lex();
                     asm_output << "\tPROC\n\tBEGIN\n";
@@ -5219,10 +5218,10 @@ public:
                     last_is_return = 0;
                     output->trash_registers();
                 } else if (name == "END" && sneak_peek() != 'I') {  // END (and not END IF)
-                    if (!inside_proc) {
+                    if (!inside_proc)
                         emit_warning("END without PROCEDURE");
-                        err_code = 1;
-                    }
+                    else if (loops.size() > 0)
+                        emit_error("Ending PROCEDURE with control block still open");
                     get_lex();
                     if (!last_is_return)
                         asm_output << "\tRETURN\n";
@@ -5235,10 +5234,8 @@ public:
                     
                     if (next_include == 50) {  // No more than 50 INCLUDE
                         emit_error("more than 50 INCLUDE used");
-                        err_code = 1;
                     } else if (active_include) {  // No nested INCLUDE
                         emit_error("trying to use INCLUDE inside INCLUDE");
-                        err_code = 1;
                     } else {
                         while (line_pos < line_size && isspace(line[line_pos]))
                             line_pos++;
@@ -5285,7 +5282,6 @@ public:
                             // This needed because of bug in Visual C++ 2008 Express Edition
                             if (++next_include == 50) {
                                 emit_error("too many INCLUDE used");
-                                err_code = 1;
                             } else {
                                 include[next_include].open(path);
                             }
@@ -5311,7 +5307,6 @@ public:
             }
             if (lex != C_END) {
                 emit_warning("invalid extra characters");
-                err_code = 1;
             }
             
         }
