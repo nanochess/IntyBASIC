@@ -181,6 +181,7 @@
 //                         previously used with CONST. Solved bug where ELSEIF
 //                         should be finished with ELSE.
 //  Revision: Sep/19/2015. A few warnings emitted wrongly an error code.
+//  Revision: Sep/22/2015. Warns about assignment to internal variable names.
 //
 
 //  TODO:
@@ -3392,7 +3393,14 @@ private:
             tree = NULL;
             return;
         }
-        read_write[name] = (read_write[name] | 2);
+        if (name != "COL0" && name != "COL1" && name != "COL2" && name != "COL3" && name != "COL4" && name != "COL5" && name != "COL6" && name != "COL7" && name != "FRAME" && name != "RAND" && name != "NTSC" && name != "CONT" && name != "CONT1" && name != "CONT2" && name != "CONT3" && name != "CONT4") {
+            read_write[name] = (read_write[name] | 2);
+        } else {
+            string message;
+            
+            message = "assignment to internal variable '" + name + "' doesn't have effect, use another name";
+            emit_warning(message);
+        }
         if (variables[name] == 0) {
             variables[name] = next_var++;
             if ((constants[name] & 0x10000) != 0) {
