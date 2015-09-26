@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Sep/01/2015.
+Last revision: Sep/25/2015.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -22,6 +22,13 @@ All trademarks are property of their respective owners.
 
 
 >>>>>>>>>>>>>>  Changes in this version
+
+v1.2.4 Sep/25/2015  o Optimizes sequences of ANDI/XORI instructions.
+                    o Gives warning in case of variable assignment to name
+                      previously used with CONST.
+                    o Solved bug where ELSEIF should be finished with ELSE.
+                    o A few warnings emitted wrongly an error code.
+                    o Warns about assignment to internal variable names.
 
 v1.2.3 Sep/01/2015  o Added SIGNED statement to indicate arrays or variables
                       of 8-bits signed.

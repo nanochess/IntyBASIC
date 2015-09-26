@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 01-sep-2015
+Última revisión: 25-sep-2015
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -29,6 +29,15 @@ en inglés.
 
 
 >>>>>>>>>>>>>>  Cambios en esta versión
+
+v1.2.4 25-sep-2015  o Optimiza secuencias de instrucciones ANDI/XORI.
+                    o Genera advertencia en caso de asignación a variable antes
+                      asignada a CONST.
+                    o Soluciona bug donde ELSEIF debía ser terminado con ELSE.
+                    o Unas pocas advertencias devolvían un código de error
+                      incorrecto.
+                    o Advierte acerca de asignación a nombres de variables
+                      internos.
 
 v1.2.3 01-sep-2015  o Se agrega sentencia SIGNED para indicar arreglos y
                       variables de 8 bits con signo.
