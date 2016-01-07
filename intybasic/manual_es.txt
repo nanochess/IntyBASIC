@@ -657,15 +657,15 @@ label:
   SOUND 0,[VALOR 12 bits],[VOL 0-15]       Canal A
   SOUND 1,[VALOR 12 bits],[VOL 0-15]       Canal B
   SOUND 2,[VALOR 12 bits],[VOL 0-15]       Canal C
-  SOUND 3,[VALOR 16 bits],[TIPO 0-15]      Envolvente de volume (frecuencia/forma)
-  SOUND 4,[RUIDO 6 bits],[MIX]      Registro de ruido y mezcla ($38 por defecto)
+  SOUND 3,[VALOR 16 bits],[TIPO 0-15]      Envolvente de volumen (frecuencia/forma)
+  SOUND 4,[RUIDO 5 bits],[MIX]      Registro de ruido y mezcla ($38 por defecto)
 
   Sólo para el PSG secundario en el módulo extra ECS
   SOUND 5,[VALOR 12 bits],[VOL 0-15]       Canal A
   SOUND 6,[VALOR 12 bits],[VOL 0-15]       Canal B
   SOUND 7,[VALOR 12 bits],[VOL 0-15]       Canal C
-  SOUND 8,[VALOR 16 bits],[TIPO 0-15]      Envolvente de volume (frecuencia/forma)
-  SOUND 9,[RUIDO 6 bits],[MIX]      Registro de ruido y mezcla ($38 por defecto)
+  SOUND 8,[VALOR 16 bits],[TIPO 0-15]      Envolvente de volumen (frecuencia/forma)
+  SOUND 9,[RUIDO 5 bits],[MIX]      Registro de ruido y mezcla ($38 por defecto)
 
     El valor deseado de frecuencia puede ser calculado como:
 

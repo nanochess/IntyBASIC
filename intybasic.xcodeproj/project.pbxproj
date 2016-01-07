@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		F420DB7318846AB800061E5D /* IntyBASIC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F420DB7218846AB800061E5D /* IntyBASIC.cpp */; };
+		F43F4BFE1C3E9CE0004DD0C1 /* microcode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F43F4BFC1C3E9CDF004DD0C1 /* microcode.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -26,6 +27,9 @@
 		F420DB6F18846AB800061E5D /* intybasic */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = intybasic; sourceTree = BUILT_PRODUCTS_DIR; };
 		F420DB7218846AB800061E5D /* IntyBASIC.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = IntyBASIC.cpp; sourceTree = "<group>"; };
 		F420DB7B1884786F00061E5D /* manual.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = manual.txt; sourceTree = "<group>"; };
+		F43F4BFC1C3E9CDF004DD0C1 /* microcode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = microcode.cpp; sourceTree = "<group>"; };
+		F43F4BFD1C3E9CE0004DD0C1 /* microcode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = microcode.h; sourceTree = "<group>"; };
+		F43F4BFF1C3E9D35004DD0C1 /* global.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = global.h; sourceTree = "<group>"; };
 		F45AB1371A3CCA8400BEBEAE /* manual_es.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = manual_es.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -60,6 +64,9 @@
 			isa = PBXGroup;
 			children = (
 				F420DB7218846AB800061E5D /* IntyBASIC.cpp */,
+				F43F4BFC1C3E9CDF004DD0C1 /* microcode.cpp */,
+				F43F4BFF1C3E9D35004DD0C1 /* global.h */,
+				F43F4BFD1C3E9CE0004DD0C1 /* microcode.h */,
 				F420DB7B1884786F00061E5D /* manual.txt */,
 				F45AB1371A3CCA8400BEBEAE /* manual_es.txt */,
 			);
@@ -118,6 +125,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F420DB7318846AB800061E5D /* IntyBASIC.cpp in Sources */,
+				F43F4BFE1C3E9CE0004DD0C1 /* microcode.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -620,14 +620,14 @@ label:
   SOUND 1,[VALUE 12 bits],[VOL 0-15]       Channel B
   SOUND 2,[VALUE 12 bits],[VOL 0-15]       Channel C
   SOUND 3,[VALUE 16 bits],[TYPE 0-15]      Volume envolvent (frequency/shape)
-  SOUND 4,[NOISE 6 bits],[MIX]      Noise and mix register ($38 value by default)
+  SOUND 4,[NOISE 5 bits],[MIX]      Noise and mix register ($38 value by default)
 
   Only for the secondary PSG in ECS add-on module
   SOUND 5,[VALUE 12 bits],[VOL 0-15]       Channel A
   SOUND 6,[VALUE 12 bits],[VOL 0-15]       Channel B
   SOUND 7,[VALUE 12 bits],[VOL 0-15]       Channel C
   SOUND 8,[VALUE 16 bits],[TYPE 0-15]      Volume envolvent (frequency/shape)
-  SOUND 9,[NOISE 6 bits],[MIX]      Noise and mix register ($38 value by default)
+  SOUND 9,[NOISE 5 bits],[MIX]      Noise and mix register ($38 value by default)
 
 
     Desired frequency value can be calculated as:
