@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		F420DB7318846AB800061E5D /* IntyBASIC.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F420DB7218846AB800061E5D /* IntyBASIC.cpp */; };
 		F43F4BFE1C3E9CE0004DD0C1 /* microcode.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F43F4BFC1C3E9CDF004DD0C1 /* microcode.cpp */; };
+		F43F4C021C3E9FFA004DD0C1 /* node.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F43F4C001C3E9FFA004DD0C1 /* node.cpp */; };
+		F43F4C051C3EA2CB004DD0C1 /* code.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F43F4C031C3EA2CB004DD0C1 /* code.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -30,6 +32,10 @@
 		F43F4BFC1C3E9CDF004DD0C1 /* microcode.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = microcode.cpp; sourceTree = "<group>"; };
 		F43F4BFD1C3E9CE0004DD0C1 /* microcode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = microcode.h; sourceTree = "<group>"; };
 		F43F4BFF1C3E9D35004DD0C1 /* global.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = global.h; sourceTree = "<group>"; };
+		F43F4C001C3E9FFA004DD0C1 /* node.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = node.cpp; sourceTree = "<group>"; };
+		F43F4C011C3E9FFA004DD0C1 /* node.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = node.h; sourceTree = "<group>"; };
+		F43F4C031C3EA2CB004DD0C1 /* code.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = code.cpp; sourceTree = "<group>"; };
+		F43F4C041C3EA2CB004DD0C1 /* code.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = code.h; sourceTree = "<group>"; };
 		F45AB1371A3CCA8400BEBEAE /* manual_es.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = manual_es.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -64,6 +70,10 @@
 			isa = PBXGroup;
 			children = (
 				F420DB7218846AB800061E5D /* IntyBASIC.cpp */,
+				F43F4C031C3EA2CB004DD0C1 /* code.cpp */,
+				F43F4C041C3EA2CB004DD0C1 /* code.h */,
+				F43F4C001C3E9FFA004DD0C1 /* node.cpp */,
+				F43F4C011C3E9FFA004DD0C1 /* node.h */,
 				F43F4BFC1C3E9CDF004DD0C1 /* microcode.cpp */,
 				F43F4BFF1C3E9D35004DD0C1 /* global.h */,
 				F43F4BFD1C3E9CE0004DD0C1 /* microcode.h */,
@@ -124,8 +134,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F43F4C051C3EA2CB004DD0C1 /* code.cpp in Sources */,
 				F420DB7318846AB800061E5D /* IntyBASIC.cpp in Sources */,
 				F43F4BFE1C3E9CE0004DD0C1 /* microcode.cpp in Sources */,
+				F43F4C021C3E9FFA004DD0C1 /* node.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
