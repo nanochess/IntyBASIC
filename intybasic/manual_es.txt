@@ -1,12 +1,12 @@
 >>>>>>>>>>>>>  Manual del usuario de IntyBASIC  <<<<<<<<<<<<<<<
 
                  por Oscar Toledo G.
-       (c) Copyright Oscar Toledo G. 2014-2015
+       (c) Copyright Oscar Toledo G. 2014-2016
                 http://nanochess.org/
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 25-sep-2015
+Última revisión: 22-ene-2016
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,6 +30,16 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
+v1.2.5 22-ene-2016  o Se agrega la sintaxis NO DRUMS a PLAY.
+                    o La sentencia DO seguida por dos puntos ya no es tomada
+                      como etiqueta.
+                    o Se corrige un error en la detección de PAL.
+                    o Actualizado constants.bas (correcciones y nuevas
+                      constantes para modo Coloured Squares) y ejemplo
+                      keypad.bas.
+                    o Agregado contrib/ColouredSquares.bas un ejemplo de dibujo
+                      de líneas en modo Coloured Squares por GroovyBee.
+                      
 v1.2.4 25-sep-2015  o Optimiza secuencias de instrucciones ANDI/XORI.
                     o Genera advertencia en caso de asignación a variable antes
                       asignada a CONST.
@@ -883,7 +893,9 @@ label:
     Todos los demás caracteres serán tomados como uno binario.
     
   PLAY SIMPLE
+  PLAY SIMPLE NO DRUMS
   PLAY FULL
+  PLAY FULL NO DRUMS
   
     Activa el reproductor de música y selecciona el tipo de música reproducida,
     SIMPLE utilizará solo dos canales, permitiendo al usuario usar SOUND 2 para
@@ -891,7 +903,18 @@ label:
 
     FULL utilizará los tres canales. SOUND no puede ser usado en este caso.
     
+    El reproductor de música tocará tambores usando el canal de ruido y el
+    registro de mezcla, se puede desactivar esto usando la sintaxis NO DRUMS,
+    por ejemplo si se desea crear sonidos de explosiones en el canal de ruido,
+    permitiendo usar SOUND 4.
+
     Note que cada cuadro de video se actualizan los registros de sonido.
+
+    Note que si utiliza la sintaxis NO DRUMS, es necesario que inserte esta
+    sentencia justo después de la sentencia PLAY para poner el valor correcto
+    en el registro de mezcla: (el reproductor ya no lo modifica)
+
+      SOUND 4,,$38
 
   PLAY NONE
   

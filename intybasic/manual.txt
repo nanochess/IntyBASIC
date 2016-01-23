@@ -1,12 +1,12 @@
 >>>>>>>>>>>>>  IntyBASIC user's manual  <<<<<<<<<<<<<<<
 
                  by Oscar Toledo G.
-       (c) Copyright 2014-2015 Oscar Toledo G.
+       (c) Copyright 2014-2016 Oscar Toledo G.
                 http://nanochess.org/
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Sep/25/2015.
+Last revision: Jan/22/2016.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -22,6 +22,15 @@ All trademarks are property of their respective owners.
 
 
 >>>>>>>>>>>>>>  Changes in this version
+
+v1.2.5 Jan/22/2016  o Added NO DRUMS syntax to PLAY.
+                    o DO statement followed by colon now isn't taken as
+                      label.
+                    o Corrected bug in PAL detection.
+                    o Updated constants.bas (corrections and new constants
+                      for Coloured Squares mode) and keypad.bas sample.
+                    o Added contrib/ColouredSquares.bas a sample of drawing
+                      lines in Coloured Squares mode by GroovyBee.
 
 v1.2.4 Sep/25/2015  o Optimizes sequences of ANDI/XORI instructions.
                     o Gives warning in case of variable assignment to name
@@ -309,6 +318,7 @@ Following sample programs are included:
   samples/voice.bas           Simple example of Intellivoice
 
   contrib/42k.bas             Example of how to use the 42K words maximum memory map
+  contrib/ColouredSquares.bas Uses Coloured Squares mode to draw Bresenham lines
   contrib/constants.bas       Constants library (same as samples)
   contrib/AppleCatcher.bas    Game Apple Catcher by Kiwi
   contrib/clowns.bas          Game Clowns & Ballons by catsfolly
@@ -840,14 +850,26 @@ label:
     Every other character will be taken as one.
     
   PLAY SIMPLE
+  PLAY SIMPLE NO DRUMS
   PLAY FULL
+  PLAY FULL NO DRUMS
   
     Activates music player and selects type of music played, SIMPLE will use only
     two channels, allowing user to use SOUND 2 for sound effects.
     
     FULL will use all three channels. SOUND cannot be used in this case.
     
+    The music player will play drums using the noise channel and mix register,
+    you can deactivate this using the NO DRUMS syntax, for example if you want
+    to create explosion sounds on noise channel, allowing you to use SOUND 4.
+
     Note every frame the music player will update the sound channels.
+    
+    Note that if you use the NO DRUMS syntax it's needed for you to insert
+    this statement just after the PLAY statement in order to put the right
+    value to mix register: (the player will not modify it)
+    
+      SOUND 4,,$38
 
   PLAY NONE
   

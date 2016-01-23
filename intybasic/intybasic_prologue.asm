@@ -4,15 +4,16 @@
         ;
         ; Revision: Jan/30/2014. Spacing adjustment and more comments.
         ; Revision: Apr/01/2014. It now sets the starting screen pos. for PRINT
-	; Revision: Aug/26/2014. Added PAL detection code.
-	; Revision: Dec/12/2014. Added optimized constant multiplication routines
-	;                        by James Pujals.
-	; Revision: Jan/25/2015. Added marker for automatic title replacement.
-	;                        (option --title of IntyBASIC)
-	; Revision: Aug/06/2015. Turns off ECS sound. Seed random generator using
-	;                        trash in 16-bit RAM. Solved bugs and optimized
-	;                        macro for constant multiplication.
-	; 
+	    ; Revision: Aug/26/2014. Added PAL detection code.
+	    ; Revision: Dec/12/2014. Added optimized constant multiplication routines
+	    ;                        by James Pujals.
+	    ; Revision: Jan/25/2015. Added marker for automatic title replacement.
+	    ;                        (option --title of IntyBASIC)
+	    ; Revision: Aug/06/2015. Turns off ECS sound. Seed random generator using
+	    ;                        trash in 16-bit RAM. Solved bugs and optimized
+	    ;                        macro for constant multiplication.
+        ; Revision: Jan/12/2016. Solved bug in PAL detection.
+	    ;
 
         ROMW 16
         ORG $5000
@@ -116,11 +117,11 @@ _MAIN2:	INCR R2
 	CMPI #4,R0
 	BNE _MAIN2
 
-        ; 387 for PAL in jzintv
+        ; 596 for PAL in jzintv
         ; 444 for NTSC in jzintv
-        CMPI #415,R2
+        CMPI #520,R2
         MVII #1,R0
-        BGE _MAIN3
+        BLE _MAIN3
         CLRR R0
 _MAIN3: MVO R0,_ntsc
 

@@ -182,6 +182,8 @@
 //                         should be finished with ELSE.
 //  Revision: Sep/19/2015. A few warnings emitted wrongly an error code.
 //  Revision: Sep/22/2015. Warns about assignment to internal variable names.
+//  Revision: Jan/22/2016. Added NO DRUMS syntax to PLAY SIMPLE and PLAY FULL.
+//                         DO followed by colon now isn't taken as label.
 //
 
 //  TODO:
@@ -409,7 +411,8 @@ private:
             }
             if (line_pos < line_size && line[line_pos] == ':' && line_start
             && name != "RETURN" && name != "CLS" && name != "WAIT"
-            && name != "RESTORE" && name != "STACK_CHECK" && name != "WEND") {
+            && name != "RESTORE" && name != "STACK_CHECK" && name != "WEND"
+            && name != "DO") {
                 lex = C_LABEL;
                 line_pos++;
             } else {
@@ -2586,6 +2589,7 @@ private:
                     }
                 } else if (name == "PLAY") {
                     int label;
+                    int c;
                     
                     get_lex();
                     if (lex != C_NAME) {
@@ -2594,16 +2598,40 @@ private:
                     }
                     music_used = true;
                     if (name == "OFF") {
+                        get_lex();
                         output->emit_r(N_CLRR, 0);
                         output->emit_a(N_CALL, "_play_music", -1);
                     } else if (name == "NONE") {
+                        get_lex();
                         output->emit_r(N_CLRR, 3);
                         output->emit_rl(N_MVO, 3, "_music_mode", -1);
                     } else if (name == "SIMPLE") {
-                        output->emit_nr(N_MVII, "", 1, 3);
+                        get_lex();
+                        c = 3;
+                        if (lex == C_NAME && name == "NO") {
+                            get_lex();
+                            if (lex == C_NAME && name == "DRUMS") {
+                                get_lex();
+                                c--;
+                            } else {
+                                emit_error("only allowed PLAY SIMPLE NO DRUMS");
+                            }
+                        }
+                        output->emit_nr(N_MVII, "", c, 3);
                         output->emit_rl(N_MVO, 3, "_music_mode", -1);
                     } else if (name == "FULL") {
-                        output->emit_nr(N_MVII, "", 2, 3);
+                        get_lex();
+                        c = 5;
+                        if (lex == C_NAME && name == "NO") {
+                            get_lex();
+                            if (lex == C_NAME && name == "DRUMS") {
+                                get_lex();
+                                c--;
+                            } else {
+                                emit_error("only allowed PLAY FULL NO DRUMS");
+                            }
+                        }
+                        output->emit_nr(N_MVII, "", c, 3);
                         output->emit_rl(N_MVO, 3, "_music_mode", -1);
                     } else {
                         if (arrays[name] != 0) {
@@ -2618,8 +2646,8 @@ private:
                         }
                         output->emit_nr(N_MVII, LABEL_PREFIX, label, 0);
                         output->emit_a(N_CALL, "_play_music", -1);
+                        get_lex();
                     }
-                    get_lex();
                 } else if (name == "MUSIC") {
                     int arg;
                     static int previous[4];

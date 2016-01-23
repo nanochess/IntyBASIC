@@ -39,6 +39,8 @@
 	;                        handling.
 	; Revision: Aug/31/2015. Added CPYBLK2 for SCREEN fifth argument.
 	; Revision: Sep/01/2015. Defined labels Q1 and Q2 as alias.
+	; Revision: Jan/22/2016. Music player allows not to use noise channel
+	;                        for drums.
 
 	;
 	; Avoids empty programs to crash
@@ -958,63 +960,76 @@ _flute_volume:	PROC
 _emit_sound:	PROC
         MOVR R5,R1
 	MVI _music_mode,R2
-	TSTR R2
-	BEQ @@2
+	SARC R2,1
+	BEQ @@6
 	MVII #_music_freq10,R4
 	MVII #$01F0,R5
         MVI@ R4,R0
-	MVO@ R0,R5
+	MVO@ R0,R5	; $01F0 - Channel A Period (Low 8 bits of 12)
         MVI@ R4,R0
-	MVO@ R0,R5
-	CMPI #1,R2
+	MVO@ R0,R5	; $01F1 - Channel B Period (Low 8 bits of 12)
+	DECR R2
 	BEQ @@1
+        MVI@ R4,R0	
+	MVO@ R0,R5	; $01F2 - Channel C Period (Low 8 bits of 12)
+	INCR R5		; Avoid $01F3 - Enveloped Period (Low 8 bits of 16)
         MVI@ R4,R0
-	MVO@ R0,R5
-	INCR R5
+	MVO@ R0,R5	; $01F4 - Channel A Period (High 4 bits of 12)
         MVI@ R4,R0
-	MVO@ R0,R5
+	MVO@ R0,R5	; $01F5 - Channel B Period (High 4 bits of 12)
         MVI@ R4,R0
-	MVO@ R0,R5
+	MVO@ R0,R5	; $01F6 - Channel C Period (High 4 bits of 12)
+	INCR R5		; Avoid $01F7 - Envelope Period (High 8 bits of 16)
+	BC @@2		; Jump if playing with drums
+	ADDI #2,R4
+	ADDI #3,R5
+	B @@3
+
+@@2:	MVI@ R4,R0
+	MVO@ R0,R5	; $01F8 - Enable Noise/Tone (bits 3-5 Noise : 0-2 Tone)
+        MVI@ R4,R0	
+	MVO@ R0,R5	; $01F9 - Noise Period (5 bits)
+	INCR R5		; Avoid $01FA - Envelope Type (4 bits)
+@@3:    MVI@ R4,R0
+	MVO@ R0,R5	; $01FB - Channel A Volume
         MVI@ R4,R0
-	MVO@ R0,R5
-	INCR R5
+	MVO@ R0,R5	; $01FC - Channel B Volume
         MVI@ R4,R0
-	MVO@ R0,R5
-        MVI@ R4,R0
-	MVO@ R0,R5
-	INCR R5
-        MVI@ R4,R0
-	MVO@ R0,R5
-        MVI@ R4,R0
-	MVO@ R0,R5
-        MVI@ R4,R0
-	MVO@ R0,R5
+	MVO@ R0,R5	; $01FD - Channel C Volume
         JR R1
 
-@@1:	INCR R4
-	ADDI #2,R5
+@@1:	INCR R4		
+	ADDI #2,R5	; Avoid $01F2 and $01F3
         MVI@ R4,R0
-	MVO@ R0,R5
+	MVO@ R0,R5	; $01F4
         MVI@ R4,R0
-	MVO@ R0,R5
+	MVO@ R0,R5	; $01F5
 	INCR R4
-	ADDI #2,R5
+	ADDI #2,R5	; Avoid $01F6 and $01F7
+	BC @@4		; Jump if playing with drums
+	ADDI #2,R4
+	ADDI #3,R5
+	B @@5
+
+@@4:	MVI@ R4,R0
+	MVO@ R0,R5	; $01F8
         MVI@ R4,R0
-	MVO@ R0,R5
+	MVO@ R0,R5	; $01F9
+	INCR R5		; Avoid $01FA
+@@5:    MVI@ R4,R0
+	MVO@ R0,R5	; $01FB
         MVI@ R4,R0
-	MVO@ R0,R5
-	INCR R5
-        MVI@ R4,R0
-	MVO@ R0,R5
-        MVI@ R4,R0
-	MVO@ R0,R5
-@@2:    JR R1
+	MVO@ R0,R5	; $01FD
+@@6:    JR R1
 	ENDP
 
         ;
         ; Activates drum
         ;
 _activate_drum:	PROC
+	MVI _music_mode,R2
+	SARC R2,1	; PLAY NO DRUMS?
+	BNC @@0		; Yes, jump
 	MVI _music_vol1,R0
 	TSTR R0
 	BNE @@1
@@ -1037,9 +1052,8 @@ _activate_drum:	PROC
 	MVO R0,_music_mix
 	JR R5
 
-@@2:    MVI _music_mode,R0
-        CMPI #2,R0
-        BNE @@3
+@@2:    DECR R2		; PLAY SIMPLE?
+        BEQ @@3		; Yes, jump
         MVI _music_vol3,R0
 	TSTR R0
 	BNE @@3
@@ -1054,7 +1068,7 @@ _activate_drum:	PROC
 @@3:    MVI _music_mix,R0
         ANDI #$EF,R0
 	MVO R0,_music_mix
-	JR R5
+@@0:	JR R5
 
 	ENDP
 
@@ -2865,7 +2879,7 @@ _scroll_y:  RMB 1       ; Scroll Y offset
 _scroll_d:  RMB 1       ; Scroll direction
     ENDI
     IF DEFINED intybasic_music
-_music_mode: RMB 1      ; Music mode (0= Not using PSG, 1= Simple, 2= Full)
+_music_mode: RMB 1      ; Music mode (0= Not using PSG, 2= Simple, 4= Full, add 1 if using noise channel for drums)
 _music_frame: RMB 1     ; Music frame (for 50 hz fixed)
 _music_tc:  RMB 1       ; Time counter
 _music_t:   RMB 1       ; Time base
