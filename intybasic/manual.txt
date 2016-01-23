@@ -23,7 +23,8 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.5 Jan/22/2016  o Added NO DRUMS syntax to PLAY.
+v1.2.5 Jan/22/2016  o Added PLAY VOLUME statement.
+                    o Added NO DRUMS syntax to PLAY.
                     o DO statement followed by colon now isn't taken as
                       label.
                     o Corrected bug in PAL detection.
@@ -880,6 +881,17 @@ label:
       SOUND 1,1,0
       SOUND 2,1,0
       SOUND 4,1,$38
+
+  PLAY VOLUME expr
+
+     Set volume for music playing (0 is silence, 1 is minimum volume, 15 is
+     maximum volume)
+     
+     If you use this statement, don't forget to put PLAY VOLUME 15 at start of
+     your program, because volume will be 0 at start (silence).
+
+     Note this will include extra code inside your program (around 300 words)
+     and will use slightly more cycles in each video frame.
 
   PLAY label
   

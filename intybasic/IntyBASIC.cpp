@@ -352,6 +352,7 @@ private:
     bool voice_used;    // Indicates if Intellivoice used (VOICE)
     bool ecs_used;      // Indicates if ECS used (SOUND, CONT3, CONT4)
     bool flash_used;    // Indicates if JLP Flash is used (FLASH)
+    bool playvol_used;  // Indicates if PLAY VOLUME is used.
     
     //
     // Avoid spaces
@@ -2633,6 +2634,11 @@ private:
                         }
                         output->emit_nr(N_MVII, "", c, 3);
                         output->emit_rl(N_MVO, 3, "_music_mode", -1);
+                    } else if (name == "VOLUME") {
+                        get_lex();
+                        eval_expr(0, 0);
+                        output->emit_rl(N_MVO, 0, "_music_vol", -1);
+                        playvol_used = true;
                     } else {
                         if (arrays[name] != 0) {
                             label = arrays[name] >> 16;
@@ -3139,6 +3145,7 @@ public:
         voice_used = false;
         ecs_used = false;
         flash_used = false;
+        playvol_used = false;
         jlp_used = ((flags & 1) != 0);
         cc3_used = ((flags & 2) != 0);
         warnings = ((flags & 4) == 0);
@@ -3362,6 +3369,8 @@ public:
             asm_output << "intybasic_keypad:\tequ 1\t; Forces to include keypad library\n";
         if (music_used)
             asm_output << "intybasic_music:\tequ 1\t; Forces to include music library\n";
+        if (playvol_used)
+            asm_output << "intybasic_music_volume:\tequ 1\t; Forces to include music volume change\n";
         if (stack_used)
             asm_output << "intybasic_stack:\tequ 1\t; Forces to include stack overflow checking\n";
         if (numbers_used)
@@ -3458,6 +3467,8 @@ public:
             available_vars -= 6;
         if (music_used)
             available_vars -= 26;
+        if (playvol_used)
+            available_vars -= 1;
         if (used_space > available_vars) {
             std::cerr << "Error: Use of 8-bits variables exceeds available space (" << used_space << " vs " << available_vars << ")\n";
             err_code = 1;

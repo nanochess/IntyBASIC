@@ -30,7 +30,8 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.5 22-ene-2016  o Se agrega la sintaxis NO DRUMS a PLAY.
+v1.2.5 22-ene-2016  o Se agrega la sentencia PLAY VOLUME.
+                    o Se agrega la sintaxis NO DRUMS a PLAY.
                     o La sentencia DO seguida por dos puntos ya no es tomada
                       como etiqueta.
                     o Se corrige un error en la detección de PAL.
@@ -925,6 +926,17 @@ label:
       SOUND 1,1,0
       SOUND 2,1,0
       SOUND 4,1,$38
+
+  PLAY VOLUME expr
+
+     Pone volumen para reproducción de música (0 es silencio, 1 es volumen
+     mínimo y 15 es volumen máximo)
+     
+     Si se utiliza esta sentencia, no debe olvidar poner PLAY VOLUME 15 al
+     inicio de su programa, debido a que el volumen será 0 al inicio (silencio)
+
+     Note que esto incluirá código extra dentro de su programa (alrededor de
+     300 palabras) y usará ligeramente más ciclos en cada cuadro de video.
 
   PLAY etiqueta
   

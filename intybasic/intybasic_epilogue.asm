@@ -40,7 +40,7 @@
 	; Revision: Aug/31/2015. Added CPYBLK2 for SCREEN fifth argument.
 	; Revision: Sep/01/2015. Defined labels Q1 and Q2 as alias.
 	; Revision: Jan/22/2016. Music player allows not to use noise channel
-	;                        for drums.
+	;                        for drums. Allows setting music volume.
 
 	;
 	; Avoids empty programs to crash
@@ -857,7 +857,11 @@ _bass_instrument:	PROC
 	SLL R3,2	; Lower 2 octaves
 	ADDI #_bass_volume,R1
 	MVI@ R1,R1	; Bass effect
+    IF DEFINED intybasic_music_volume
+	B _global_volume
+    ELSE
 	JR R5
+    ENDI
 	ENDP
 
 _bass_volume:	PROC
@@ -878,7 +882,11 @@ _bass_volume:	PROC
 _piano_instrument:	PROC
 	ADDI #_piano_volume,R1
 	MVI@ R1,R1
+    IF DEFINED intybasic_music_volume
+	B _global_volume
+    ELSE
 	JR R5
+    ENDI
 	ENDP
 
 _piano_volume:	PROC
@@ -904,7 +912,11 @@ _clarinet_instrument:	PROC
 	ADCR R3
         ADDI #_clarinet_volume-_clarinet_vibrato,R1
 	MVI@ R1,R1
+    IF DEFINED intybasic_music_volume
+	B _global_volume
+    ELSE
 	JR R5
+    ENDI
 	ENDP
 
 _clarinet_vibrato:	PROC
@@ -936,7 +948,11 @@ _flute_instrument:	PROC
 	ADD@ R1,R3
 	ADDI #_flute_volume-_flute_vibrato,R1
 	MVI@ R1,R1
+    IF DEFINED intybasic_music_volume
+	B _global_volume
+    ELSE
 	JR R5
+    ENDI
 	ENDP
 
 _flute_vibrato:	PROC
@@ -953,6 +969,40 @@ _flute_volume:	PROC
         DECLE 11,11,11,11,10,10,10,10
         DECLE 11,11,11,11,10,10,10,10
 	ENDP
+
+    IF DEFINED intybasic_music_volume
+
+_global_volume:	PROC
+	MVI _music_vol,R2
+	ANDI #$0F,R2
+	SLL R2,2
+	SLL R2,2
+	ADDR R1,R2
+	ADDI #@@table,R2
+	MVI@ R2,R1
+	JR R5
+
+@@table:
+	DECLE 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+	DECLE 0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1
+	DECLE 0,0,0,0,1,1,1,1,1,1,1,2,2,2,2,2
+	DECLE 0,0,0,1,1,1,1,1,2,2,2,2,2,3,3,3
+	DECLE 0,0,1,1,1,1,2,2,2,2,3,3,3,4,4,4
+	DECLE 0,0,1,1,1,2,2,2,3,3,3,4,4,4,5,5
+	DECLE 0,0,1,1,2,2,2,3,3,4,4,4,5,5,6,6
+	DECLE 0,1,1,1,2,2,3,3,4,4,5,5,6,6,7,7
+	DECLE 0,1,1,2,2,3,3,4,4,5,5,6,6,7,8,8
+	DECLE 0,1,1,2,2,3,4,4,5,5,6,7,7,8,8,9
+	DECLE 0,1,1,2,3,3,4,5,5,6,7,7,8,9,9,10
+	DECLE 0,1,2,2,3,4,4,5,6,7,7,8,9,10,10,11
+	DECLE 0,1,2,2,3,4,5,6,6,7,8,9,10,10,11,12
+	DECLE 0,1,2,3,4,4,5,6,7,8,9,10,10,11,12,13
+	DECLE 0,1,2,3,4,5,6,7,8,8,9,10,11,12,13,14
+	DECLE 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+
+	ENDP
+
+    ENDI
 
         ;
         ; Emits sound
@@ -1027,48 +1077,77 @@ _emit_sound:	PROC
         ; Activates drum
         ;
 _activate_drum:	PROC
+    IF DEFINED intybasic_music_volume
+	BEGIN
+    ENDI
 	MVI _music_mode,R2
 	SARC R2,1	; PLAY NO DRUMS?
 	BNC @@0		; Yes, jump
 	MVI _music_vol1,R0
 	TSTR R0
 	BNE @@1
-        MVII #11,R0
-	MVO R0,_music_vol1
+        MVII #11,R1
+    IF DEFINED intybasic_music_volume
+	CALL _global_volume
+    ENDI
+	MVO R1,_music_vol1
 	MVI _music_mix,R0
 	ANDI #$F6,R0
 	XORI #$01,R0
 	MVO R0,_music_mix
+    IF DEFINED intybasic_music_volume
+	RETURN
+    ELSE
 	JR R5
+    ENDI
 
 @@1:    MVI _music_vol2,R0
 	TSTR R0
 	BNE @@2
-        MVII #11,R0
-	MVO R0,_music_vol2
+        MVII #11,R1
+    IF DEFINED intybasic_music_volume
+	CALL _global_volume
+    ENDI
+	MVO R1,_music_vol2
 	MVI _music_mix,R0
 	ANDI #$ED,R0
 	XORI #$02,R0
 	MVO R0,_music_mix
+    IF DEFINED intybasic_music_volume
+	RETURN
+    ELSE
 	JR R5
+    ENDI
 
 @@2:    DECR R2		; PLAY SIMPLE?
         BEQ @@3		; Yes, jump
         MVI _music_vol3,R0
 	TSTR R0
 	BNE @@3
-        MVII #11,R0
-	MVO R0,_music_vol3
+        MVII #11,R1
+    IF DEFINED intybasic_music_volume
+	CALL _global_volume
+    ENDI
+	MVO R1,_music_vol3
 	MVI _music_mix,R0
 	ANDI #$DB,R0
 	XORI #$04,R0
 	MVO R0,_music_mix
+    IF DEFINED intybasic_music_volume
+	RETURN
+    ELSE
 	JR R5
+    ENDI
 
 @@3:    MVI _music_mix,R0
         ANDI #$EF,R0
 	MVO R0,_music_mix
-@@0:	JR R5
+@@0:	
+    IF DEFINED intybasic_music_volume
+	RETURN
+    ELSE
+	JR R5
+    ENDI
 
 	ENDP
 
@@ -2906,6 +2985,9 @@ _music_noise:	RMB 1   ; Noise
 _music_vol1:	RMB 1   ; Volume A
 _music_vol2:	RMB 1   ; Volume B
 _music_vol3:	RMB 1   ; Volume C
+    ENDI
+    IF DEFINED intybasic_music_volume
+_music_vol:	RMB 1	; Global music volume
     ENDI
     IF DEFINED intybasic_voice
 IV.QH:     RMB 1    ; IV_xxx        8-bit           Voice queue head
