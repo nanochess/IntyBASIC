@@ -184,6 +184,7 @@
 //  Revision: Sep/22/2015. Warns about assignment to internal variable names.
 //  Revision: Jan/22/2016. Added NO DRUMS syntax to PLAY SIMPLE and PLAY FULL.
 //                         DO followed by colon now isn't taken as label.
+//                         Updated copyright.
 //
 
 //  TODO:
@@ -210,7 +211,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.4 Sep/19/2015";      // Compiler version
+const string VERSION = "v1.2.5 Jan/22/2016";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -3585,7 +3586,7 @@ int main(int argc, const char * argv[])
     const char *p2;
     
     std::cerr << "\nIntyBASIC compiler " << VERSION << "\n";
-    std::cerr << "(c) 2014-2015 Oscar Toledo G. http://nanochess.org/\n\n";
+    std::cerr << "(c) 2014-2016 Oscar Toledo G. http://nanochess.org/\n\n";
     
     // Get year and default title for program
     // And yep, use old-style C functions :)
