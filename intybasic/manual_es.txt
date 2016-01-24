@@ -32,6 +32,7 @@ en inglés.
 
 v1.2.5 22-ene-2016  o Se agrega la sentencia PLAY VOLUME.
                     o Se agrega la sintaxis NO DRUMS a PLAY.
+                    o Se agrega la sentencia MUSIC JUMP.
                     o La sentencia DO seguida por dos puntos ya no es tomada
                       como etiqueta.
                     o Se corrige un error en la detección de PAL.
@@ -957,6 +958,7 @@ label:
 
                 MUSIC REPEAT
                 MUSIC STOP
+                MUSIC JUMP etiq    ' Salta a etiqueta (útil para intro separada en música repetitiva)
 
                 MUSIC C4,F4,- ' Note como C4 se extiende por 4 tempos y F4 sólo 2
                 MUSIC S,S,-

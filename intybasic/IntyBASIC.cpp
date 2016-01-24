@@ -185,6 +185,7 @@
 //  Revision: Jan/22/2016. Added NO DRUMS syntax to PLAY SIMPLE and PLAY FULL.
 //                         DO followed by colon now isn't taken as label.
 //                         Updated copyright.
+//  Revision: Jan/23/2016. Added MUSIC JUMP statement.
 //
 
 //  TODO:
@@ -211,7 +212,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.5 Jan/22/2016";      // Compiler version
+const string VERSION = "v1.2.5 Jan/23/2016";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -2661,9 +2662,11 @@ private:
                     unsigned int notes;
                     int note;
                     int c;
+                    int label;
                     
                     get_lex();
                     notes = 0;
+                    label = 0;
                     arg = 0;
                     while (1) {
                         if (lex != C_NAME && lex != C_MINUS) {
@@ -2679,6 +2682,25 @@ private:
                         } else if (arg == 0 && name == "STOP") {
                             get_lex();
                             notes = 0xfe;
+                            break;
+                        } else if (arg == 0 && name == "JUMP") {
+                            get_lex();
+                            notes = 0xfe;
+                            if (lex != C_NAME) {
+                                emit_error("missing label for MUSIC JUMP");
+                                break;
+                            }
+                            if (arrays[name] != 0) {
+                                label = arrays[name] >> 16;
+                            } else if (labels[name] == 0) {
+                                label = labels[name] = next_label;
+                                next_label++;
+                                label_used[name] |= 1;
+                            } else {
+                                label = labels[name];
+                                label_used[name] |= 1;
+                            }
+                            get_lex();
                             break;
                         } else if (arg == 3) {
                             if (name[0] != 'M' || name[1] < '1' || name[1] > '3') {
@@ -2744,7 +2766,12 @@ private:
                         }
                         get_lex();
                     }
-                    output->emit_d2(N_DECLE, (notes & 0xffff), (notes >> 16 & 0xffff));
+                    if (label) {
+                        output->emit_d(N_DECLE, notes & 0xffff);
+                        output->emit_dl(N_DECLE, LABEL_PREFIX, label);
+                    } else {
+                        output->emit_d2(N_DECLE, (notes & 0xffff), (notes >> 16 & 0xffff));
+                    }
                 } else if (name == "ON") {
                     int label;
                     int table;

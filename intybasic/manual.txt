@@ -23,8 +23,9 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.5 Jan/22/2016  o Added PLAY VOLUME statement.
+v1.2.5 Jan/23/2016  o Added PLAY VOLUME statement.
                     o Added NO DRUMS syntax to PLAY.
+                    o Added MUSIC JUMP statement.
                     o DO statement followed by colon now isn't taken as
                       label.
                     o Corrected bug in PAL detection.
@@ -910,6 +911,7 @@ label:
 
                 MUSIC REPEAT
                 MUSIC STOP
+                MUSIC JUMP label    ' Jump to label (useful for separate intro in looping music)
 
                 MUSIC C4,F4,- ' Note how C4 extends along 4 tempos and F4 only 2
                 MUSIC S,S,-

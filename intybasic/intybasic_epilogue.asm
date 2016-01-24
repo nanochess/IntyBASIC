@@ -41,6 +41,7 @@
 	; Revision: Sep/01/2015. Defined labels Q1 and Q2 as alias.
 	; Revision: Jan/22/2016. Music player allows not to use noise channel
 	;                        for drums. Allows setting music volume.
+	; Revision: Jan/23/2016. Added jump inside of music (for MUSIC JUMP)
 
 	;
 	; Avoids empty programs to crash
@@ -684,10 +685,13 @@ _generate_music:	PROC
 	MVI@ R4,R1
 	MVI _music_t,R2
         CMPI #$FE,R0	; The end?
-	BEQ @@000       ; Keep quiet
+	BEQ @@001       ; Keep quiet
 	CMPI #$FD,R0	; Repeat?
 	BNE @@00
 	MVI _music_start,R4
+	B @@15
+
+@@001:	MOVR R1,R4	; Jump, zero will make it quiet
 	B @@15
 
 @@000:  MVII #1,R0
