@@ -186,6 +186,8 @@
 //                         DO followed by colon now isn't taken as label.
 //                         Updated copyright.
 //  Revision: Jan/23/2016. Added MUSIC JUMP statement.
+//  Revision: Jan/25/2016. SOUND now allows constant expressions as first
+//                         parameter.
 //
 
 //  TODO:
@@ -212,7 +214,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.5 Jan/23/2016";      // Compiler version
+const string VERSION = "v1.2.5 Jan/25/2016";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -2016,17 +2018,18 @@ private:
                         }
                     }
                 } else if (name == "SOUND") {
+                    class node *tree;
                     int channel;
                     
                     get_lex();
-                    if (lex != C_NUM) {
-                        emit_error("bad syntax for SOUND");
+                    tree = eval_level0();
+                    if (tree->node_type() != C_NUM) {
+                        emit_error("only constant expression for first SOUND parameter");
                         channel = 0;
                     } else {
-                        channel = value;
+                        channel = tree->node_value();
                         if (channel < 0 || channel > 9)
                             emit_error("bad channel for SOUND");
-                        get_lex();
                         if (channel >= 5)
                             ecs_used = true;
                     }
