@@ -188,6 +188,7 @@
 //  Revision: Jan/23/2016. Added MUSIC JUMP statement.
 //  Revision: Jan/25/2016. SOUND now allows constant expressions as first
 //                         parameter.
+//  Revision: Jan/27/2016. Added MUSIC.PLAYING status.
 //
 
 //  TODO:
@@ -214,7 +215,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.5 Jan/25/2016";      // Compiler version
+const string VERSION = "v1.2.5 Jan/27/2016";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -232,6 +233,7 @@ bool jlp_used;       // Indicates if JLP is used
 bool cc3_used;       // Indicates if CC3 is used
 bool fastmult_used;  // Indicates if fast multiplication is used
 bool fastdiv_used;   // Indicates if fast division/remainder is used
+bool music_used;     // Indicates if music used
 bool warnings;       // Indicates if warnings are generated
 int program_year;
 char program_title[256];
@@ -350,7 +352,6 @@ private:
     int last_is_return; // Indicates if last statement processed was a RETURN
     bool scroll_used;   // Indicates if scroll used
     bool keypad_used;   // Indicates if keypad used
-    bool music_used;    // Indicates if music used
     bool stack_used;    // Indicates if stack check used
     bool numbers_used;  // Indicates if numbers used (PRINT)
     bool voice_used;    // Indicates if Intellivoice used (VOICE)
@@ -1163,6 +1164,18 @@ private:
                     return new node(C_VAR, 17, NULL, NULL);
                 }
                 emit_error("syntax error in FLASH");
+                return new node(C_NUM, 0, NULL, NULL);
+            } else if (name == "MUSIC") {  // Music status
+                get_lex();
+                if (lex != C_PERIOD)
+                    emit_error("missing period in MUSIC");
+                else
+                    get_lex();
+                if (lex == C_NAME && name == "PLAYING") {
+                    get_lex();
+                    return new node(C_VAR, 18, NULL, NULL);
+                }
+                emit_error("syntax error in MUSIC");
                 return new node(C_NUM, 0, NULL, NULL);
             } else if (macros[name] != NULL) {  // Function (macro)
                 if (replace_macro())

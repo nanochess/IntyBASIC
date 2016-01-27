@@ -485,6 +485,17 @@ void node::generate(int reg, int decision) {
                 output->emit_lr(N_MVI, "", 0x8023, reg);
             if (value == 17)    // FLASH.LAST
                 output->emit_lr(N_MVI, "", 0x8024, reg);
+            if (value == 18) {  // MUSIC.PLAYING
+                output->emit_lr(N_MVI, "_music_p", -1, 4);
+                output->emit_r(N_TSTR, 4);
+                output->emit_a(N_BEQ, "", 5); // two words of jump, one word of MVIA, two words of CMPI
+                output->emit_rr(N_MVIA, 4, reg);
+                output->emit_nr(N_CMPI, "", 254, reg);
+                output->emit_nr(N_MVII, "", 1, reg);
+                output->emit_a(N_BNE, "", 3);
+                output->emit_r(N_DECR, reg);
+                music_used = true;
+            }
             break;
         case C_PEEK:    // PEEK()
             if (left->type == C_NUM) {  // Peek directly from memory location

@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 22-ene-2016
+Última revisión: 27-ene-2016
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,9 +30,10 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.5 22-ene-2016  o Se agrega la sentencia PLAY VOLUME.
+v1.2.5 27-ene-2016  o Se agrega la sentencia PLAY VOLUME.
                     o Se agrega la sintaxis NO DRUMS a PLAY.
                     o Se agrega la sentencia MUSIC JUMP.
+                    o Se agrega la expresión MUSIC.PLAYING
                     o La sentencia DO seguida por dos puntos ya no es tomada
                       como etiqueta.
                     o Se corrige un error en la detección de PAL.
@@ -41,6 +42,8 @@ v1.2.5 22-ene-2016  o Se agrega la sentencia PLAY VOLUME.
                       keypad.bas.
                     o Agregado contrib/ColouredSquares.bas un ejemplo de dibujo
                       de líneas en modo Coloured Squares por GroovyBee.
+                    o Agregado samples/bats.bas (murciélagos animados) y
+                      samples/envelope.bas (envolvente de sonido).
                       
 v1.2.4 25-sep-2015  o Optimiza secuencias de instrucciones ANDI/XORI.
                     o Genera advertencia en caso de asignación a variable antes
@@ -332,8 +335,10 @@ También vea debajo para información sobre depuración a nivel de código fuent
 
 Los siguientes programas de ejemplo están incluídos:
 
+  samples/bats.bas            Murciélagos animados usando nuevas sentencias de bucle
   samples/constants.bas       Librería de constantes (usada por todos los ejemplos)
   samples/controller.bas      Prueba de los controladores Intellivision
+  samples/envelope.bas        Como utilizar el generador de envolvente del sonido
   samples/flash.bas           Ejemplo de como utilizar memoria Flash de cartuchos JLP
   samples/frame.bas           Muestra de ON FRAME GOSUB
   samples/game1.bas           Un juego sencillo de dispara a la letra.
@@ -1332,6 +1337,9 @@ la resta tienen menos prioridad que la multiplicación y la división)
 
   FLASH.LAST
     Última línea que puede ser leer/escrita de la memoria Flash JLP.
+
+  MUSIC.PLAYING
+    Indica si está tocando música, cero si no, uno si está tocando.
 
 
 Los números fijos son útiles para mover elementos del juego en pasos fraccionales, el

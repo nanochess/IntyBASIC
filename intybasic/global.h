@@ -29,6 +29,7 @@ extern bool optimized;              // Indicates if expression for IF statement 
 extern bool jlp_used;               // Indicates if JLP is used
 extern bool fastmult_used;          // Indicates if fast multiplication is used
 extern bool fastdiv_used;           // Indicates if fast division/remainder is used
+extern bool music_used;             // Indicates if music used
 extern int err_code;
 
 // Lexical components mixed with expression tree node types
