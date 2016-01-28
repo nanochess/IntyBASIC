@@ -355,7 +355,7 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
     }
     if (type == N_CMP) {
         // register still valid
-    } else if (type == N_ADD || type == N_AND || type == N_CMP || type == N_SUB || type == N_XOR) {
+    } else if (type == N_ADD || type == N_AND || type == N_SUB || type == N_XOR) {
         register_content[r].valid = 0;
         register_memory[r].valid = 0;
         if (r == 3)

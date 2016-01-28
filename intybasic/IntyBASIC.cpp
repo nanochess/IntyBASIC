@@ -189,6 +189,8 @@
 //  Revision: Jan/25/2016. SOUND now allows constant expressions as first
 //                         parameter.
 //  Revision: Jan/27/2016. Added MUSIC.PLAYING status.
+//  Revision: Jan/28/2016. Added UNSIGNED statement and support for unsigned
+//                         comparisons of 16-bits variables.
 //
 
 //  TODO:
@@ -215,7 +217,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.5 Jan/27/2016";      // Compiler version
+const string VERSION = "v1.2.5 Jan/28/2016";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -618,6 +620,14 @@ private:
     }
     
     //
+    // Mix signedness
+    //
+    int mix_signedness(int type1, int type2)
+    {
+        return type1 | type2;   // Unsigned wins
+    }
+    
+    //
     // Evaluates an expression
     // Result in R0
     //
@@ -625,8 +635,9 @@ private:
     {
         class node *tree;
         enum lexical_component c;
+        int type;
         
-        tree = eval_level0();
+        tree = eval_level0(&type);
         tree->label();
         optimized = false;
         tree->generate(reg, decision);
@@ -639,17 +650,19 @@ private:
     //
     // Expression evaluation: Level 0 (OR)
     //
-    class node *eval_level0(void)
+    class node *eval_level0(int *type)
     {
         class node *left;
         class node *right;
+        int type2;
         
-        left = eval_level1();
+        left = eval_level1(type);
         while (1) {
             if (lex == C_NAME && name == "OR") {
                 get_lex();
-                right = eval_level1();
+                right = eval_level1(&type2);
                 left = new node(C_OR, 0, left, right);
+                *type = mix_signedness(*type, type2);
             } else {
                 break;
             }
@@ -660,17 +673,19 @@ private:
     //
     // Expression evaluation: Level 1 (XOR)
     //
-    class node *eval_level1(void)
+    class node *eval_level1(int *type)
     {
         class node *left;
         class node *right;
+        int type2;
         
-        left = eval_level2();
+        left = eval_level2(type);
         while (1) {
             if (lex == C_NAME && name == "XOR") {
                 get_lex();
-                right = eval_level2();
+                right = eval_level2(&type2);
                 left = new node(C_XOR, 0, left, right);
+                *type = mix_signedness(*type, type2);
             } else {
                 break;
             }
@@ -681,17 +696,19 @@ private:
     //
     // Expression evaluation: Level 2 (AND)
     //
-    class node *eval_level2(void)
+    class node *eval_level2(int *type)
     {
         class node *left;
         class node *right;
+        int type2;
         
-        left = eval_level3();
+        left = eval_level3(type);
         while (1) {
             if (lex == C_NAME && name == "AND") {
                 get_lex();
-                right = eval_level3();
+                right = eval_level3(&type2);
                 left = new node(C_AND, 0, left, right);
+                *type = mix_signedness(*type, type2);
             } else {
                 break;
             }
@@ -702,37 +719,44 @@ private:
     //
     // Expression evaluation: Level 3 (= <> < <= > >=)
     //
-    class node *eval_level3(void)
+    class node *eval_level3(int *type)
     {
         class node *left;
         class node *right;
+        int type2;
         
-        left = eval_level4();
+        left = eval_level4(type);
         while (1) {
             if (lex == C_EQUAL) {
                 get_lex();
-                right = eval_level4();
+                right = eval_level4(&type2);
                 left = new node(C_EQUAL, 0, left, right);
+                type = 0;
             } else if (lex == C_NOTEQUAL) {
                 get_lex();
-                right = eval_level4();
+                right = eval_level4(&type2);
                 left = new node(C_NOTEQUAL, 0, left, right);
+                type = 0;
             } else if (lex == C_LESS) {
                 get_lex();
-                right = eval_level4();
-                left = new node(C_LESS, 0, left, right);
+                right = eval_level4(&type2);
+                left = new node(C_LESS, *type | type2, left, right);
+                type = 0;
             } else if (lex == C_LESSEQUAL) {
                 get_lex();
-                right = eval_level4();
-                left = new node(C_LESSEQUAL, 0, left, right);
+                right = eval_level4(&type2);
+                left = new node(C_LESSEQUAL, *type | type2, left, right);
+                type = 0;
             } else if (lex == C_GREATER) {
                 get_lex();
-                right = eval_level4();
-                left = new node(C_GREATER, 0, left, right);
+                right = eval_level4(&type2);
+                left = new node(C_GREATER, *type | type2, left, right);
+                type = 0;
             } else if (lex == C_GREATEREQUAL) {
                 get_lex();
-                right = eval_level4();
-                left = new node(C_GREATEREQUAL, 0, left, right);
+                right = eval_level4(&type2);
+                left = new node(C_GREATEREQUAL, *type | type2, left, right);
+                type = 0;
             } else {
                 break;
             }
@@ -743,29 +767,34 @@ private:
     //
     // Expression evaluation: Level 4 (+ -)
     //
-    class node *eval_level4(void)
+    class node *eval_level4(int *type)
     {
         class node *left;
         class node *right;
+        int type2;
         
-        left = eval_level5();
+        left = eval_level5(type);
         while (1) {
             if (lex == C_PLUS) {
                 get_lex();
-                right = eval_level5();
+                right = eval_level5(&type2);
                 left = new node(C_PLUS, 0, left, right);
+                *type = mix_signedness(*type, type2);
             } else if (lex == C_MINUS) {
                 get_lex();
-                right = eval_level5();
+                right = eval_level5(&type2);
                 left = new node(C_MINUS, 0, left, right);
+                *type = mix_signedness(*type, type2);
             } else if (lex == C_PLUSF) {
                 get_lex();
-                right = eval_level5();
+                right = eval_level5(&type2);
                 left = new node(C_PLUSF, 0, left, right);
+                *type = mix_signedness(*type, type2);
             } else if (lex == C_MINUSF) {
                 get_lex();
-                right = eval_level5();
+                right = eval_level5(&type2);
                 left = new node(C_MINUSF, 0, left, right);
+                *type = mix_signedness(*type, type2);
             } else {
                 break;
             }
@@ -776,25 +805,29 @@ private:
     //
     // Expression evaluation: Level 5 (* / %)
     //
-    class node *eval_level5(void)
+    class node *eval_level5(int *type)
     {
         class node *left;
         class node *right;
+        int type2;
         
-        left = eval_level6();
+        left = eval_level6(type);
         while (1) {
             if (lex == C_MUL) {
                 get_lex();
-                right = eval_level6();
+                right = eval_level6(&type2);
                 left = new node(C_MUL, 0, left, right);
+                *type = mix_signedness(*type, type2);
             } else if (lex == C_DIV) {
                 get_lex();
-                right = eval_level6();
+                right = eval_level6(&type2);
                 left = new node(C_DIV, 0, left, right);
+                *type = mix_signedness(*type, type2);
             } else if (lex == C_MOD) {
                 get_lex();
-                right = eval_level6();
+                right = eval_level6(&type2);
                 left = new node(C_MOD, 0, left, right);
+                *type = mix_signedness(*type, type2);
             } else {
                 break;
             }
@@ -805,20 +838,20 @@ private:
     //
     // Expression evaluation: Level 6 (NOT)
     //
-    class node *eval_level6(void)
+    class node *eval_level6(int *type)
     {
         class node *left;
         
         if (lex == C_MINUS) {
             get_lex();
-            left = eval_level7();
+            left = eval_level7(type);
             left = new node(C_NEG, 0, left, NULL);
         } else if (lex == C_NAME && name == "NOT") {
             get_lex();
-            left = eval_level7();
+            left = eval_level7(type);
             left = new node(C_NOT, 0, left, NULL);
         } else {
-            left = eval_level7();
+            left = eval_level7(type);
         }
         return left;
     }
@@ -826,13 +859,16 @@ private:
     //
     // Expression evaluation: Level 7 (parenthesis, functions, variables and values)
     //
-    class node *eval_level7(void)
+    class node *eval_level7(int *type)
     {
+        int type2;
+        
+        *type = 0;  /* Signed by default */
         if (lex == C_LPAREN) {
             class node *tree;
             
             get_lex();
-            tree = eval_level0();
+            tree = eval_level0(type);
             if (lex != C_RPAREN)
                 emit_error("missing right parenthesis");
             else
@@ -863,7 +899,7 @@ private:
                     emit_error("missing left parenthesis in PEEK");
                 else
                     get_lex();
-                tree = eval_level0();
+                tree = eval_level0(&type2);
                 if (lex != C_RPAREN)
                     emit_error("missing right parenthesis in PEEK");
                 else
@@ -875,7 +911,7 @@ private:
                     emit_error("missing left parenthesis in ABS");
                 else
                     get_lex();
-                tree = eval_level0();
+                tree = eval_level0(&type2);
                 if (lex != C_RPAREN)
                     emit_error("missing right parenthesis in ABS");
                 else
@@ -887,7 +923,7 @@ private:
                     emit_error("missing left parenthesis in SGN");
                 else
                     get_lex();
-                tree = eval_level0();
+                tree = eval_level0(&type2);
                 if (lex != C_RPAREN)
                     emit_error("missing right parenthesis in SGN");
                 else
@@ -994,7 +1030,7 @@ private:
                     int c;
                     
                     get_lex();
-                    tree = eval_level0();
+                    tree = eval_level0(&type2);
                     if (lex != C_RPAREN)
                         emit_error("missing right parenthesis in RAND");
                     else
@@ -1021,7 +1057,7 @@ private:
                     emit_error("missing left parenthesis in RANDOM");
                 else
                     get_lex();
-                tree = eval_level0();
+                tree = eval_level0(&type2);
                 if (lex != C_RPAREN)
                     emit_error("missing right parenthesis in RANDOM");
                 else
@@ -1051,7 +1087,7 @@ private:
                 if (lex == C_LPAREN) {
                     get_lex();
                     while (1) {
-                        tree = eval_level0();
+                        tree = eval_level0(&type2);
                         tree = new node(C_COMMA, 0, tree, NULL);
                         if (list == NULL) {
                             list = tree;
@@ -1095,7 +1131,7 @@ private:
                         emit_error("missing left parenthesis in array access");
                     else
                         get_lex();
-                    tree = eval_level0();
+                    tree = eval_level0(&type2);
                     if (lex != C_RPAREN)
                         emit_error("missing right parenthesis in array access");
                     else
@@ -1139,7 +1175,7 @@ private:
                     emit_error("missing left parenthesis in POS");
                 else
                     get_lex();
-                tree = eval_level0();
+                tree = eval_level0(&type2);
                 delete tree;
                 if (lex != C_RPAREN)
                     emit_error("missing right parenthesis in POS");
@@ -1180,7 +1216,7 @@ private:
             } else if (macros[name] != NULL) {  // Function (macro)
                 if (replace_macro())
                     return new node(C_NUM, 0, NULL, NULL);
-                return eval_level0();
+                return eval_level0(&type2);
             }
             
             // Take note for sign extension
@@ -1189,6 +1225,8 @@ private:
             else
                 bits = 0;
             sign = signedness[name];
+            if (bits == 1 && sign == 2)  // UNSIGNED
+                *type = 1;
             
             if (sneak_peek() == '(') {  // Indexed access
                 if (arrays[name] != 0) {
@@ -1205,7 +1243,7 @@ private:
                     emit_error("missing left parenthesis in array access");
                 else
                     get_lex();
-                tree = eval_level0();
+                tree = eval_level0(&type2);
                 if (lex != C_RPAREN)
                     emit_error("missing right parenthesis in array access");
                 else
@@ -1354,6 +1392,7 @@ private:
     {
         class node *tree2;
         int bits;
+        int type;
         
         if (lex != C_NAME) {
             emit_error("name required for assignment");
@@ -1377,7 +1416,7 @@ private:
                 emit_error("missing left parenthesis in array access");
             else
                 get_lex();
-            tree = eval_level0();
+            tree = eval_level0(&type);
             if (lex != C_RPAREN)
                 emit_error("missing right parenthesis in array access");
             else
@@ -1389,7 +1428,7 @@ private:
                     emit_error("required '=' for assignment");
                 else
                     get_lex();
-                tree2 = eval_level0();
+                tree2 = eval_level0(&type);
             }
             if (bits == 0 && tree2->node_type() == C_NUM) {
                 int c = tree2->node_value() & 0xffff;
@@ -1441,7 +1480,7 @@ private:
                 return;
             }
             get_lex();
-            tree2 = eval_level0();
+            tree2 = eval_level0(&type);
             if (bits == 0) {
                 if (tree2->node_type() == C_NUM) {
                     int c = tree2->node_value() & 0xffff;
@@ -1644,6 +1683,7 @@ private:
                     class node *step = NULL;
                     struct loop new_loop;
                     bool positive;
+                    int type;
                     
                     get_lex();
                     compile_assignment(0);
@@ -1655,7 +1695,7 @@ private:
                         emit_error("missing TO in FOR");
                     } else {
                         get_lex();
-                        final = eval_level0();
+                        final = eval_level0(&type);
                         if (assigned[0] != '#' && final->node_type() == C_NUM && (final->node_value() & 0xffff) > 255) {
                             emit_warning("TO value is larger than 8-bits size of variable");
                         }
@@ -1664,12 +1704,12 @@ private:
                             get_lex();
                             if (lex == C_MINUS) {
                                 get_lex();
-                                step = eval_level0();
+                                step = eval_level0(&type);
                                 step = new node(C_MINUS, 0,
                                                 new node(C_NAME, variables[loop], 0, 0), step);
                                 positive = false;
                             } else {
-                                step = eval_level0();
+                                step = eval_level0(&type);
                                 step = new node(C_PLUS, 0,
                                                 new node(C_NAME, variables[loop], 0, 0), step);
                             }
@@ -1678,7 +1718,7 @@ private:
                             step = new node(C_PLUS, 0,
                                             new node(C_NAME, variables[loop], 0, 0), step);
                         }
-                        final = new node(positive ? C_GREATER : C_LESS, 0, new node(C_NAME, variables[loop], 0, 0), final);
+                        final = new node(positive ? C_GREATER : C_LESS, (loop[0] == '#' && signedness[loop] == 2) ? 1 : 0, new node(C_NAME, variables[loop], 0, 0), final);
                     }
                     new_loop.type = 0;
                     new_loop.step = step;
@@ -1893,14 +1933,15 @@ private:
                     }
                 } else if (name == "POKE") {  // POKE
                     class node *tree;
+                    int type;
                     
                     get_lex();
-                    tree = eval_level0();
+                    tree = eval_level0(&type);
                     if (lex != C_COMMA)
                         emit_error("missing comma in POKE");
                     else
                         get_lex();
-                    tree = new node(C_ASSIGN, 1, eval_level0(), tree);
+                    tree = new node(C_ASSIGN, 1, eval_level0(&type), tree);
                     tree->label();
                     optimized = false;
                     tree->generate(0, 0);
@@ -1943,8 +1984,9 @@ private:
                     get_lex();
                     while (1) {
                         class node *tree;
+                        int type;
                         
-                        tree = eval_level0();
+                        tree = eval_level0(&type);
                         if (tree->node_type() != C_NUM) {
                             emit_error("not a constant expression in DATA");
                             break;
@@ -2033,9 +2075,10 @@ private:
                 } else if (name == "SOUND") {
                     class node *tree;
                     int channel;
+                    int type;
                     
                     get_lex();
-                    tree = eval_level0();
+                    tree = eval_level0(&type);
                     if (tree->node_type() != C_NUM) {
                         emit_error("only constant expression for first SOUND parameter");
                         channel = 0;
@@ -2120,9 +2163,10 @@ private:
                     class node *tree;
                     int sprite;
                     int add;
+                    int type;
                     
                     get_lex();
-                    tree = eval_level0();
+                    tree = eval_level0(&type);
                     if (lex != C_COMMA)
                         emit_error("bad syntax for SPRITE");
                     else
@@ -2189,6 +2233,7 @@ private:
                     }
                 } else if (name == "PRINT") {
                     int start;
+                    int type;
                     
                     get_lex();
                     start = 1;
@@ -2196,7 +2241,7 @@ private:
                         class node *final;
                         
                         get_lex();
-                        final = eval_level0();
+                        final = eval_level0(&type);
                         final = new node(C_PLUS, 0, final, new node(C_NUM, 0x200, NULL, NULL));
                         final->label();
                         final->generate(0, 0);
@@ -2365,7 +2410,6 @@ private:
                             break;
                         get_lex();
                     }
-#if 0   // Someday :)
                 } else if (name == "UNSIGNED") {
                     get_lex();
                     while (1) {
@@ -2379,7 +2423,6 @@ private:
                             break;
                         get_lex();
                     }
-#endif
                 } else if (name == "CONST") {
                     get_lex();
                     if (lex != C_NAME) {
@@ -2394,9 +2437,10 @@ private:
                         emit_error("required '=' for constant assignment");
                     } else {
                         class node *tree;
+                        int type;
                         
                         get_lex();
-                        tree = eval_level0();
+                        tree = eval_level0(&type);
                         if (tree->node_type() != C_NUM) {
                             emit_error("not a constant expression in CONST");
                         } else {
@@ -2410,6 +2454,7 @@ private:
                     class node *tree = NULL;
                     int c;
                     int where;
+                    int type;
                     
                     while (1) {
                         get_lex();
@@ -2424,7 +2469,7 @@ private:
                         } else {
                             get_lex();
                         }
-                        tree = eval_level0();
+                        tree = eval_level0(&type);
                         if (tree->node_type() != C_NUM) {
                             emit_error("not a constant expression in DIM");
                             break;
@@ -2450,7 +2495,7 @@ private:
                         // And newbies could ask too complicated questions about it. Not enough time ;)
                         if (lex == C_NAME && name == "AT") {
                             get_lex();
-                            tree = eval_level0();
+                            tree = eval_level0(&type);
                             if (tree->node_type() != C_NUM) {
                                 emit_error("not a constant expression in DIM AT");
                                 where = 0;
@@ -2481,9 +2526,10 @@ private:
                     class node *tree = NULL;
                     class node *tree2 = NULL;
                     int mode;
+                    int type;
                     
                     get_lex();
-                    tree = eval_level0();
+                    tree = eval_level0(&type);
                     if (tree->node_type() != C_NUM) {
                         emit_error("not a constant expression in MODE");
                         break;
@@ -2500,26 +2546,26 @@ private:
                             emit_error("missing comma in MODE");
                         else
                             get_lex();
-                        tree = eval_level0();
+                        tree = eval_level0(&type);
                         if (lex != C_COMMA)
                             emit_error("missing comma in MODE");
                         else
                             get_lex();
-                        tree2 = eval_level0();
+                        tree2 = eval_level0(&type);
                         tree2 = new node(C_MUL, 0, tree2, new node(C_NUM, 0x100, NULL, NULL));
                         tree = new node(C_PLUS, 0, tree, tree2);
                         if (lex != C_COMMA)
                             emit_error("missing comma in MODE");
                         else
                             get_lex();
-                        tree2 = eval_level0();
+                        tree2 = eval_level0(&type);
                         tree2 = new node(C_MUL, 0, tree2, new node(C_NUM, 0x1000, NULL, NULL));
                         tree = new node(C_PLUS, 0, tree, tree2);
                         if (lex != C_COMMA)
                             emit_error("missing comma in MODE");
                         else
                             get_lex();
-                        tree2 = eval_level0();
+                        tree2 = eval_level0(&type);
                         tree2 = new node(C_MUL, 0, tree2, new node(C_NUM, 0x10, NULL, NULL));
                         tree = new node(C_PLUS, 0, tree, tree2);
                         tree->label();
@@ -2555,9 +2601,10 @@ private:
                     get_lex();
                     if (lex == C_COMMA) {  // There is a second argument?
                         class node *final;
+                        int type;
                         
                         get_lex();
-                        final = eval_level0();  // Evaluate second argument (origin position)
+                        final = eval_level0(&type);  // Evaluate second argument (origin position)
                         final = new node(C_PLUS, 0, final, new node(C_NAME_RO, label, NULL, NULL));
                         final->label();
                         final->generate(0, 0);
@@ -2568,7 +2615,7 @@ private:
                             break;
                         }
                         get_lex();
-                        final = eval_level0();  // Evaluate third argument (target position)
+                        final = eval_level0(&type);  // Evaluate third argument (target position)
                         final = new node(C_PLUS, 0, final, new node(C_NUM, 0x200, NULL, NULL));
                         final->label();
                         final->generate(0, 0);

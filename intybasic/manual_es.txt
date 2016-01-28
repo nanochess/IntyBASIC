@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 27-ene-2016
+Última revisión: 28-ene-2016
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,7 +30,9 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.5 27-ene-2016  o Se agrega la sentencia PLAY VOLUME.
+v1.2.5 28-ene-2016  o Se agrega la sentencia UNSIGNED, permite realizar
+                      comparaciones sin signo.
+                    o Se agrega la sentencia PLAY VOLUME.
                     o Se agrega la sintaxis NO DRUMS a PLAY.
                     o Se agrega la sentencia MUSIC JUMP.
                     o Se agrega la expresión MUSIC.PLAYING
@@ -420,9 +422,10 @@ Las siguientes sentencias están disponibles:
 
   SIGNED nombre[,nombre]
   
-     Indica que los nombres son variables o arreglos de 8 bits con signo.
+     Indica que los nombres indican variables o arreglos con signo.
 
-     Por defecto las variables de 8 bits no tienen signo.
+     Esto sólo afecta a las variables de 8 bits que son UNSIGNED por
+     defecto.
 
      Note que esto agrega dos instrucciones para extender el signo a cada
      lectura de variable de 8-bits con signo, aunque IntyBASIC tratará
@@ -430,6 +433,19 @@ Las siguientes sentencias están disponibles:
      
      Por lo general puede desarrollar sus programas sin usar esta palabra
      clave, pero está disponible si se requiere.
+
+  UNSIGNED nombre[,nombre]
+  
+     Indica que los nombres indican variables o arreglos sin signo.
+
+     Esto sólo afecta a las variables de 16 bits al momento de realizar
+     comparaciones de menor o mayor, incluyendo sentencias FOR.
+     
+     Note que esto puede agregar una instrucción extra a cada comparación,
+     dependiendo del sentido.
+     
+     Muy útil para conservar puntuaciones hasta 65535 o crear rutinas
+     para valores de 32 bits.
 
   CONST [nombre]=[expresión constante]
   

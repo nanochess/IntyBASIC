@@ -689,41 +689,61 @@ void node::generate(int reg, int decision) {
                 } else if (type == C_LESS) {
                     output->emit_nr(N_CMPI, "", val, reg);
                     if (decision) {
-                        output->emit_a(N_BGE, TEMP_PREFIX, decision);
+                        output->emit_a(value ? N_BC : N_BGE, TEMP_PREFIX, decision);
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(N_BLT, "", 3);   // two words of jump and one word of INCR
+                        output->emit_a(value ? N_BNC : N_BLT, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_LESSEQUAL) {
                     output->emit_nr(N_CMPI, "", val, reg);
                     if (decision) {
-                        output->emit_a(N_BGT, TEMP_PREFIX, decision);
+                        if (value) {    // Unsigned
+                            output->emit_a(N_BEQ, "", 4);
+                            output->emit_a(N_BC, TEMP_PREFIX, decision);
+                        } else {
+                            output->emit_a(N_BGT, TEMP_PREFIX, decision);
+                        }
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
+                        if (value) {    // Unsigned
+                            output->emit_a(N_BEQ, "", 5);   // 2+2+1
+                            output->emit_a(N_BNC, "", 3);   // two words of jump and one word of INCR
+                        } else {
+                            output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
+                        }
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_GREATER) {
                     output->emit_nr(N_CMPI, "", val, reg);
                     if (decision) {
-                        output->emit_a(N_BLE, TEMP_PREFIX, decision);
+                        if (value) {    // Unsigned
+                            output->emit_a(N_BEQ, TEMP_PREFIX, decision);
+                            output->emit_a(N_BNC, TEMP_PREFIX, decision);
+                        } else {
+                            output->emit_a(N_BLE, TEMP_PREFIX, decision);
+                        }
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
+                        if (value) {    // Unsigned
+                            output->emit_a(N_BEQ, "", 4);   // 2+2
+                            output->emit_a(N_BC, "", 3);   // two words of jump and one word of INCR
+                        } else {
+                            output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
+                        }
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_GREATEREQUAL) {
                     output->emit_nr(N_CMPI, "", val, reg);
                     if (decision) {
-                        output->emit_a(N_BLT, TEMP_PREFIX, decision);
+                        output->emit_a(value ? N_BNC : N_BLT, TEMP_PREFIX, decision);
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(N_BGE, "", 3);   // two words of jump and one word of INCR
+                        output->emit_a(value ? N_BC : N_BGE, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_MUL) {
@@ -938,41 +958,61 @@ void node::generate(int reg, int decision) {
                 } else if (type == C_LESS) {
                     output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
                     if (decision) {
-                        output->emit_a(N_BGE, TEMP_PREFIX, decision);
+                        output->emit_a(value ? N_BC : N_BGE, TEMP_PREFIX, decision);
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(N_BLT, "", 3);   // two words of jump and one word of INCR
+                        output->emit_a(value ? N_BNC : N_BLT, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_LESSEQUAL) {
                     output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
                     if (decision) {
-                        output->emit_a(N_BGT, TEMP_PREFIX, decision);
+                        if (value) {    // Unsigned
+                            output->emit_a(N_BEQ, "", 4);
+                            output->emit_a(N_BC, TEMP_PREFIX, decision);
+                        } else {
+                            output->emit_a(N_BGT, TEMP_PREFIX, decision);
+                        }
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
+                        if (value) {    // Unsigned
+                            output->emit_a(N_BEQ, "", 5);   // 2+2+1
+                            output->emit_a(N_BNC, "", 3);   // two words of jump and one word of INCR
+                        } else {
+                            output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
+                        }
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_GREATER) {
                     output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
                     if (decision) {
-                        output->emit_a(N_BLE, TEMP_PREFIX, decision);
+                        if (value) {    // Unsigned
+                            output->emit_a(N_BEQ, TEMP_PREFIX, decision);
+                            output->emit_a(N_BNC, TEMP_PREFIX, decision);
+                        } else {
+                            output->emit_a(N_BLE, TEMP_PREFIX, decision);
+                        }
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
+                        if (value) {    // Unsigned
+                            output->emit_a(N_BEQ, "", 4);   // 2+2
+                            output->emit_a(N_BC, "", 3);   // two words of jump and one word of INCR
+                        } else {
+                            output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
+                        }
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_GREATEREQUAL) {
                     output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
                     if (decision) {
-                        output->emit_a(N_BLT, TEMP_PREFIX, decision);
+                        output->emit_a(value ? N_BNC : N_BLT, TEMP_PREFIX, decision);
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(N_BGE, "", 3);   // two words of jump and one word of INCR
+                        output->emit_a(value ? N_BC : N_BGE, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_MUL) {
@@ -1122,41 +1162,113 @@ void node::generate(int reg, int decision) {
                 } else if (type == C_LESS) {
                     output->emit_rr(N_CMPR, reg + 1, reg);
                     if (decision) {
-                        output->emit_a(reversed ? N_BLE : N_BGE, TEMP_PREFIX, decision);
+                        if (value) {    // Unsigned comparison
+                            if (reversed) {
+                                output->emit_a(N_BEQ, TEMP_PREFIX, decision);
+                                output->emit_a(N_BNC, TEMP_PREFIX, decision);
+                            } else {
+                                output->emit_a(N_BC, TEMP_PREFIX, decision);
+                            }
+                        } else {
+                            output->emit_a(reversed ? N_BLE : N_BGE, TEMP_PREFIX, decision);
+                        }
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(reversed ? N_BGT : N_BLT, "", 3);
+                        if (value) {    // Unsigned comparison
+                            if (reversed) {
+                                output->emit_a(N_BEQ, "", 4);
+                                output->emit_a(N_BC, "", 3);
+                            } else {
+                                output->emit_a(N_BNC, "", 3);
+                            }
+                        } else {
+                            output->emit_a(reversed ? N_BGT : N_BLT, "", 3);
+                        }
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_LESSEQUAL) {
                     output->emit_rr(N_CMPR, reg + 1, reg);
                     if (decision) {
-                        output->emit_a(reversed ? N_BLT : N_BGT, TEMP_PREFIX, decision);
+                        if (value) {    // Unsigned cpmparison
+                            if (reversed) {
+                                output->emit_a(N_BNC, TEMP_PREFIX, decision);
+                            } else {
+                                output->emit_a(N_BEQ, "", 4);
+                                output->emit_a(N_BC, TEMP_PREFIX, decision);
+                            }
+                        } else {
+                            output->emit_a(reversed ? N_BLT : N_BGT, TEMP_PREFIX, decision);
+                        }
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(reversed ? N_BGE : N_BLE, "", 3);
+                        if (value) {    // Unsigned comparison
+                            if (reversed) {
+                                output->emit_a(N_BC, "", 3);
+                            } else {
+                                output->emit_a(N_BEQ, "", 5);
+                                output->emit_a(N_BNC, "", 3);
+                            }
+                        } else {
+                            output->emit_a(reversed ? N_BGE : N_BLE, "", 3);
+                        }
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_GREATER) {
                     output->emit_rr(N_CMPR, reg + 1, reg);
                     if (decision) {
-                        output->emit_a(reversed ? N_BGE : N_BLE, TEMP_PREFIX, decision);
+                        if (value) {    // Unsigned
+                            if (reversed) {
+                                output->emit_a(N_BC, TEMP_PREFIX, decision);
+                            } else {
+                                output->emit_a(N_BEQ, TEMP_PREFIX, decision);
+                                output->emit_a(N_BNC, TEMP_PREFIX, decision);
+                            }
+                        } else {
+                            output->emit_a(reversed ? N_BGE : N_BLE, TEMP_PREFIX, decision);
+                        }
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(reversed ? N_BLT : N_BGT, "", 3);
+                        if (value) {    // Unsigned
+                            if (reversed) {
+                                output->emit_a(N_BNC, "", 3);
+                            } else {
+                                output->emit_a(N_BEQ, "", 4);
+                                output->emit_a(N_BC, "", 3);
+                            }
+                        } else {
+                            output->emit_a(reversed ? N_BLT : N_BGT, "", 3);
+                        }
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_GREATEREQUAL) {
                     output->emit_rr(N_CMPR, reg + 1, reg);
                     if (decision) {
-                        output->emit_a(reversed ? N_BGT : N_BLT, TEMP_PREFIX, decision);
+                        if (value) {    // Unsigned
+                            if (reversed) {
+                                output->emit_a(N_BEQ, "", 4);
+                                output->emit_a(N_BC, TEMP_PREFIX, decision);
+                            } else {
+                                output->emit_a(N_BNC, TEMP_PREFIX, decision);
+                            }
+                        } else {
+                            output->emit_a(reversed ? N_BGT : N_BLT, TEMP_PREFIX, decision);
+                        }
                         optimized = true;
                     } else {
                         output->emit_nr(N_MVII, "", -1, reg);
-                        output->emit_a(reversed ? N_BLE : N_BGE, "", 3);
+                        if (value) {    // Unsigned
+                            if (reversed) {
+                                output->emit_a(N_BEQ, "", 5);
+                                output->emit_a(N_BNC, "", 3);
+                            } else {
+                                output->emit_a(N_BC, "", 3);
+                            }
+                        } else {
+                            output->emit_a(reversed ? N_BLE : N_BGE, "", 3);
+                        }
                         output->emit_r(N_INCR, reg);
                     }
                 } else if (type == C_MUL) {

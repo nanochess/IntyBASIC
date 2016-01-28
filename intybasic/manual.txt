@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jan/27/2016.
+Last revision: Jan/28/2016.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,9 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.5 Jan/27/2016  o Added PLAY VOLUME statement.
+v1.2.5 Jan/28/2016  o Added UNSIGNED statement, allows to make unsigned
+                      comparisons.
+                    o Added PLAY VOLUME statement.
                     o Added NO DRUMS syntax to PLAY.
                     o Added MUSIC JUMP statement.
                     o Added MUSIC.PLAYING expression.
@@ -390,15 +392,29 @@ Following statements are available:
     
   SIGNED name[,name]
   
-     Indicates the names are 8-bits variables/arrays with sign.
+     Indicates the names are signed variables/arrays.
      
-     By default the 8-bits variables are unsigned.
+     This only affects to the 8-bits variables that are unsigned by
+     default.
      
      Note this adds two instructions to extend sign to each 8-bit signed
      variable read, although IntyBASIC will try to optimize them out.
      
      Usually you can develop your programs without using this keyword,
      but it's available if you require it.
+
+  UNSIGNED name[,name]
+  
+     Indicates the names are unsigned variables/arrays.
+     
+     This only affects to the 16-bits variables when doing comparisons
+     of less or greater than, including FOR statements.
+
+     Note this can add one extra instruction to each comparison, this
+     depends on comparison direction.
+
+     Very useful for score routines up to 65535 or to create subroutines
+     for values of 32 bits.
 
   CONST [name]=[constant expression]
   
