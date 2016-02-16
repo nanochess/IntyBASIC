@@ -358,9 +358,11 @@ Los siguientes programas de ejemplo están incluídos:
   samples/voice.bas           Ejemplo sencillo del uso de Intellivoice
 
   contrib/42k.bas             Ejemplo de como usar el mapa máximo de 42K palabras
-  contrib/constants.bas       Librería de constantes (misma de samples)
   contrib/AppleCatcher.bas    Juego Apple Catcher por Kiwi
   contrib/clowns.bas          Juego Clowns & Ballons por catsfolly
+  contrib/ColouredSquares.bas Utiliza el modo de cuadros coloreados para dibujar líneas
+  contrib/constants.bas       Librería de constantes (misma de samples)
+  contrib/Gram2GromFont.bas   Convierte font del GROM a diferentes fonts. (GroovyBee)
   contrib/hello.bas           Hello World por DZ-Jay
   contrib/intro.bas           Introducción a IntyBASIC por Tarzilla
   contrib/keypad.bas          Keypad test por GroovyBee

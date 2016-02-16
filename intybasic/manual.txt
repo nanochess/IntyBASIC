@@ -23,6 +23,10 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
+v1.2.6 Feb/16/2016  o Added contrib/Gram2GromFont.bas (GroovyBee) showing
+                      how to take the GROM font and creating an entirely
+                      new font.
+
 v1.2.5 Feb/16/2016  o Added UNSIGNED statement, allows to make unsigned
                       comparisons.
                     o Added PLAY VOLUME statement.
@@ -329,10 +333,11 @@ Following sample programs are included:
   samples/voice.bas           Simple example of Intellivoice
 
   contrib/42k.bas             Example of how to use the 42K words maximum memory map
-  contrib/ColouredSquares.bas Uses Coloured Squares mode to draw Bresenham lines
-  contrib/constants.bas       Constants library (same as samples)
   contrib/AppleCatcher.bas    Game Apple Catcher by Kiwi
   contrib/clowns.bas          Game Clowns & Ballons by catsfolly
+  contrib/ColouredSquares.bas Uses Coloured Squares mode to draw Bresenham lines
+  contrib/constants.bas       Constants library (same as samples)
+  contrib/Gram2GromFont.bas   Converts GROM font to different fonts. (GroovyBee)
   contrib/hello.bas           Hello World by DZ-Jay
   contrib/intro.bas           Intro to IntyBASIC by Tarzilla
   contrib/keypad.bas          Keypad test by GroovyBee
