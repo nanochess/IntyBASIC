@@ -36,6 +36,7 @@ v1.2.5 16-feb-2016  o Se agrega la sentencia UNSIGNED, permite realizar
                     o Se agrega la sintaxis NO DRUMS a PLAY.
                     o Se agrega la sentencia MUSIC JUMP.
                     o Se agrega la expresión MUSIC.PLAYING
+                    o Nueva sentencia CALL (como USR pero fuera de expresión)
                     o DATA permite cadenas.
                     o La sentencia DO seguida por dos puntos ya no es tomada
                       como etiqueta.
@@ -1171,6 +1172,11 @@ label:
 
     Intentará primero incluir el archivo del directorio actual y luego intentará
     agregar el camino de librería provisto en la línea de órdenes.
+
+  CALL NOMBRE        Llama función ensamblador NOMBRE con argumentos.
+  CALL NOMBRE(expr)  Llama función ensamblador NOMBRE con un argumento en R0.
+  CALL NOMBRE(expr,expr)  Llama función ensamblador NOMBRE con dos argumentos en R0 y R1.
+                    (hasta 4 admitidos)
 
   ASM código
   

@@ -29,6 +29,7 @@ v1.2.5 Feb/16/2016  o Added UNSIGNED statement, allows to make unsigned
                     o Added NO DRUMS syntax to PLAY.
                     o Added MUSIC JUMP statement.
                     o Added MUSIC.PLAYING expression.
+                    o Added CALL statement (like USR but outside expressions)
                     o DATA allows for string literal.
                     o DO statement followed by colon now isn't taken as
                       label.
@@ -1114,6 +1115,11 @@ label:
 
     It will try to include first from the current directory and then will try adding
     the library path provided in the command line.
+
+  CALL NAME        Calls assembly function NAME without arguments
+  CALL NAME(expr)  Calls assembly function NAME with one argument in R0
+  CALL NAME(expr,expr)  Calls assembly function NAME with two arguments in R0 and R1
+                    (up to 4 allowed)
 
   ASM code
   

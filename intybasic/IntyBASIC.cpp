@@ -191,7 +191,8 @@
 //  Revision: Jan/27/2016. Added MUSIC.PLAYING status.
 //  Revision: Jan/28/2016. Added UNSIGNED statement and support for unsigned
 //                         comparisons of 16-bits variables.
-//  Revision: Feb/16/2016. Added support for strings in DATA.
+//  Revision: Feb/16/2016. Added support for strings in DATA. Added CALL (like
+//                         USR but doesn't return value)
 //
 
 //  TODO:
@@ -1068,47 +1069,9 @@ private:
                 get_lex();
                 return new node(C_VAR, 12, NULL, NULL);
             } else if (name == "USR") {  // Call to function written in assembler
-                class node *list;
-                class node *last_list;
-                int c;
-                
                 get_lex();
-                if (lex != C_NAME)
-                    emit_error("missing function name in USR");
-                if (functions[name] != 0) {
-                    temp = functions[name];
-                } else {
-                    functions[name] = temp = next_label++;
-                }
-                get_lex();
-                tree = NULL;
-                list = NULL;
-                last_list = NULL;
-                c = 0;
-                if (lex == C_LPAREN) {
-                    get_lex();
-                    while (1) {
-                        tree = eval_level0(&type2);
-                        tree = new node(C_COMMA, 0, tree, NULL);
-                        if (list == NULL) {
-                            list = tree;
-                        } else {
-                            last_list->set_right(tree);
-                        }
-                        last_list = tree;
-                        c++;
-                        if (lex != C_COMMA)
-                            break;
-                        get_lex();
-                    }
-                    if (lex == C_RPAREN)
-                        get_lex();
-                    else
-                        emit_error("missing right parenthesis");
-                }
-                if (c > 4)
-                    emit_error("more than 4 arguments for USR function");
-                return new node(C_USR, temp, list, NULL);
+                tree = process_usr(0);
+                return tree;
             } else if (name == "VARPTR") {  // Access to variable/array/label address
                 get_lex();
                 if (lex != C_NAME) {
@@ -1280,6 +1243,61 @@ private:
         }
         emit_error("bad syntax for expression");
         return new node(C_NUM, 0, NULL, NULL);
+    }
+    
+    //
+    // Process call to assembly language
+    //
+    class node *process_usr(int is_call)
+    {
+        class node *list;
+        class node *last_list;
+        int c;
+        int temp;
+        class node *tree;
+        int type2;
+        
+        if (lex != C_NAME) {
+            if (is_call)
+                emit_error("missing function name in CALL");
+            else
+                emit_error("missing function name in USR");
+        }
+        if (functions[name] != 0) {
+            temp = functions[name];
+        } else {
+            functions[name] = temp = next_label++;
+        }
+        get_lex();
+        tree = NULL;
+        list = NULL;
+        last_list = NULL;
+        c = 0;
+        if (lex == C_LPAREN) {
+            get_lex();
+            while (1) {
+                tree = eval_level0(&type2);
+                tree = new node(C_COMMA, 0, tree, NULL);
+                if (list == NULL) {
+                    list = tree;
+                } else {
+                    last_list->set_right(tree);
+                }
+                last_list = tree;
+                c++;
+                if (lex != C_COMMA)
+                    break;
+                get_lex();
+            }
+            if (lex == C_RPAREN)
+                get_lex();
+            else
+                emit_error("missing right parenthesis");
+        }
+        if (c > 4)
+            emit_error("more than 4 arguments for USR function");
+        tree = new node(C_USR, temp, list, NULL);
+        return tree;
     }
     
     //
@@ -3138,9 +3156,17 @@ private:
                         output->emit_dl(N_DECLE, "JF.write", -1);
                     }
                     flash_used = true;
-                } else if (name == "STACK_CHECK") {  // Stack overflow check
+                } else if (name == "STACK_CHECK") { // Stack overflow check
                     get_lex();
                     stack_used = true;
+                } else if (name == "CALL") {        // Call assembly language
+                    class node *tree;
+                    
+                    get_lex();
+                    tree = process_usr(1);
+                    tree->label();
+                    tree->generate(0, 0);
+                    delete tree;
                 } else if (name == "ASM") {         // ASM statement for inserting assembly code
                     size_t c;
                     
