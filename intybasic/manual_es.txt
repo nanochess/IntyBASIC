@@ -30,12 +30,13 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.5 28-ene-2016  o Se agrega la sentencia UNSIGNED, permite realizar
+v1.2.5 16-feb-2016  o Se agrega la sentencia UNSIGNED, permite realizar
                       comparaciones sin signo.
                     o Se agrega la sentencia PLAY VOLUME.
                     o Se agrega la sintaxis NO DRUMS a PLAY.
                     o Se agrega la sentencia MUSIC JUMP.
                     o Se agrega la expresión MUSIC.PLAYING
+                    o DATA permite cadenas.
                     o La sentencia DO seguida por dos puntos ya no es tomada
                       como etiqueta.
                     o Se corrige un error en la detección de PAL.
@@ -636,6 +637,7 @@ Las siguientes sentencias están disponibles:
   READ var,var2
 label:
   DATA expr_constante[,expr_constante]
+  DATA cadena
 
     Útil para tener tablas/gráficos, los números pueden estar en el rango de 16 bits
     READ limitará automáticamente los datos al tamaño de la variable.
@@ -655,6 +657,9 @@ label:
       
       TABLA:
       DATA 21,42,63,84,105
+
+    Los datos de una cadena serán convertidos a códigos de caracter de Intellivision
+    (mismos que en PRINT pero sin multiplicarse por 8 para la pantalla)
 
 
   DEFINE num_car,total,etiqueta

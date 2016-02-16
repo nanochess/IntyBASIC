@@ -23,12 +23,13 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.5 Jan/28/2016  o Added UNSIGNED statement, allows to make unsigned
+v1.2.5 Feb/16/2016  o Added UNSIGNED statement, allows to make unsigned
                       comparisons.
                     o Added PLAY VOLUME statement.
                     o Added NO DRUMS syntax to PLAY.
                     o Added MUSIC JUMP statement.
                     o Added MUSIC.PLAYING expression.
+                    o DATA allows for string literal.
                     o DO statement followed by colon now isn't taken as
                       label.
                     o Corrected bug in PAL detection.
@@ -600,6 +601,7 @@ Following statements are available:
   READ var,var2
 label:
   DATA constant_expr[,constant_expr]
+  DATA string
 
     Useful to keep tables/graphics, numbers can be in the 16-bit range.
     READ will automatically limit to variable size.
@@ -620,6 +622,8 @@ label:
       TABLE:
       DATA 21,42,63,84,105
 
+    String data will be converted to Intellivision character codes (just
+    like in PRINT but not multiplied by 8 for screen)
 
   DEFINE card_num,total,label
   DEFINE card_num,total,VARPTR label(expr)

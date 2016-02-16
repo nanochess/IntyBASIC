@@ -191,6 +191,7 @@
 //  Revision: Jan/27/2016. Added MUSIC.PLAYING status.
 //  Revision: Jan/28/2016. Added UNSIGNED statement and support for unsigned
 //                         comparisons of 16-bits variables.
+//  Revision: Feb/16/2016. Added support for strings in DATA.
 //
 
 //  TODO:
@@ -1983,17 +1984,33 @@ private:
                 } else if (name == "DATA") {
                     get_lex();
                     while (1) {
-                        class node *tree;
-                        int type;
-                        
-                        tree = eval_level0(&type);
-                        if (tree->node_type() != C_NUM) {
-                            emit_error("not a constant expression in DATA");
-                            break;
+                        if (lex == C_STRING) {
+                            int c;
+                            int v;
+                            
+                            for (c = 0; c < name.length(); c++) {
+                                if (name[c] == 127 && c + 1 < name.length()) {
+                                    c++;
+                                    v = (name[c] & 0xff) + 127;
+                                } else {
+                                    v = (name[c] & 0xff);
+                                }
+                                output->emit_d(N_DECLE, v);
+                            }
+                            get_lex();
+                        } else {
+                            class node *tree;
+                            int type;
+                            
+                            tree = eval_level0(&type);
+                            if (tree->node_type() != C_NUM) {
+                                emit_error("not a constant expression in DATA");
+                                break;
+                            }
+                            output->emit_d(N_DECLE, tree->node_value());
+                            delete tree;
+                            tree = NULL;
                         }
-                        output->emit_d(N_DECLE, tree->node_value());
-                        delete tree;
-                        tree = NULL;
                         if (lex != C_COMMA)
                             break;
                         get_lex();
