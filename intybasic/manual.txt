@@ -23,9 +23,13 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.6 Feb/16/2016  o Added contrib/Gram2GromFont.bas (GroovyBee) showing
+v1.2.6 Feb/16/2016  o Detects when PROCEDURE isn't finished at end of
+                      source code.
+                    o Added contrib/Gram2GromFont.bas (GroovyBee) showing
                       how to take the GROM font and creating an entirely
                       new font.
+                    o Added contrib/TinyFont.bas (GroovyBee) showing how
+                      to display 40 columns using a 4 pixel wide font.
 
 v1.2.5 Feb/16/2016  o Added UNSIGNED statement, allows to make unsigned
                       comparisons.
@@ -342,6 +346,7 @@ Following sample programs are included:
   contrib/intro.bas           Intro to IntyBASIC by Tarzilla
   contrib/keypad.bas          Keypad test by GroovyBee
   contrib/tcg.bas             Trollish Comment Generator by catsfolly
+  contrib/TinyFont.bas        Small font generator at 40 columns (GroovyBee)
 
 Following utilities are included:
 

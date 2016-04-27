@@ -30,6 +30,15 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
+v1.2.6 16-feb-2016  o Detecta cuando el archivo fuente termina sin finalizar
+                      un PROCEDURE.
+                    o Se agrega contrib/Gram2GromFont.bas (GroovyBee) muestra
+                      como usar las letras de la GROM para crear un tipo de
+                      letra diferente.
+                    o Se agrega contrib/TinyFont.bas (GroovyBee) mostrando
+                      como ilustrar 40 columnas con un tipo de letra de 4
+                      pixeles de ancho.
+
 v1.2.5 16-feb-2016  o Se agrega la sentencia UNSIGNED, permite realizar
                       comparaciones sin signo.
                     o Se agrega la sentencia PLAY VOLUME.
@@ -367,6 +376,7 @@ Los siguientes programas de ejemplo están incluídos:
   contrib/intro.bas           Introducción a IntyBASIC por Tarzilla
   contrib/keypad.bas          Keypad test por GroovyBee
   contrib/tcg.bas             Generador de comentarios tipo troll por catsfolly.
+  contrib/TinyFont.bas        Generador de font pequeño a 40 columnas (GroovyBee)
 
 Se incluyen las siguientes utilidades:
 

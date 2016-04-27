@@ -193,6 +193,10 @@
 //                         comparisons of 16-bits variables.
 //  Revision: Feb/16/2016. Added support for strings in DATA. Added CALL (like
 //                         USR but doesn't return value)
+//  Revision: Mar/16/2016. Nobody ever tested CONT3 and CONT4, because these
+//                         weren't enabled.
+//  Revision: Apr/26/2016. Detects if source code ends without finishing
+//                         PROCEDURE.
 //
 
 //  TODO:
@@ -219,7 +223,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.5 Feb/16/2016";      // Compiler version
+const string VERSION = "v1.2.6 Apr/26/2016";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -931,7 +935,7 @@ private:
                 else
                     get_lex();
                 return new node(C_SGN, 0, tree, NULL);
-            } else if (name == "CONT" || name == "CONT1" || name == "CONT2") {
+            } else if (name == "CONT" || name == "CONT1" || name == "CONT2" || name == "CONT3" || name == "CONT4") {
                 int c;
                 
                 if (name == "CONT2") {
@@ -3485,6 +3489,22 @@ public:
             }
             
         }
+    
+        // Final check
+        if (inside_proc) {
+            if (loops.size() > 0)
+                emit_error("End of source with control block still open");
+            else
+                emit_warning("End of source without ending PROCEDURE");
+            if (!last_is_return)
+                asm_output << "\tRETURN\n";
+            asm_output << "\tENDP\n";
+            inside_proc = 0;
+            last_is_return = 0;
+            output->trash_registers();
+        }
+        
+        // Finish compiled source code with epilogue
         asm_output << "\t;ENDFILE\n";
         asm_output << "\tSRCFILE \"\",0\n";
         if (voice_used || ecs_used || flash_used) {
