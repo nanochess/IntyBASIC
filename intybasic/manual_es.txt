@@ -30,8 +30,14 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.6 16-feb-2016  o Detecta cuando el archivo fuente termina sin finalizar
-                      un PROCEDURE.
+v1.2.6 03-may-2016  o Detecta cuando el archivo fuente termina sin finalizar
+                      un PROCEDURE. También comenzar un nuevo PROCEDURE sin
+                      finalizar el previo ahora es causa de error en lugar de
+                      advertencia.
+                    o Interno: la variable _mode_select conserva en el bit 0
+                      el modo actual.
+                    o Corregido contrib/clowns.bas (catsfolly) se había "roto"
+                      debido a un cambio en constants.bas.
                     o Se agrega contrib/Gram2GromFont.bas (GroovyBee) muestra
                       como usar las letras de la GROM para crear un tipo de
                       letra diferente.

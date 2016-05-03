@@ -23,8 +23,14 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.6 Feb/16/2016  o Detects when PROCEDURE isn't finished at end of
-                      source code.
+v1.2.6 May/03/2016  o Detects when PROCEDURE isn't finished at end of
+                      source code. Also starting a new PROCEDURE without
+                      closing the previous one now is an error instead of
+                      a warning.
+                    o Internal: the mode_select variable now preserves in
+                      bit 0 the actual mode.
+                    o Corrected contrib/clowns.bas (catsfolly) it breaked
+                      with a change in constants.bas
                     o Added contrib/Gram2GromFont.bas (GroovyBee) showing
                       how to take the GROM font and creating an entirely
                       new font.

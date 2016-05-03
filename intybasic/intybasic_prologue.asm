@@ -13,6 +13,7 @@
 	    ;                        trash in 16-bit RAM. Solved bugs and optimized
 	    ;                        macro for constant multiplication.
         ; Revision: Jan/12/2016. Solved bug in PAL detection.
+	; Revision: May/03/2016. Changed in _mode_select initialization.
 	    ;
 
         ROMW 16
@@ -127,7 +128,7 @@ _MAIN3: MVO R0,_ntsc
 
         CALL _wait
 	CALL _init_music
-        MVII #1,R0
+        MVII #2,R0
         MVO R0,_mode_select
         MVII #$038,R0
         MVO R0,$01F8            ; Configures sound

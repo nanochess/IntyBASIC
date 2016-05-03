@@ -197,6 +197,9 @@
 //                         weren't enabled.
 //  Revision: Apr/26/2016. Detects if source code ends without finishing
 //                         PROCEDURE.
+//  Revision: May/03/2016. Now is an error to start a PROCEDURE without closing
+//                         the previous one. MODE now sets a different value in
+//                         _mode_select.
 //
 
 //  TODO:
@@ -2612,10 +2615,10 @@ private:
                         delete tree;
                         tree = NULL;
                         output->emit_rl(N_MVO, 0, "_color", -1);
-                        output->emit_nr(N_MVII, "", 1, 0);
+                        output->emit_nr(N_MVII, "", 2, 0);
                         output->emit_rl(N_MVO, 0, "_mode_select", -1);
                     } else {    // Foreground/Background mode
-                        output->emit_nr(N_MVII, "", 2, 0);
+                        output->emit_nr(N_MVII, "", 3, 0);
                         output->emit_rl(N_MVO, 0, "_mode_select", -1);
                     }
                 } else if (name == "SCREEN") {  // Copy screen
@@ -3389,7 +3392,7 @@ public:
             if (lex == C_NAME) {
                 if (name == "PROCEDURE") {
                     if (inside_proc)
-                        emit_warning("starting PROCEDURE without ENDing previous PROCEDURE");
+                        emit_error("starting PROCEDURE without ENDing previous PROCEDURE");
                     // as1600 requires that label and PROC are on same line
                     get_lex();
                     asm_output << "\tPROC\n\tBEGIN\n";

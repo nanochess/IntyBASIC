@@ -42,6 +42,7 @@
 	; Revision: Jan/22/2016. Music player allows not to use noise channel
 	;                        for drums. Allows setting music volume.
 	; Revision: Jan/23/2016. Added jump inside of music (for MUSIC JUMP)
+	; Revision: May/03/2016. Preserves current mode in bit 0 of _mode_select
 
 	;
 	; Avoids empty programs to crash
@@ -235,14 +236,13 @@ _int_vector:     PROC
         MVO     R0,     _int    ; Indicates interrupt happened
 
         MVI _mode_select,R0
-        TSTR R0
-        BEQ @@vi0
-        CLRR R1
-        MVO R1,_mode_select
-        DECR R0
-        BEQ @@vi14
+        SARC R0,2
+        BNOV @@vi0
+	CLRR R1
+        BNC @@vi14
         MVO R0,$21  ; Activates Foreground/Background mode
-        B @@vi15
+        INCR R1
+	B @@vi15
 
 @@vi14: MVI $21,R0  ; Activates Color Stack mode
         MVI _color,R0
@@ -254,7 +254,8 @@ _int_vector:     PROC
         MVO R0,$2A
         SWAP R0
         MVO R0,$2B
-@@vi15: MVII #7,R0
+@@vi15: MVO R1,_mode_select
+	MVII #7,R0
         MVO R0,_color           ; Default color for PRINT "string"
 @@vi0:
         MVI _border_color,R0
