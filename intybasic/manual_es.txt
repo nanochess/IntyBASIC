@@ -34,6 +34,8 @@ v1.2.6 03-may-2016  o Detecta cuando el archivo fuente termina sin finalizar
                       un PROCEDURE. También comenzar un nuevo PROCEDURE sin
                       finalizar el previo ahora es causa de error en lugar de
                       advertencia.
+                    o Genera advertencia cuando se usa DEFINE para tratar de
+                      definir más de 16 GRAM al mismo tiempo.
                     o Interno: la variable _mode_select conserva en el bit 0
                       el modo actual.
                     o Corregido contrib/clowns.bas (catsfolly) se había "roto"
@@ -44,6 +46,8 @@ v1.2.6 03-may-2016  o Detecta cuando el archivo fuente termina sin finalizar
                     o Se agrega contrib/TinyFont.bas (GroovyBee) mostrando
                       como ilustrar 40 columnas con un tipo de letra de 4
                       pixeles de ancho.
+                    o Se agregan notas en el manual acerca de las convenciones
+                      de lenguaje ensamblador para USR y CALL.
 
 v1.2.5 16-feb-2016  o Se agrega la sentencia UNSIGNED, permite realizar
                       comparaciones sin signo.
@@ -1396,6 +1400,51 @@ Más acerca de los números fijos utilizados en IntyBASIC:
 
   http://atariage.com/forums/topic/229168-now-available-intybasic-compiler-v08/page-2#entry3080617
 
+
+>>>>>>>>>>>>>>  Interfaz con lenguaje ensamblador
+
+La expresión USR y la sentencia CALL permiten llamar módulos de lenguaje
+ensamblador desde dentro de programas IntyBASIC.
+
+IntyBASIC espera que se respeten las siguientes convenciones:
+
+    Antes de llamar:
+
+    R0 = Valor del primer argumento (o basura)
+    R1 = Valor del segundo argumento (o basura)
+    R2 = Valor del tercer argumento (o basura)
+    R3 = Valor del cuarto argumento (o basura)
+    R4 = Basura
+    R5 = Locación para retornar
+
+    En el retorno:
+
+    R0 = Valor devuelto por el módulo (sólo expresiones USR)
+    R1 = No importante
+    R2 = No importante
+    R3 = No importante
+    R4 = No importante
+    R5 = No importante
+
+Si su módulo cambia la dirección del apuntador de pila (R6) o arruina los
+valores previos guardados entonces es obvio que el programa IntyBASIC
+fallará.
+
+Si su función es relativamente simple:
+
+    ASM MIFUNCION:     PROC
+    ASM                ; ... su código ...
+    ASM                JR R5
+    ASM                ENDP
+    
+Si su función necesita más registros o llamadas a funciones anidadas:
+
+    ASM MIFUNCION:     PROC
+    ASM                BEGIN  ; En realidad es PSHR R5
+    ASM                ; ... su código ...
+    ASM                RETURN ; En realidad es PULR R7
+    ASM                ENDP
+    
 
 >>>>>>>>>>>>>>  Algunas notas extras
 

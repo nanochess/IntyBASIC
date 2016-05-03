@@ -27,6 +27,8 @@ v1.2.6 May/03/2016  o Detects when PROCEDURE isn't finished at end of
                       source code. Also starting a new PROCEDURE without
                       closing the previous one now is an error instead of
                       a warning.
+                    o Generates warning when using DEFINE and requesting
+                      more than 16 GRAM to define.
                     o Internal: the mode_select variable now preserves in
                       bit 0 the actual mode.
                     o Corrected contrib/clowns.bas (catsfolly) it breaked
@@ -36,6 +38,8 @@ v1.2.6 May/03/2016  o Detects when PROCEDURE isn't finished at end of
                       new font.
                     o Added contrib/TinyFont.bas (GroovyBee) showing how
                       to display 40 columns using a 4 pixel wide font.
+                    o Added manual notes about assembly language 
+                      conventions for USR and CALL.
 
 v1.2.5 Feb/16/2016  o Added UNSIGNED statement, allows to make unsigned
                       comparisons.
@@ -1329,6 +1333,50 @@ More about the fixed numbers used in IntyBASIC:
 
   http://atariage.com/forums/topic/229168-now-available-intybasic-compiler-v08/page-2#entry3080617
 
+
+>>>>>>>>>>>>>>  Assembly language interfacing
+
+The USR expression and the CALL statement allow you to call assembly languages
+modules from inside IntyBASIC programs.
+
+IntyBASIC expect the following conventions to be preserved:
+
+    Before calling:
+    
+    R0 = Value of first argument (or trash)
+    R1 = Value of second argument (or trash)
+    R2 = Value of third argument (or trash)
+    R3 = Value of fourth argument (or trash)
+    R4 = Trash
+    R5 = Location to return
+
+    After calling:
+
+    R0 = Value from assembly language module (only USR expression)
+    R1 = Not important
+    R2 = Not important
+    R3 = Not important
+    R4 = Not important
+    R5 = Not important
+
+If your module changes the address of Stack Pointer (R6) or messes with
+previous values stored is obvious the IntyBASIC program will crash.
+
+If your function is relatively simple:
+
+    ASM MYFUNCTION:    PROC
+    ASM                ; ... your code...
+    ASM                JR R5
+    ASM                ENDP
+    
+If your function needs more registers or calls nested functions:
+
+    ASM MYFUNCTION:    PROC
+    ASM                BEGIN  ; Really it's PSHR R5
+    ASM                ; ... your code...
+    ASM                RETURN ; Really it's PULR R7
+    ASM                ENDP
+    
 
 >>>>>>>>>>>>>>  Some further notes
 

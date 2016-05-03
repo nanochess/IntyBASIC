@@ -199,7 +199,8 @@
 //                         PROCEDURE.
 //  Revision: May/03/2016. Now is an error to start a PROCEDURE without closing
 //                         the previous one. MODE now sets a different value in
-//                         _mode_select.
+//                         _mode_select. Generates warning when more than 16
+//                         GRAM defined per video frame.
 //
 
 //  TODO:
@@ -2042,6 +2043,8 @@ private:
                     }
                 } else if (name == "DEFINE") {
                     int label;
+                    class node *tree;
+                    int type;
                     
                     get_lex();
                     if (lex == C_NAME && name == "ALTERNATE") {
@@ -2052,7 +2055,16 @@ private:
                             emit_error("missing comma for DEFINE");
                         else
                             get_lex();
-                        eval_expr(0, 0);
+                        
+                        tree = eval_level0(&type);
+                        tree->label();
+                        if (tree->node_type() == C_NUM && tree->node_value() > 16)
+                            emit_warning("More than 16 GRAM defined per video frame");
+                        optimized = false;
+                        tree->generate(0, 0);
+                        delete tree;
+                        tree = NULL;
+                        
                         output->emit_rl(N_MVO, 0, "_gram2_total", -1);
                         if (lex != C_COMMA)
                             emit_error("missing comma for DEFINE");
@@ -2086,7 +2098,16 @@ private:
                             emit_error("missing comma for DEFINE");
                         else
                             get_lex();
-                        eval_expr(0, 0);
+                        
+                        tree = eval_level0(&type);
+                        tree->label();
+                        if (tree->node_type() == C_NUM && tree->node_value() > 16)
+                            emit_warning("More than 16 GRAM defined per video frame");
+                        optimized = false;
+                        tree->generate(0, 0);
+                        delete tree;
+                        tree = NULL;
+                        
                         output->emit_rl(N_MVO, 0, "_gram_total", -1);
                         if (lex != C_COMMA)
                             emit_error("missing comma for DEFINE");
