@@ -1188,7 +1188,7 @@ private:
             } else if (macros[name] != NULL) {  // Function (macro)
                 if (replace_macro())
                     return new node(C_NUM, 0, NULL, NULL);
-                return eval_level0(&type2);
+                return eval_level0(type);
             }
             
             // Take note for sign extension
