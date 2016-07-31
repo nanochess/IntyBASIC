@@ -298,36 +298,39 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
     // Common optimization case: register just saved to memory and still available
     for (c = 0; c < 4; c++) {
         d = (r + c) % 4;
-        if (register_memory[d].valid == 1 && register_memory[d].prefix == prefix && register_memory[d].value == value && register_memory[d].offset == offset) {
-            if (type == N_ADD) {
+        if (register_memory[d].valid == 1           // Register is copy of memory
+         && register_memory[d].prefix == prefix     // Same prefix
+         && register_memory[d].value == value       // Same value
+         && register_memory[d].offset == offset) {  // Same offset
+            if (type == N_ADD) {                    // Change ADD from memory to ADD from register
                 type = N_ADDR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
-            } else if (type == N_AND) {
+            } else if (type == N_AND) {             // Change AND from memory to AND from register
                 type = N_ANDR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
-            } else if (type == N_CMP) {
+            } else if (type == N_CMP) {             // Change CMP from memory to CMP from register
                 type = N_CMPR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
                 // Note register is still valid
-            } else if (type == N_SUB) {
+            } else if (type == N_SUB) {             // Change SUB from memory to SUB from register
                 type = N_SUBR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
-            } else if (type == N_XOR) {
+            } else if (type == N_XOR) {             // Change XOR from memory to XOR from register
                 type = N_XORR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
-            } else {
+            } else /*if (type == N_MVI)*/ {         // Change MVI to MOVR
                 if (d == r) {
                     // Nothing to do =P
                 } else {
@@ -344,6 +347,7 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
         }
     }
     previous = everything.size() > 0 ? everything.back() : NULL;
+    // Replace NEGR/ADD with SUB/NEGR for future optimization
     if (type == N_ADD && previous && previous->get_type() == N_NEGR && previous->get_r1() == r) {
         everything.pop_back();
         delete previous;
@@ -353,19 +357,26 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
     } else {
         everything.push_back(new microcode(M_LR, type, r, 0, prefix, value, offset));
     }
-    if (type == N_CMP) {
+    if (type == N_CMP) {  // Comparisons doesn't affect registers state
         // register still valid
     } else if (type == N_ADD || type == N_AND || type == N_SUB || type == N_XOR) {
+        // Target register ceases to be valid (content or memory alias)
         register_content[r].valid = 0;
         register_memory[r].valid = 0;
         if (r == 3)
             subexpression_valid = false;
-    } else {
+    } else /*if (type == N_MVI)*/ {
+        // Target register ceases to be valid as value
         register_content[r].valid = 0;
-        register_memory[r].valid = 1;
-        register_memory[r].prefix = prefix;
-        register_memory[r].value = value;
-        register_memory[r].offset = offset;
+        if (prefix == "" && (value == 0x9f8e || value == 0x9f8f)) {  // JLP doesn't qualify for cache
+            register_memory[r].valid = 0;
+        } else {
+            // Target register is now a copy of memory, so it's optimizable
+            register_memory[r].valid = 1;
+            register_memory[r].prefix = prefix;
+            register_memory[r].value = value;
+            register_memory[r].offset = offset;
+        }
         if (r == 3)
             subexpression_valid = false;
     }
