@@ -69,6 +69,7 @@ public:
     void emit_d(enum opcode type, int d);
     void emit_d2(enum opcode type, int d1, int d2);
     void emit_dl(enum opcode type, string prefix, int value);
+    void emit_dlo(enum opcode type, string prefix, int value, int offset);
     void emit_literal(string text);
     void dump(void);
 };

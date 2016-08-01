@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 16-feb-2016
+Última revisión: 31-jul-2016
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -34,10 +34,15 @@ v1.2.6 03-may-2016  o Detecta cuando el archivo fuente termina sin finalizar
                       un PROCEDURE. También comenzar un nuevo PROCEDURE sin
                       finalizar el previo ahora es causa de error en lugar de
                       advertencia.
+                    o Se agrega DATA VARPTR para permitir arreglos de
+                      apuntadores a variables o arreglos.
                     o Genera advertencia cuando se usa DEFINE para tratar de
                       definir más de 16 GRAM al mismo tiempo.
                     o Interno: la variable _mode_select conserva en el bit 0
                       el modo actual.
+                    o Solucionados errores en multiplicación por 126 y 126.
+                    o Soluciona error al usar aceleración JLP (registros
+                      cacheados por error)
                     o Corregido contrib/clowns.bas (catsfolly) se había "roto"
                       debido a un cambio en constants.bas.
                     o Se agrega contrib/Gram2GromFont.bas (GroovyBee) muestra
@@ -661,6 +666,8 @@ Las siguientes sentencias están disponibles:
 label:
   DATA expr_constante[,expr_constante]
   DATA cadena
+  DATA VARPTR a
+  DATA VARPTR b(expr_constante)
 
     Útil para tener tablas/gráficos, los números pueden estar en el rango de 16 bits
     READ limitará automáticamente los datos al tamaño de la variable.

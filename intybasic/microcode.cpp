@@ -163,6 +163,8 @@ void microcode::dump(void) {
                 asm_output << this->prefix;
             else
                 asm_output << this->prefix << this->value;
+            if (this->offset)
+                asm_output << "+" << this->offset;
             break;
         case M_LITERAL:  // Literal assembler code
             asm_output << this->prefix;

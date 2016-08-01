@@ -13,8 +13,9 @@
 	    ;                        trash in 16-bit RAM. Solved bugs and optimized
 	    ;                        macro for constant multiplication.
         ; Revision: Jan/12/2016. Solved bug in PAL detection.
-	; Revision: May/03/2016. Changed in _mode_select initialization.
-	    ;
+        ; Revision: May/03/2016. Changed in _mode_select initialization.
+	    ; Revision: Jul/31/2016. Solved bug in multiplication by 126 and 127.
+        ;
 
         ROMW 16
         ORG $5000
@@ -1586,10 +1587,11 @@ _mul.done       QSET    -1
         ; Multiply by $7E (126)
         IF (_mul.const = $7E)
 _mul.done       QSET    -1
+                SLL     %reg%,  1
                 MOVR    %reg%,  %tmp%
-                SWAP    %reg%,  1
-                SLR     %reg%,  1
-		ADDR    %tmp%,  %tmp%
+                SLL     %reg%,  2
+                SLL     %reg%,  2
+                SLL     %reg%,  2
                 SUBR    %tmp%,  %reg%
         ENDI
 
@@ -1597,8 +1599,10 @@ _mul.done       QSET    -1
         IF (_mul.const = $7F)
 _mul.done       QSET    -1
                 MOVR    %reg%,  %tmp%
-                SWAP    %reg%, 1
-                SLR     %reg%, 1
+                SLL     %reg%,  2
+                SLL     %reg%,  2
+                SLL     %reg%,  2
+                SLL     %reg%,  1
                 SUBR    %tmp%,  %reg%
         ENDI
 

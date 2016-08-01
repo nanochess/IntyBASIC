@@ -227,7 +227,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.6 Apr/26/2016";      // Compiler version
+const string VERSION = "v1.2.6 Jul/31/2016";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -2010,7 +2010,60 @@ private:
                 } else if (name == "DATA") {
                     get_lex();
                     while (1) {
-                        if (lex == C_STRING) {
+                        if (name == "VARPTR") {  // Access to variable/array/label address
+                            int temp;
+                            int index;
+                            int type2;
+                            
+                            get_lex();
+                            if (lex != C_NAME) {
+                                emit_error("missing variable name for VARPTR");
+                            } else {
+                                if (sneak_peek() == '(') {  // Indexed access
+                                    class node *tree;
+                                    
+                                    if (arrays[name] != 0) {
+                                        temp = arrays[name] >> 16;
+                                    } else if (labels[name] != 0) {
+                                        temp = labels[name];
+                                        label_used[name] |= 1;
+                                    } else {
+                                        labels[name] = temp = next_label++;
+                                        label_used[name] |= 1;
+                                    }
+                                    get_lex();
+                                    if (lex != C_LPAREN)
+                                        emit_error("missing left parenthesis in array access");
+                                    else
+                                        get_lex();
+                                    tree = eval_level0(&type2);
+                                    if (tree->node_type() != C_NUM) {
+                                        index = 0;
+                                        emit_error("not a constant expression in array access");
+                                    } else {
+                                        index = tree->node_value();
+                                    }
+                                    if (lex != C_RPAREN)
+                                        emit_error("missing right parenthesis in array access");
+                                    else
+                                        get_lex();
+                                    output->emit_dlo(N_DECLE, LABEL_PREFIX, temp, index);
+                                    delete tree;
+                                    tree = NULL;
+                                } else {
+                                    if ((constants[name] & 0x10000) != 0) {
+                                        emit_error("constants doesn't have address for VARPTR");
+                                        get_lex();
+                                    } else {
+                                        if (variables[name] == 0)
+                                            variables[name] = next_var++;
+                                        temp = variables[name];
+                                        get_lex();
+                                        output->emit_dl(N_DECLE, VAR_PREFIX, temp);
+                                    }
+                                }
+                            }
+                        } else if (lex == C_STRING) {
                             int c;
                             int v;
                             

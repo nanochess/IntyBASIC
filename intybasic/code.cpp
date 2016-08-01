@@ -523,6 +523,12 @@ void code::emit_dl(enum opcode type, string prefix, int value) {
     cycles = 0;
 }
 
+// Emits data (label)
+void code::emit_dlo(enum opcode type, string prefix, int value, int offset) {
+    everything.push_back(new microcode(M_DL, type, 0, 0, prefix, value, offset));
+    cycles = 0;
+}
+
 // Emits literal assembler (user provided)
 void code::emit_literal(string text) {
     everything.push_back(new microcode(M_LITERAL, 0, 0, 0, text, 0, 0));
