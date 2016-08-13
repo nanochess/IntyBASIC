@@ -201,6 +201,8 @@
 //                         the previous one. MODE now sets a different value in
 //                         _mode_select. Generates warning when more than 16
 //                         GRAM defined per video frame.
+//  Revision: Aug/12/2016. Solved bug where DEFINE with VARPTR swallowed one
+//                         extra lexical component.
 //
 
 //  TODO:
@@ -2140,9 +2142,9 @@ private:
                                     label_used[name] |= 1;
                                 }
                                 output->emit_nr(N_MVII, LABEL_PREFIX, label, 0);
+                                get_lex();
                             }
                             output->emit_rl(N_MVO, 0, "_gram2_bitmap", -1);
-                            get_lex();
                         }
                     } else {
                         eval_expr(0, 0);
@@ -2183,9 +2185,9 @@ private:
                                     label_used[name] |= 1;
                                 }
                                 output->emit_nr(N_MVII, LABEL_PREFIX, label, 0);
+                                get_lex();
                             }
                             output->emit_rl(N_MVO, 0, "_gram_bitmap", -1);
-                            get_lex();
                         }
                     }
                 } else if (name == "SOUND") {
