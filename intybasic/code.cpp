@@ -287,15 +287,17 @@ void code::emit_nor(enum opcode type, string prefix, int value, int offset, int 
                     register_content[r].offset = offset;
                     if (r == 3)
                         subexpression_valid = false;
-                    return;
                 }
-            } else if (diff == 1 && d == r) {
+                return;
+            }
+            if (diff == 1 && d == r) {
                 everything.push_back(new microcode(M_R, N_INCR, r, 0, "", 0, 0));
                 register_content[r].offset = offset;
                 if (r == 3)
                     subexpression_valid = false;
                 return;
-            } else if (diff == -1 && d == r) {
+            }
+            if (diff == -1 && d == r) {
                 everything.push_back(new microcode(M_R, N_INCR, r, 0, "", 0, 0));
                 register_content[r].offset = offset;
                 if (r == 3)
