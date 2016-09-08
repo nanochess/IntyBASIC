@@ -1985,8 +1985,6 @@ private:
                 } else if (name == "CLS") {  // CLS
                     get_lex();
                     output->emit_a(N_CALL, "CLRSCR", -1);
-                    output->emit_nr(N_MVII, "", 0x200, 0);
-                    output->emit_rl(N_MVO, 0, "_screen", -1);
                 } else if (name == "WAIT") {  // WAIT
                     get_lex();
                     output->emit_a(N_CALL, "_wait", -1);
@@ -3353,6 +3351,7 @@ public:
         int available_vars;
         int inside_proc;
         char *p;
+        int eof;
         
         line_number = 0;
         next_label = 1;
@@ -3423,25 +3422,44 @@ public:
         // Must be defined in this order
         arrays["#MOBSHADOW"] = 24 | (next_label++ << 16);  // #MOBSHADOW array (label Q1)
         arrays["#BACKTAB"] = 240 | (next_label++ << 16);  // #BACKTAB array (label Q2)
+        eof = 0;
         while (1) {
             int label_exists;
+            string line2;
             
-            if (active_include) {
-                if (!getline(include[next_include], line)) {
-                    include[next_include].close();
-                    asm_output << "\t;ENDFILE\n";
-                    next_include++;
-                    active_include = 0;
-                    line_number = saved_line_number;
-                    asm_output << "\t;FILE " << input_file << "\n";
+            line2 = "";
+            while (1) {
+                if (active_include) {
+                    if (!getline(include[next_include], line)) {
+                        include[next_include].close();
+                        asm_output << "\t;ENDFILE\n";
+                        next_include++;
+                        active_include = 0;
+                        line_number = saved_line_number;
+                        asm_output << "\t;FILE " << input_file << "\n";
+                    } else {
+                        line_number++;
+                    }
+                }
+                if (!active_include) {
+                    if (!getline(input, line)) {
+                        eof = 1;
+                        break;
+                    }
+                    line_number++;
+                }
+                line = line2 + line;
+                if (line.length() > 0 && line[line.length() - 1] == '\\') {
+                    line.erase(line.length() - 1, 1);
+                    line2 = line;
+                    continue;
+                } else {
+                    break;
                 }
             }
-            if (!active_include) {
-                if (!getline(input, line))
-                    break;
-            }
+            if (eof)
+                break;
 //            std::cerr << line << "\n";
-            line_number++;
             line_start = 1;
             line_pos = 0;
             line_size = line.length();

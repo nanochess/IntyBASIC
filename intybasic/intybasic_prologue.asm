@@ -15,6 +15,8 @@
         ; Revision: Jan/12/2016. Solved bug in PAL detection.
         ; Revision: May/03/2016. Changed in _mode_select initialization.
 	    ; Revision: Jul/31/2016. Solved bug in multiplication by 126 and 127.
+	; Revision: Sep/08/2016. Now CLRSCR initializes screen position for PRINT, this
+	;                        solves bug when user programs goes directly to PRINT.
         ;
 
         ROMW 16
@@ -49,6 +51,7 @@ _ONES:  DECLE   $0001, $0001    ; Initial color stack 0 and 1: Blue
 C_WHT:  EQU $0007
 
 CLRSCR: MVII #$200,R4           ; Used also for CLS
+	MVO R4,_screen		; Set up starting screen position for PRINT
         MVII #$F0,R1
 FILLZERO:
         CLRR R0

@@ -30,10 +30,16 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.7 08-sep-2016  o Se soluciona un bug donde DEFINE VARPTR se comía un
+v1.2.7 08-sep-2016  o Permite concatenar líneas utilizando el caracter \ al
+                      final de una línea.
+                    o Ahora optimiza acceso a arreglos que usan el mismo indice
+                      incluso para arreglos diferentes o con offset diferente.
+                    o Se soluciona un bug donde DEFINE VARPTR se comía un
                       componente léxico extra.
                     o Se soluciona un bug donde 1024-x*x generaba código
                       incorrecto.
+                    o Se soluciona un bug donde PRINT "cadena" como primera
+                      sentencia escribía en memoria fuera de la pantalla.
                     o Edición menor del manual (definición de BORDER)
 
 v1.2.6 03-may-2016  o Detecta cuando el archivo fuente termina sin finalizar
@@ -447,6 +453,17 @@ prefijo # son tratadas como variables diferentes de 8 bits.
 
 Todas las variables contienen cero al comienzo. También IntyBASIC le advertirá si
 excede el número de variables disponibles.
+
+La concatenación de líneas es admitida con el caracter \, que concatena la línea
+actual con la siguiente como una sóla línea larga. Así que esto es válido:
+current line with the following line as a single long line. So this is valid:
+
+     PR\
+     INT\
+      "HOL\
+     A"
+    
+Y será procesado como PRINT "HOLA"
 
 Las siguientes sentencias están disponibles:
 

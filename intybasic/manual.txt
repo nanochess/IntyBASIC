@@ -23,9 +23,15 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.7 Sep/08/2016  o Solved bug where DEFINE VARPTR swallowed one extra
+v1.2.7 Sep/08/2016  o Allows to concatenate lines using the character \
+                      at the end of a line.
+                    o Now optimizes access to arrays when using same index
+                      even if different array or offset.
+                    o Solved bug where DEFINE VARPTR swallowed one extra
                       lexical component.
                     o Solved bug where 1024-x*x generated wrong code.
+                    o Solved bug where PRINT "string" as first statement
+                      would write in non-screen memory.
                     o Minor edit in manual (definition of BORDER)
 
 v1.2.6 Jul/31/2016  o Detects when PROCEDURE isn't finished at end of
@@ -390,7 +396,7 @@ it. Because lack of time I cannot guarantee it will be corrected.
 Execution starts at init of BASIC program.
 
 Syntax per line:
-  [label:] statement[:statement] [' comment]
+  [label:] statement[:statement] [' comment][\]
 
   MAIN:    PRINT "HELLO"  ' Prints hello
   
@@ -414,6 +420,16 @@ without # prefix are treated as different 8-bit variables.
     
 All variables start containing zero value. Also IntyBASIC will warn you if you
 exceed the number of available variables.
+
+Concatenation of lines is provided by the \ character, it concatenates the
+current line with the following line as a single long line. So this is valid:
+
+     PR\
+     INT\
+      "HELL\
+     O"
+    
+And will be processed as PRINT "HELLO"
 
 Following statements are available:
 
