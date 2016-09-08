@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 31-jul-2016
+Última revisión: 08-sep-2016
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -29,6 +29,12 @@ en inglés.
 
 
 >>>>>>>>>>>>>>  Cambios en esta versión
+
+v1.2.7 08-sep-2016  o Se soluciona un bug donde DEFINE VARPTR se comía un
+                      componente léxico extra.
+                    o Se soluciona un bug donde 1024-x*x generaba código
+                      incorrecto.
+                    o Edición menor del manual (definición de BORDER)
 
 v1.2.6 03-may-2016  o Detecta cuando el archivo fuente termina sin finalizar
                       un PROCEDURE. También comenzar un nuevo PROCEDURE sin

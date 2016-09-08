@@ -203,6 +203,7 @@
 //                         GRAM defined per video frame.
 //  Revision: Aug/12/2016. Solved bug where DEFINE with VARPTR swallowed one
 //                         extra lexical component.
+//  Revision: Aug/25/2016. Solved bug when using qs_mpy16 like 1024-x*x
 //
 
 //  TODO:
@@ -229,7 +230,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.6 Jul/31/2016";      // Compiler version
+const string VERSION = "v1.2.7 Sep/08/2016";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels

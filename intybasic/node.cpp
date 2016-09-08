@@ -291,7 +291,14 @@ void node::label(void) {
     right->label();
     
     if (right->type == C_NUM || right->type == C_NAME) {
-        regs = left->regs;
+        if (type == C_MUL && left->type == C_NAME && right->type == C_NAME && !jlp_used)
+            regs = 10;
+        else if (type == C_DIV && left->type == C_NAME && right->type == C_NAME && !jlp_used)
+            regs = 10;
+        else if (type == C_MOD && left->type == C_NAME && right->type == C_NAME && !jlp_used)
+            regs = 10;
+        else
+            regs = left->regs;
     } else {
         
         // Optimize case a+(-b) to a-b
@@ -340,13 +347,7 @@ void node::label(void) {
                 right = temp;
             }
         }
-        if (type == C_MUL && left->type == C_NAME && right->type == C_NAME && !jlp_used)
-            regs = 10;
-        else if (type == C_DIV && left->type == C_NAME && right->type == C_NAME && !jlp_used)
-            regs = 10;
-        else if (type == C_MOD && left->type == C_NAME && right->type == C_NAME && !jlp_used)
-            regs = 10;
-        else if (left->regs > right->regs)
+        if (left->regs > right->regs)
             regs = left->regs;
         else if (right->regs > left->regs)
             regs = right->regs;

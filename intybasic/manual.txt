@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jul/31/2016.
+Last revision: Sep/08/2016.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -22,6 +22,11 @@ All trademarks are property of their respective owners.
 
 
 >>>>>>>>>>>>>>  Changes in this version
+
+v1.2.7 Sep/08/2016  o Solved bug where DEFINE VARPTR swallowed one extra
+                      lexical component.
+                    o Solved bug where 1024-x*x generated wrong code.
+                    o Minor edit in manual (definition of BORDER)
 
 v1.2.6 Jul/31/2016  o Detects when PROCEDURE isn't finished at end of
                       source code. Also starting a new PROCEDURE without
@@ -839,7 +844,7 @@ label:
     
     Color can be any number between 0 and 15.
     
-    Mask can be 0, 1 (mask left column), 2 (mask top column) or 3 (mask both)
+    Mask can be 0, 1 (mask left column), 2 (mask top row) or 3 (mask both)
     
     Border and mask will be updated in next frame.
     
