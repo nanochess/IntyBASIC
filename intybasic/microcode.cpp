@@ -1,6 +1,7 @@
 //
 //  microcode.cpp
-//  intybasic
+//  This module keeps assembler instructions generated...
+//  ...by IntyBASIC in a list ready to be output.
 //
 //  Created by Oscar Toledo on 07/01/16.
 //  Copyright (c) 2016 Oscar Toledo. All rights reserved.
@@ -101,6 +102,17 @@ void microcode::dump(void) {
                 asm_output << this->value;
             else
                 asm_output << this->prefix << this->value;
+            if (this->offset > 0)
+                asm_output << "+" << this->offset;
+            else if (this->offset < 0)
+                asm_output << "-" << (-this->offset);
+            asm_output << ",R" << this->r1;
+            break;
+        case M_NNR: // Constant: ADDI #label-label,R0
+            asm_output << "\t" << opcode_list[this->type] << " #";
+            asm_output << this->prefix << this->value;
+            asm_output << "-";
+            asm_output << this->prefix << this->r2;
             if (this->offset > 0)
                 asm_output << "+" << this->offset;
             else if (this->offset < 0)

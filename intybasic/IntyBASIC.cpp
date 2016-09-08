@@ -203,7 +203,9 @@
 //                         GRAM defined per video frame.
 //  Revision: Aug/12/2016. Solved bug where DEFINE with VARPTR swallowed one
 //                         extra lexical component.
-//  Revision: Aug/25/2016. Solved bug when using qs_mpy16 like 1024-x*x
+//  Revision: Aug/25/2016. Solved bug when using qs_mpy16 like 1024-x*x. Optimizes
+//                         array(4+index) and now subexpression also optimizes
+//                         accesses using same index to any array/offset combo.
 //
 
 //  TODO:

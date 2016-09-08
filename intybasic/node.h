@@ -28,6 +28,7 @@ public:
     class node *node_right(void);
     void set_right(class node *right);
     bool valid_array(void);
+    void annotate_index_for_subexpression(void);
     void label(void);
     void generate(int reg, int decision);
 };

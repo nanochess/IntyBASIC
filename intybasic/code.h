@@ -18,7 +18,7 @@ class code {
     
     int cycles;
     
-    // Relates which registers contains what constants
+    // Relates which registers contains what constants or addresses
     struct {
         int valid;
         string prefix;

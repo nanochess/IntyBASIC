@@ -20,7 +20,7 @@ enum opcode {
 };
 
 enum microcode_style {
-    M_SINGLE, M_R, M_RR, M_NR, M_LR, M_RL,
+    M_SINGLE, M_R, M_RR, M_NR, M_NNR, M_LR, M_RL,
     M_A, M_S, M_M, M_L, M_D, M_D2, M_DL, M_LITERAL,
 };
 

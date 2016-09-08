@@ -1,6 +1,6 @@
 //
 //  node.cpp
-//  intybasic
+//  This module creates trees for IntyBASIC expressions, label nodes, and generates code.
 //
 //  Created by Oscar Toledo on 07/01/16.
 //  Copyright (c) 2016 Oscar Toledo. All rights reserved.
@@ -77,17 +77,24 @@ node::node(enum lexical_component type, int value, class node *left, class node 
         delete right;
         right = this->right;
     }
-    // Optimize common array access case a(c+1)
-    if (type == C_PLUS && left->type == C_NAME_RO && right->type == C_PLUS && right->right->type == C_NUM) {
+    // Optimize common array access case array(c+1)
+    if (type == C_PLUS && left->type == C_NAME_RO && right->type == C_PLUS) {
         class node *temp;
         
         // Pass constant to left side (in order to be added to address in one instruction)
-        temp = right->left;
-        right->left = left;
-        this->left = right;
-        this->right = temp;
+        if (right->right->type == C_NUM) {      // array(c+1)
+            temp = right->left;
+            right->left = left;
+            this->left = right;
+            this->right = temp;
+        } else if (right->left->type == C_NUM) {    // array(1+c)
+            temp = right->right;
+            right->right = left;
+            this->left = right;
+            this->right = temp;
+        }
     }
-    // Optimize common array access case a(c-1)
+    // Optimize common array access case array(c-1)
     if (type == C_PLUS && left->type == C_NAME_RO && right->type == C_MINUS && right->right->type == C_NUM) {
         class node *temp;
         
@@ -258,11 +265,56 @@ void node::set_right(class node *right) {
 // Check for valid array with or without offset
 //
 bool node::valid_array(void) {
-    if (this->type == C_NAME_RO)
+    //
+    //         C_PLUS          a(x)
+    //        /      \
+    //   C_NAME_RO   C_NAME
+    //
+    //         C_PLUS          a(x+5)
+    //        /      \
+    //     C_PLUS   C_NAME
+    //    /      \
+    // C_NAME_RO  C_NUM
+    //
+    //
+    if (type != C_PLUS || right->type != C_NAME)
+        return false;
+    if (left->type == C_NAME_RO)
         return true;
-    if (this->type == C_PLUS && left->type == C_NAME_RO && right->type == C_NUM)
+    if (left->type == C_PLUS && left->left->type == C_NAME_RO && left->right->type == C_NUM)
         return true;
     return false;
+}
+
+//
+// Annotate index for subexpression
+//
+void node::annotate_index_for_subexpression(void)
+{
+    
+    //         C_PLUS          a(x)
+    //        /      \
+    //   C_NAME_RO   C_NAME
+    //
+    if (left->type == C_NAME_RO) {  // Without offset
+        if (!output->subexpression_available(left->value, 0, right->value)) {
+            this->generate(3, 0);
+            output->annotate_subexpression(left->value, 0, right->value);
+        }
+        
+    //         C_PLUS          a(x+5)
+    //        /      \
+    //     C_PLUS   C_NAME
+    //    /      \
+    // C_NAME_RO  C_NUM
+    //
+    //
+    } else {  // With offset into array
+        if (!output->subexpression_available(left->left->value, left->right->value, right->value)) {
+            this->generate(3, 0);
+            output->annotate_subexpression(left->left->value, left->right->value, right->value);
+        }
+    }
 }
 
 //
@@ -503,18 +555,8 @@ void node::generate(int reg, int decision) {
                 output->emit_lr(N_MVI, "", left->value, reg);
             } else if (left->type == C_PLUS && left->left->type == C_NAME_RO && left->right->type == C_NUM) {  // Constant index into array
                 output->emit_lor(N_MVI, LABEL_PREFIX, left->left->value, left->right->value, reg);
-            } else if (left->type == C_PLUS && left->left->valid_array() && left->right->type == C_NAME) {  // Simple index into array
-                if (left->left->type == C_NAME_RO) {  // Without offset
-                    if (!output->subexpression_available(left->left->value, 0, left->right->value)) {
-                        left->generate(3, 0);
-                        output->annotate_subexpression(left->left->value, 0, left->right->value);
-                    }
-                } else {  // With offset into array
-                    if (!output->subexpression_available(left->left->left->value, left->left->right->value, left->right->value)) {
-                        left->generate(3, 0);
-                        output->annotate_subexpression(left->left->left->value, left->left->right->value, left->right->value);
-                    }
-                }
+            } else if (left->valid_array()) {  // Simple index into array
+                left->annotate_index_for_subexpression();
                 output->emit_rr(N_MVIA, 3, reg);
             } else {
                 if (reg == 0) {  // R0 cannot be used as source of address
@@ -597,19 +639,9 @@ void node::generate(int reg, int decision) {
             } else if (type == C_PLUS && left->type == C_NAME_RO && right->type == C_NUM) {
                 output->emit_nor(N_MVII, LABEL_PREFIX, left->value, right->value, reg);
                 // Optimization for assignation to array with simple index
-            } else if (type == C_ASSIGN && right->type == C_PLUS && right->left->valid_array() && right->right->type == C_NAME) {
+            } else if (type == C_ASSIGN && right->valid_array()) {
                 left->generate(0, 0);
-                if (right->left->type == C_NAME_RO) {
-                    if (!output->subexpression_available(right->left->value, 0, right->right->value)) {
-                        right->generate(3, 0);
-                        output->annotate_subexpression(right->left->value, 0, right->right->value);
-                    }
-                } else {
-                    if (!output->subexpression_available(right->left->left->value, right->left->right->value, right->right->value)) {
-                        right->generate(3, 0);
-                        output->annotate_subexpression(right->left->left->value, right->left->right->value, right->right->value);
-                    }
-                }
+                right->annotate_index_for_subexpression();
                 output->emit_rr(N_MVOA, 0, 3);
                 // Optimize right side when it's constant
             } else if (right->type == C_NUM && type != C_ASSIGN) {
@@ -618,7 +650,7 @@ void node::generate(int reg, int decision) {
                 if (left->type == C_EXTEND && (type == C_EQUAL || type == C_NOTEQUAL)) {
                     left->left->generate(reg, 0);
                     if (val >= 0x0080 && val <= 0xff7f)
-                        std::cerr << "Warning: comparing equality of 8-bit signed variable with value " << val << " out of range";
+                        std::cerr << "Warning: equality comparison of 8-bit signed variable with value " << val << " out of range";
                     val &= 0xff;
                 } else {
                     left->generate(reg, 0);

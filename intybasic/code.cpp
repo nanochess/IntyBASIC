@@ -1,6 +1,7 @@
 //
 //  code.cpp
-//  intybasic
+//  This module takes generated assembler code, keeps register state for...
+//  ...subexpression elimination and does peephole optimization.
 //
 //  Created by Oscar Toledo on 07/01/16.
 //  Copyright (c) 2016 Oscar Toledo. All rights reserved.
@@ -20,11 +21,34 @@ code::code(void) {
     trash_registers();
 }
 
+// Subexpressions currently consists of addresses of the form: array + const + a
 // Checks for subexpression available (currently only in R3)
 bool code::subexpression_available(int base, int offset, int index) {
-    if (subexpression_valid && subexpression_base == base && subexpression_offset == offset && subexpression_index == index)
+    int diff;
+    
+    if (!subexpression_valid)
+        return false;
+    if (subexpression_index != index)  // Return if not same index
+        return false;
+    diff = offset - subexpression_offset;
+    subexpression_offset = offset;
+    if (subexpression_base == base) {  // Same base array, adjust offset
+        if (diff == 1)
+            everything.push_back(new microcode(M_R, N_INCR, 3, 0, "", 0, 0));
+        else if (diff == -1)
+            everything.push_back(new microcode(M_R, N_DECR, 3, 0, "", 0, 0));
+        else if (diff > 0)
+            everything.push_back(new microcode(M_NR, N_ADDI, 3, 0, "", diff, 0));
+        else if (diff < 0)
+            everything.push_back(new microcode(M_NR, N_SUBI, 3, 0, "", -diff, 0));
+        if (diff != 0)
+            cycles = 0;
         return true;
-    return false;
+    }
+    everything.push_back(new microcode(M_NNR, N_ADDI, 3, subexpression_base, LABEL_PREFIX, base, diff));
+    cycles = 0;
+    subexpression_base = base;
+    return true;
 }
 
 // Annotate for subexpression available (currently only in R3)
@@ -212,6 +236,7 @@ void code::emit_nr(enum opcode type, string prefix, int value, int r) {
 void code::emit_nor(enum opcode type, string prefix, int value, int offset, int r) {
     int c;
     int d;
+    int diff;
     
     // Common pattern optimization: modulus plus number
     if (type == N_ADDI && prefix == "" && everything.size() > 0) {
@@ -249,19 +274,34 @@ void code::emit_nor(enum opcode type, string prefix, int value, int offset, int 
     // Common pattern optimization: constant in register
     for (c = 0; c < 4; c++) {
         d = (r + c) % 4;
-        if (type == N_MVII && register_content[d].valid == 1 && register_content[d].prefix == prefix && register_content[d].value == value && register_content[d].offset == offset) {
-            if (d == r) {
-                // Nothing to do =P
-            } else {
-                everything.push_back(new microcode(M_RR, N_MOVR, d, r, "", 0, 0));
-                register_content[r].valid = 1;
-                register_content[r].prefix = prefix;
-                register_content[r].value = value;
+        if (type == N_MVII && register_content[d].valid == 1 && register_content[d].prefix == prefix && register_content[d].value == value) {
+            diff = offset - register_content[d].offset;
+            if (diff == 0) {
+                if (d == r) {
+                    // Nothing to do =P
+                } else {
+                    everything.push_back(new microcode(M_RR, N_MOVR, d, r, "", 0, 0));
+                    register_content[r].valid = 1;
+                    register_content[r].prefix = prefix;
+                    register_content[r].value = value;
+                    register_content[r].offset = offset;
+                    if (r == 3)
+                        subexpression_valid = false;
+                    return;
+                }
+            } else if (diff == 1 && d == r) {
+                everything.push_back(new microcode(M_R, N_INCR, r, 0, "", 0, 0));
                 register_content[r].offset = offset;
                 if (r == 3)
                     subexpression_valid = false;
+                return;
+            } else if (diff == -1 && d == r) {
+                everything.push_back(new microcode(M_R, N_INCR, r, 0, "", 0, 0));
+                register_content[r].offset = offset;
+                if (r == 3)
+                    subexpression_valid = false;
+                return;
             }
-            return;
         }
     }
     everything.push_back(new microcode(M_NR, type, r, 0, prefix, value, offset));
@@ -272,6 +312,18 @@ void code::emit_nor(enum opcode type, string prefix, int value, int offset, int 
         register_content[r].prefix = prefix;
         register_content[r].value = value;
         register_content[r].offset = offset;
+        register_memory[r].valid = 0;
+        if (r == 3)
+            subexpression_valid = false;
+    } else if (type == N_ADDI) {
+        if (register_content[r].valid && register_content[r].prefix != "")
+            register_content[r].offset = (register_content[r].offset + value) & 0xffff;
+        register_memory[r].valid = 0;
+        if (r == 3)
+            subexpression_valid = false;
+    } else if (type == N_SUBI) {
+        if (register_content[r].valid && register_content[r].prefix != "")
+            register_content[r].offset = (register_content[r].offset - value) & 0xffff;
         register_memory[r].valid = 0;
         if (r == 3)
             subexpression_valid = false;
