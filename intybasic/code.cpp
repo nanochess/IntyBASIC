@@ -23,6 +23,11 @@ code::code(void) {
 
 // Subexpressions currently consists of addresses of the form: array + const + a
 // Checks for subexpression available (currently only in R3)
+//
+// base - label number for array
+// offset - constant offset used
+// index - label number for index variable
+//
 bool code::subexpression_available(int base, int offset, int index) {
     int diff;
     
@@ -359,12 +364,14 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
             if (type == N_ADD) {                    // Change ADD from memory to ADD from register
                 type = N_ADDR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
+                register_content[r].valid = 0;
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
             } else if (type == N_AND) {             // Change AND from memory to AND from register
                 type = N_ANDR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
+                register_content[r].valid = 0;
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
@@ -375,12 +382,14 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
             } else if (type == N_SUB) {             // Change SUB from memory to SUB from register
                 type = N_SUBR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
+                register_content[r].valid = 0;
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
             } else if (type == N_XOR) {             // Change XOR from memory to XOR from register
                 type = N_XORR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
+                register_content[r].valid = 0;
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
@@ -389,7 +398,7 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                     // Nothing to do =P
                 } else {
                     everything.push_back(new microcode(M_RR, N_MOVR, d, r, "", 0, 0));
-                    register_memory[r].valid = 1;
+                    register_memory[r].valid = true;
                     register_memory[r].prefix = register_memory[d].prefix;
                     register_memory[r].value = register_memory[d].value;
                     register_memory[r].offset = register_memory[d].offset;
