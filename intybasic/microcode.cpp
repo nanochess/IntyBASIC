@@ -109,7 +109,7 @@ void microcode::dump(void) {
             asm_output << ",R" << this->r1;
             break;
         case M_NNR: // Constant: ADDI #label-label,R0
-            asm_output << "\t" << opcode_list[this->type] << " #";
+            asm_output << "\t" << opcode_list[this->type] << " #(";
             asm_output << this->prefix << this->value;
             asm_output << "-";
             asm_output << this->prefix << this->r2;
@@ -117,7 +117,9 @@ void microcode::dump(void) {
                 asm_output << "+" << this->offset;
             else if (this->offset < 0)
                 asm_output << "-" << (-this->offset);
-            asm_output << ",R" << this->r1;
+            asm_output << ") AND $FFFF,R" << this->r1;
+            // Note how the AND in expression solves a bug when substraction creates a big negative
+            // number, triggering an error in as1600
             break;
         case M_LR:  // Label and register: MVI V2,R0
             asm_output << "\t" << opcode_list[this->type] << " ";
