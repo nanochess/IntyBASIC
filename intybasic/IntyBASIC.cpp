@@ -206,6 +206,9 @@
 //  Revision: Aug/25/2016. Solved bug when using qs_mpy16 like 1024-x*x. Optimizes
 //                         array(4+index) and now subexpression also optimizes
 //                         accesses using same index to any array/offset combo.
+//  Revision: Sep/27/2016. Had to change extra memory flags so LTO-Flash can
+//                         detect correctly the ROM type.
+//  Revision: Oct/06/2016. Added OPTION EXPLICIT.
 //
 
 //  TODO:
@@ -232,7 +235,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.7 Sep/26/2016";      // Compiler version
+const string VERSION = "v1.2.8 Oct/06/2016";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -252,9 +255,13 @@ bool fastmult_used;  // Indicates if fast multiplication is used
 bool fastdiv_used;   // Indicates if fast division/remainder is used
 bool music_used;     // Indicates if music used
 bool warnings;       // Indicates if warnings are generated
+
 int program_year;
 char program_title[256];
+
 int err_code;
+
+bool option_explicit;   // Force declaration of variables
 
 //#define DEBUG_FN
 
@@ -746,32 +753,32 @@ private:
                 get_lex();
                 right = eval_level4(&type2);
                 left = new node(C_EQUAL, 0, left, right);
-                type = 0;
+                *type = 0;
             } else if (lex == C_NOTEQUAL) {
                 get_lex();
                 right = eval_level4(&type2);
                 left = new node(C_NOTEQUAL, 0, left, right);
-                type = 0;
+                *type = 0;
             } else if (lex == C_LESS) {
                 get_lex();
                 right = eval_level4(&type2);
                 left = new node(C_LESS, *type | type2, left, right);
-                type = 0;
+                *type = 0;
             } else if (lex == C_LESSEQUAL) {
                 get_lex();
                 right = eval_level4(&type2);
                 left = new node(C_LESSEQUAL, *type | type2, left, right);
-                type = 0;
+                *type = 0;
             } else if (lex == C_GREATER) {
                 get_lex();
                 right = eval_level4(&type2);
                 left = new node(C_GREATER, *type | type2, left, right);
-                type = 0;
+                *type = 0;
             } else if (lex == C_GREATEREQUAL) {
                 get_lex();
                 right = eval_level4(&type2);
                 left = new node(C_GREATEREQUAL, *type | type2, left, right);
-                type = 0;
+                *type = 0;
             } else {
                 break;
             }
@@ -1121,8 +1128,10 @@ private:
                     get_lex();
                     return new node(C_NUM, 0, NULL, NULL);
                 }
-                if (variables[name] == 0)
+                if (variables[name] == 0) {
+                    check_for_explicit(name);
                     variables[name] = next_var++;
+                }
                 temp = variables[name];
                 get_lex();
                 return new node(C_NAME_R, temp, NULL, NULL);
@@ -1238,8 +1247,10 @@ private:
                 return new node(C_NUM, temp, NULL, NULL);
             }
             read_write[name] = (read_write[name] | 1);
-            if (variables[name] == 0)
+            if (variables[name] == 0) {
+                check_for_explicit(name);
                 variables[name] = next_var++;
+            }
             temp = variables[name];
             get_lex();
             tree = new node(C_NAME, temp, NULL, NULL);
@@ -1492,6 +1503,7 @@ private:
             emit_warning(message);
         }
         if (variables[name] == 0) {
+            check_for_explicit(name);
             variables[name] = next_var++;
             if ((constants[name] & 0x10000) != 0) {
                 string message;
@@ -1544,7 +1556,19 @@ private:
         else
             output->emit_rlo8(N_MVO, 0, VAR_PREFIX, variables[assigned], 0);
     }
-    
+
+    //
+    // Check if explicit declaration is needed
+    //
+    void check_for_explicit(string name) {
+        string message;
+        
+        if (!option_explicit)
+            return;
+        message = "variable '" + name + "' not defined previously";
+        emit_error(message);
+    }
+
     //
     // Process a BASIC statement
     //
@@ -2058,8 +2082,10 @@ private:
                                         emit_error("constants doesn't have address for VARPTR");
                                         get_lex();
                                     } else {
-                                        if (variables[name] == 0)
+                                        if (variables[name] == 0) {
+                                            check_for_explicit(name);
                                             variables[name] = next_var++;
+                                        }
                                         temp = variables[name];
                                         get_lex();
                                         output->emit_dl(N_DECLE, VAR_PREFIX, temp);
@@ -2583,60 +2609,66 @@ private:
                         }
                         array = name;
                         get_lex();
-                        if (lex != C_LPAREN) {
-                            emit_error("missing left parenthesis in DIM");
-                        } else {
-                            get_lex();
-                        }
-                        tree = eval_level0(&type);
-                        if (tree->node_type() != C_NUM) {
-                            emit_error("not a constant expression in DIM");
-                            break;
-                        }
-                        c = tree->node_value();
-                        if (c <= 0 || c >= 65535) {
-                            emit_error("invalid dimension in DIM");
-                            c = 1;
-                        }
-                        delete tree;
-                        tree = NULL;
-                        if (lex != C_RPAREN) {
-                            emit_error("missing right parenthesis in DIM");
-                        } else {
-                            get_lex();
-                        }
-                        where = -1;
-                        
-                        // Maps an array directly to a memory address.
-                        // Nothing that cannot be done with assembler.
-                        //
-                        // Not included in the docs because pros think there is no need for it.
-                        // And newbies could ask too complicated questions about it. Not enough time ;)
-                        if (lex == C_NAME && name == "AT") {
+                        if (lex == C_LPAREN) {
                             get_lex();
                             tree = eval_level0(&type);
                             if (tree->node_type() != C_NUM) {
-                                emit_error("not a constant expression in DIM AT");
-                                where = 0;
-                            } else {
-                                where = tree->node_value();
-                                if (where <= 0 || where > 65535) {
-                                    emit_error("invalid address in DIM AT");
-                                    where = 0;
-                                }
+                                emit_error("not a constant expression in DIM");
+                                break;
+                            }
+                            c = tree->node_value();
+                            if (c <= 0 || c >= 65535) {
+                                emit_error("invalid dimension in DIM");
+                                c = 1;
                             }
                             delete tree;
                             tree = NULL;
-                        }
-                        
-                        if (arrays[array] != 0) {
-                            emit_error("already used name for DIM");
-                        } else {
-                            arrays[array] = c | (next_label++ << 16);
-                            if (where >= 0) {
-                                asm_output << LABEL_PREFIX << (arrays[array] >> 16) << ":\tEQU " << where << "\t; " << array << "\n";
-                                arrays[array] = (arrays[array] - c) + 65535;  // Make length 65535
+                            if (lex != C_RPAREN) {
+                                emit_error("missing right parenthesis in DIM");
+                            } else {
+                                get_lex();
                             }
+                            where = -1;
+                            
+                            // Maps an array directly to a memory address.
+                            // Nothing that cannot be done with assembler.
+                            //
+                            // Not included in the docs because pros think there is no need for it.
+                            // And newbies could ask too complicated questions about it. Not enough time ;)
+                            if (lex == C_NAME && name == "AT") {
+                                get_lex();
+                                tree = eval_level0(&type);
+                                if (tree->node_type() != C_NUM) {
+                                    emit_error("not a constant expression in DIM AT");
+                                    where = 0;
+                                } else {
+                                    where = tree->node_value();
+                                    if (where <= 0 || where > 65535) {
+                                        emit_error("invalid address in DIM AT");
+                                        where = 0;
+                                    }
+                                }
+                                delete tree;
+                                tree = NULL;
+                            }
+                            
+                            if (arrays[array] != 0) {
+                                emit_error("already used name for DIM");
+                            } else {
+                                arrays[array] = c | (next_label++ << 16);
+                                if (where >= 0) {
+                                    asm_output << LABEL_PREFIX << (arrays[array] >> 16) << ":\tEQU " << where << "\t; " << array << "\n";
+                                    arrays[array] = (arrays[array] - c) + 65535;  // Make length 65535
+                                }
+                            }
+                        } else {
+                            if (variables[array] != 0) {
+                                string message;
+                                
+                                message = "variable '" + array + "' already defined";
+                                emit_error(message);
+                            }
+                            variables[array] = next_var++;
                         }
                         if (lex != C_COMMA)
                             break;
@@ -3324,6 +3356,24 @@ private:
                             }
                         }
                     }
+                } else if (name == "OPTION") {
+                    get_lex();
+                    if (lex != C_NAME) {
+                        emit_error("required name after OPTION");
+                    } else if (name == "EXPLICIT") {
+                        get_lex();
+                        if (lex == C_NAME && name == "ON") {
+                            get_lex();
+                            option_explicit = true;
+                        } else if (lex == C_NAME && name == "OFF") {
+                            get_lex();
+                            option_explicit = false;
+                        } else {
+                            option_explicit = true;
+                        }
+                    } else {
+                        emit_error("non-recognized OPTION");
+                    }
                 } else if (macros[name] != NULL) {  // Function (macro)
                     if (!replace_macro()) {
                         compile_statement(check_for_else);
@@ -3370,7 +3420,11 @@ public:
         warnings = ((flags & 4) == 0);
         fastmult_used = false;
         fastdiv_used = false;
+        
         frame_drive = -1;
+
+        option_explicit = false;
+        
         active_include = 0;
         next_include = 0;
         err_code = 0;
@@ -3740,7 +3794,7 @@ public:
             used_space += 5;
         }
         if (jlp_used || cc3_used) {
-            asm_output << "\tORG $8040, $8040, \"-RWBN\"\n";
+            asm_output << "\tORG $8040, $8040, \"=RW\"\n";
             used_space = 0;
         }
         

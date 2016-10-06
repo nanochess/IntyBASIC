@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Sep/08/2016.
+Last revision: Oct/06/2016.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -22,6 +22,11 @@ All trademarks are property of their respective owners.
 
 
 >>>>>>>>>>>>>>  Changes in this version
+
+v1.2.8 Oct/06/2016  o Added OPTION EXPLICIT for generating errors for any
+                      variable used not declared previously with DIM.
+                    o Now 16-bits memory segment for JLP/CC3 has new
+                      as1600 attributes "=RW" (required for LTO-Flash)
 
 v1.2.7 Sep/08/2016  o Allows to concatenate lines using the character \
                       at the end of a line.
@@ -627,6 +632,19 @@ Following statements are available:
   WAIT
   
      Waits for next frame interruption (1/60 sec. for NTSC or 1/50 for PAL)
+
+  OPTION EXPLICIT
+  
+     Makes obligatory to declare each variable with DIM before being used.
+
+  DIM variable
+  DIM variable[,variable]
+  
+     Declares a variable.
+     
+     Useful in combination with OPTION EXPLICIT.
+     
+     UNSIGNED and SIGNED are still applied separately.
 
   DIM var(size)
   
