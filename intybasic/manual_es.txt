@@ -30,10 +30,11 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.8 Oct/06/2016  o Se agrega OPTION EXPLICIT para generar errores cuando se
+v1.2.8 06-oct-2016  o Se agrega OPTION EXPLICIT para generar errores cuando se
                       usa una variable no declarada previamente con DIM.
                     o Ahora el segmento de memoria para 16-bits para JLP/CC3
                       tiene atributos as1600 "=RW" (necesario para LTO-Flash)
+                    o Advierte de constantes extrañas en FOR TO.
 
 v1.2.7 08-sep-2016  o Permite concatenar líneas utilizando el caracter \ al
                       final de una línea.

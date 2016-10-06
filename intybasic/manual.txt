@@ -27,6 +27,7 @@ v1.2.8 Oct/06/2016  o Added OPTION EXPLICIT for generating errors for any
                       variable used not declared previously with DIM.
                     o Now 16-bits memory segment for JLP/CC3 has new
                       as1600 attributes "=RW" (required for LTO-Flash)
+                    o Warns about weird constants in FOR TO
 
 v1.2.7 Sep/08/2016  o Allows to concatenate lines using the character \
                       at the end of a line.
