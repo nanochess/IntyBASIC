@@ -1431,15 +1431,16 @@ private:
     //
     // Assignment processing
     //
-    void compile_assignment(int is_read)
+    int compile_assignment(int is_read)
     {
         class node *tree2;
         int bits;
         int type;
+        int c;
         
         if (lex != C_NAME) {
             emit_error("name required for assignment");
-            return;
+            return 65536;
         }
         if (name[0] == '#')
             bits = 1;
@@ -1474,7 +1475,7 @@ private:
                 tree2 = eval_level0(&type);
             }
             if (bits == 0 && tree2->node_type() == C_NUM) {
-                int c = tree2->node_value() & 0xffff;
+                c = tree2->node_value() & 0xffff;
                 
                 // Allows -128 to 255, some people were confused by the fact of a = -1
                 if (c >= 0x0100 && c <= 0xff7f) {
@@ -1484,6 +1485,9 @@ private:
                     emit_warning(message);
                 }
             }
+            c = 65536;
+            if (tree2->node_type() == C_NUM)
+                c = tree2->node_value() & 0xffff;
             tree = new node(C_ASSIGN, bits, tree2,
                             new node(C_PLUS, 0,
                                         new node(C_NAME_RO, temp, NULL, NULL), tree));
@@ -1492,7 +1496,7 @@ private:
             tree->generate(0, 0);
             delete tree;
             tree = NULL;
-            return;
+            return c;
         }
         if (name != "COL0" && name != "COL1" && name != "COL2" && name != "COL3" && name != "COL4" && name != "COL5" && name != "COL6" && name != "COL7" && name != "FRAME" && name != "RAND" && name != "NTSC" && name != "CONT" && name != "CONT1" && name != "CONT2" && name != "CONT3" && name != "CONT4") {
             read_write[name] = (read_write[name] | 2);
@@ -1518,10 +1522,11 @@ private:
             output->emit_lr(N_MVI, "_read", -1, 4);
             output->emit_rr(N_MVIA, 4, 0);
             output->emit_rl(N_MVO, 4, "_read", -1);
+            c = 65536;
         } else {
             if (lex != C_EQUAL) {
                 emit_error("required '=' for assignment");
-                return;
+                return 65536;
             }
             get_lex();
             tree2 = eval_level0(&type);
@@ -1545,6 +1550,9 @@ private:
                                      tree2->node_right()->node_type() == C_EXTEND ? tree2->node_right()->node_left() : tree2->node_right());
                 }
             }
+            c = 65536;
+            if (tree2->node_type() == C_NUM)
+                c = tree2->node_value() & 0xffff;
             tree2->label();
             optimized = false;
             tree2->generate(0, 0);
@@ -1555,6 +1563,7 @@ private:
             output->emit_rl(N_MVO, 0, VAR_PREFIX, variables[assigned]);
         else
             output->emit_rlo8(N_MVO, 0, VAR_PREFIX, variables[assigned], 0);
+        return c;
     }
 
     //
@@ -1740,9 +1749,12 @@ private:
                     struct loop new_loop;
                     bool positive;
                     int type;
+                    int start_value;
+                    int end_value;
+                    int step_value;
                     
                     get_lex();
-                    compile_assignment(0);
+                    start_value = compile_assignment(0);
                     loop = assigned;
                     read_write[assigned] = (read_write[assigned] | 1);  // Take note it's used
                     label_loop = next_local++;
@@ -1755,26 +1767,53 @@ private:
                         if (assigned[0] != '#' && final->node_type() == C_NUM && (final->node_value() & 0xffff) > 255) {
                             emit_warning("TO value is larger than 8-bits size of variable");
                         }
+                        if (final->node_type() == C_NUM)
+                            end_value = final->node_value() & 0xffff;
+                        else
+                            end_value = 65536;
                         positive = true;
                         if (lex == C_NAME && name == "STEP") {
                             get_lex();
                             if (lex == C_MINUS) {
                                 get_lex();
                                 step = eval_level0(&type);
+                                if (step->node_type() == C_NUM)
+                                    step_value = -step->node_value() & 0xffff;
+                                else
+                                    step_value = 65536;
                                 step = new node(C_MINUS, 0,
                                                 new node(C_NAME, variables[loop], 0, 0), step);
                                 positive = false;
                             } else {
                                 step = eval_level0(&type);
+                                if (step->node_type() == C_NUM)
+                                    step_value = step->node_value() & 0xffff;
+                                else
+                                    step_value = 65536;
                                 step = new node(C_PLUS, 0,
                                                 new node(C_NAME, variables[loop], 0, 0), step);
                             }
                         } else {
+                            step_value = 1;
                             step = new node(C_NUM, 1, NULL, NULL);
                             step = new node(C_PLUS, 0,
                                             new node(C_NAME, variables[loop], 0, 0), step);
                         }
                         final = new node(positive ? C_GREATER : C_LESS, (loop[0] == '#' && signedness[loop] == 2) ? 1 : 0, new node(C_NAME, variables[loop], 0, 0), final);
+                        if (start_value != 65536 && end_value != 65536 && step_value != 65536) {
+                            if (start_value >= 32768)
+                                start_value -= 65536;
+                            if (end_value >= 32768)
+                                end_value -= 65536;
+                            if (step_value >= 32768)
+                                step_value -= 65536;
+                            if (start_value < end_value && step_value < 0)
+                                emit_warning("TO greater than start value with negative STEP");
+                            else if (start_value > end_value && step_value > 0)
+                                emit_warning("TO less than start value with positive STEP");
+                            else if (start_value != end_value && step_value == 0)
+                                emit_warning("Infinite loop because STEP is zero");
+                        }
                     }
                     new_loop.type = 0;
                     new_loop.step = step;
