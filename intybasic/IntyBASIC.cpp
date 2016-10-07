@@ -209,6 +209,7 @@
 //  Revision: Sep/27/2016. Had to change extra memory flags so LTO-Flash can
 //                         detect correctly the ROM type.
 //  Revision: Oct/06/2016. Added OPTION EXPLICIT.
+//  Revision: Oct/07/2016. Added DATA PACKED and OPTION WARNINGS.
 //
 
 //  TODO:
@@ -4034,7 +4035,7 @@ int main(int argc, const char * argv[])
         std::cerr << "    --title \"a\" Selects title of the compiled program.\n";
         std::cerr << "                By default this is \"IntyBASIC program\".\n";
         std::cerr << "                Only appears in emulators/multicarts.\n";
-        std::cerr << "    -w          Disable warnings globally (has priority over";
+        std::cerr << "    -w          Disable warnings globally (has priority over\n";
         std::cerr << "                OPTION WARNINGS)\n\n";
         std::cerr << "    The library path is where the intybasic_prologue.asm and\n";
         std::cerr << "    intybasic_epilogue.asm files are searched for inclusion.\n";
