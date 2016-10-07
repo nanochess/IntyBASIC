@@ -24,6 +24,8 @@ All trademarks are property of their respective owners.
 >>>>>>>>>>>>>>  Changes in this version
 
 v1.2.8 Oct/07/2016  o Added DATA PACKED for fitting two letters per word.
+                    o Added OPTION WARNINGS for enabling/disabling
+                      warnings during compilation.
                     o Added OPTION EXPLICIT for generating errors for any
                       variable used not declared previously with DIM.
                     o Now 16-bits memory segment for JLP/CC3 has new
@@ -635,8 +637,16 @@ Following statements are available:
   
      Waits for next frame interruption (1/60 sec. for NTSC or 1/50 for PAL)
 
+  OPTION WARNINGS ON
+  OPTION WARNINGS OFF
+
+     Enable/disable the compilation warnings. Note that if you disable warnings
+     at the end of your program, you will not have the list of non-used variables.
+
   OPTION EXPLICIT
-  
+  OPTION EXPLICIT ON
+  OPTION EXPLICIT OFF
+
      Makes obligatory to declare each variable with DIM before being used.
 
   DIM variable

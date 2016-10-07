@@ -262,6 +262,7 @@ char program_title[256];
 int err_code;
 
 bool option_explicit;   // Force declaration of variables
+bool option_warnings;   // Enable/disable warnings
 
 //#define DEBUG_FN
 
@@ -1342,6 +1343,8 @@ private:
     void emit_warning(string message)
     {
         if (!warnings)
+            return;
+        if (!option_warnings)
             return;
         std::cerr << "Warning: " << message << " in line " << line_number;
         if (active_include)
@@ -3444,6 +3447,15 @@ private:
                         } else {
                             option_explicit = true;
                         }
+                    } else if (name == "WARNINGS") {
+                        get_lex();
+                        if (lex == C_NAME && name == "ON") {
+                            get_lex();
+                            option_warnings = true;
+                        } else if (lex == C_NAME && name == "OFF") {
+                            get_lex();
+                            option_warnings = false;
+                        }
                     } else {
                         emit_error("non-recognized OPTION");
                     }
@@ -3491,6 +3503,7 @@ public:
         jlp_used = ((flags & 1) != 0);
         cc3_used = ((flags & 2) != 0);
         warnings = ((flags & 4) == 0);
+        option_warnings = true;
         fastmult_used = false;
         fastdiv_used = false;
         
@@ -3795,10 +3808,10 @@ public:
         // Warns of read but non-assigned variables
         for (access = read_write.begin(); access != read_write.end(); access++) {
             if (access->second == 1) {
-                if (warnings)
+                if (warnings && option_warnings)
                     std::cerr << "Warning: variable '" << access->first << "' read but never assigned\n";
             } else if (access->second == 2) {
-                if (warnings)
+                if (warnings && option_warnings)
                     std::cerr << "Warning: variable '" << access->first << "' assigned but never read\n";
             }
         }
@@ -3809,7 +3822,7 @@ public:
                 std::cerr << "Error: label '" << access->first << "' undefined\n";
                 err_code = 1;
             } else if (access->second == 2) {
-                if (warnings)
+                if (warnings && option_warnings)
                     std::cerr << "Warning: label '" << access->first << "' defined but never used\n";
             }
         }
@@ -4015,13 +4028,14 @@ int main(int argc, const char * argv[])
         std::cerr << "    intybasic [--jlp] [--cc3] [--title \"title\"] infile.bas outfile.asm [library_path]\n\n";
         std::cerr << "    --jlp       Enables use of 8K-words extra memory feature of JLP\n";
         std::cerr << "                and also usage of hardware acceleration for\n";
-        std::cerr << "                multiplication and division.\n\n";
+        std::cerr << "                multiplication and division.\n";
         std::cerr << "    --cc3       Enables use of 8K-words extra memory feature of\n";
-        std::cerr << "                Cuttle Cart 3.\n\n";
+        std::cerr << "                Cuttle Cart 3.\n";
         std::cerr << "    --title \"a\" Selects title of the compiled program.\n";
         std::cerr << "                By default this is \"IntyBASIC program\".\n";
-        std::cerr << "                Only appears in emulators/multicarts.\n\n";
-        std::cerr << "    -w          Disable warnings\n\n";
+        std::cerr << "                Only appears in emulators/multicarts.\n";
+        std::cerr << "    -w          Disable warnings globally (has priority over";
+        std::cerr << "                OPTION WARNINGS)\n\n";
         std::cerr << "    The library path is where the intybasic_prologue.asm and\n";
         std::cerr << "    intybasic_epilogue.asm files are searched for inclusion.\n";
         std::cerr << "\n";

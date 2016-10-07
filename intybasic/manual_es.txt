@@ -32,6 +32,8 @@ en inglés.
 
 v1.2.8 07-oct-2016  o Se agrega DATA PACKED para combinar dos caracteres por
                       palabra de 16 bits.
+                    o Se agrega OPTION WARNINGS para desactivar/activar las
+                      advertencias durante la compilación.
                     o Se agrega OPTION EXPLICIT para generar errores cuando se
                       usa una variable no declarada previamente con DIM.
                     o Ahora el segmento de memoria para 16-bits para JLP/CC3
@@ -676,7 +678,16 @@ Las siguientes sentencias están disponibles:
   
      Espera la siguiente interrupción de video (1/60 seg. para NTSC o 1/50 para PAL)
 
+  OPTION WARNINGS ON
+  OPTION WARNINGS OFF
+
+     Activa/desactiva las advertencias de compilación. Note que si desactiva las
+     advertencias al final de su programa, no tendrá el listado de variables no
+     utilizadas.
+
   OPTION EXPLICIT
+  OPTION EXPLICIT ON
+  OPTION EXPLICIT OFF
   
      Hace obligatorio declarar cada variable con DIM antes de ser usada.
 
