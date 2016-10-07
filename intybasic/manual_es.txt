@@ -1737,8 +1737,8 @@ Emulador Intellivision Nostalgia
   
 >>>>>>>>>>>>>>  Reconocimientos
 
-Gracias a los siguientes miembros de AtariAge por contribuir sugerencias valiosas,
-programas de prueba e incluso librerías de apoyo:
+Mis agradecimientos a los siguientes miembros de AtariAge por contribuir sugerencias
+valiosas, programas de prueba e incluso librerías de apoyo:
 
   Albert 
   artrag
