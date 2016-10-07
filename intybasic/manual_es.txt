@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 06-oct-2016
+Última revisión: 07-oct-2016
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,7 +30,9 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.8 06-oct-2016  o Se agrega OPTION EXPLICIT para generar errores cuando se
+v1.2.8 07-oct-2016  o Se agrega DATA PACKED para combinar dos caracteres por
+                      palabra de 16 bits.
+                    o Se agrega OPTION EXPLICIT para generar errores cuando se
                       usa una variable no declarada previamente con DIM.
                     o Ahora el segmento de memoria para 16-bits para JLP/CC3
                       tiene atributos as1600 "=RW" (necesario para LTO-Flash)
@@ -708,6 +710,7 @@ Las siguientes sentencias están disponibles:
 label:
   DATA expr_constante[,expr_constante]
   DATA cadena
+  DATA PACKED cadena
   DATA VARPTR a
   DATA VARPTR b(expr_constante)
 
@@ -733,6 +736,9 @@ label:
     Los datos de una cadena serán convertidos a códigos de caracter de Intellivision
     (mismos que en PRINT pero sin multiplicarse por 8 para la pantalla)
 
+    Los datos de cadena con DATA PACKED combinaran dos códigos de caracter
+    de Intellivision en una palabra (el byte alto de la palabra contiene la primera
+    letra, el byte bajo de la palabara contiene la letra subsecuente)
 
   DEFINE num_car,total,etiqueta
   DEFINE num_car,total,VARPTR etiqueta(expr)

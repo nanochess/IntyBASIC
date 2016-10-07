@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Oct/06/2016.
+Last revision: Oct/07/2016.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,8 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.8 Oct/06/2016  o Added OPTION EXPLICIT for generating errors for any
+v1.2.8 Oct/07/2016  o Added DATA PACKED for fitting two letters per word.
+                    o Added OPTION EXPLICIT for generating errors for any
                       variable used not declared previously with DIM.
                     o Now 16-bits memory segment for JLP/CC3 has new
                       as1600 attributes "=RW" (required for LTO-Flash)
@@ -668,6 +669,7 @@ Following statements are available:
 label:
   DATA constant_expr[,constant_expr]
   DATA string
+  DATA PACKED string
   DATA VARPTR a
   DATA VARPTR b(constant_expr)
 
@@ -692,6 +694,10 @@ label:
 
     String data will be converted to Intellivision character codes (just
     like in PRINT but not multiplied by 8 for screen)
+
+    The string data with DATA PACKED will fit two Intellivision character
+    codes per word (higher byte of word contains first letter, lower
+    byte of word contains following letter)
 
   DEFINE card_num,total,label
   DEFINE card_num,total,VARPTR label(expr)

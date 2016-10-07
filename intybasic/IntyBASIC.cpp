@@ -235,7 +235,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.8 Oct/06/2016";      // Compiler version
+const string VERSION = "v1.2.8 Oct/07/2016";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -2076,7 +2076,7 @@ private:
                 } else if (name == "DATA") {
                     get_lex();
                     while (1) {
-                        if (name == "VARPTR") {  // Access to variable/array/label address
+                        if (lex == C_NAME && name == "VARPTR") {  // Access to variable/array/label address
                             int temp;
                             int index;
                             int type2;
@@ -2131,6 +2131,40 @@ private:
                                     }
                                 }
                             }
+                        } else if (lex == C_NAME && name == "PACKED") {
+                            int c;
+                            int v1;
+                            int v2;
+                            
+                            get_lex();
+                            if (lex != C_STRING) {
+                                emit_error("no string after PACKED in DATA");
+                            } else {
+                                for (c = 0; c < name.length(); c++) {
+                                    if (name[c] == 127 && c + 1 < name.length()) {
+                                        c++;
+                                        v1 = (name[c] & 0xff) + 127;
+                                    } else {
+                                        v1 = (name[c] & 0xff);
+                                    }
+                                    if (c + 1 < name.length()) {
+                                        c++;
+                                        if (name[c] == 127 && c + 1 < name.length()) {
+                                            c++;
+                                            v2 = (name[c] & 0xff) + 127;
+                                        } else {
+                                            v2 = (name[c] & 0xff);
+                                        }
+                                    } else {
+                                        v2 = 0;
+                                    }
+                                    if (v1 > 255 || v2 > 255)
+                                        emit_error("character out of 8-bits range in DATA PACKED");
+                                    output->emit_d(N_DECLE, (v1 << 8) | v2);
+                                }
+                                get_lex();
+                            }
+                            
                         } else if (lex == C_STRING) {
                             int c;
                             int v;
