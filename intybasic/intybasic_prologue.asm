@@ -80,6 +80,9 @@ _MAIN0:
         ;
         ; Clean memory
         ;
+        CALL CLRSCR             ; Clean up screen, right here to avoid brief
+                                ; screen display of title in Sears Intellivision.
+
         MVII #$00e,R1           ; 14 of sound (ECS)
         MVII #$0f0,R4           ; ECS PSG
         CALL FILLZERO
@@ -103,8 +106,6 @@ _MAIN4:                         ; This loop is courtesy of GroovyBee
         MVII #$058,R1           ; 88 words of 16 bits
         MVII #$308,R4           ; 16-bit scratch RAM
         CALL FILLZERO
-
-        CALL CLRSCR             ; Clean up screen
 
         MVII #_pal1_vector,R0 ; Points to interrupt vector
         MVO R0,ISRVEC
