@@ -21,6 +21,9 @@ code::code(void) {
     trash_registers();
 }
 
+// There should be a "cycles = 0;" statement for each push_back(new microcode(...)); ...
+// ... that isn't a N_MVO or N_MVOA
+
 // Subexpressions currently consists of addresses of the form: array + const + a
 // Checks for subexpression available (currently only in R3)
 //
@@ -46,12 +49,15 @@ bool code::subexpression_available(int base, int offset, int index) {
             everything.push_back(new microcode(M_NR, N_ADDI, 3, 0, "", diff, 0));
         else if (diff < 0)
             everything.push_back(new microcode(M_NR, N_SUBI, 3, 0, "", -diff, 0));
-        if (diff != 0)
+        if (diff != 0) {
             cycles = 0;
+            flags_valid = false;
+        }
         return true;
     }
     everything.push_back(new microcode(M_NNR, N_ADDI, 3, subexpression_base, LABEL_PREFIX, base, diff));
     cycles = 0;
+    flags_valid = false;
     subexpression_base = base;
     return true;
 }
@@ -75,6 +81,7 @@ void code::trash_registers(void) {
         register_memory[c].valid = 0;
     }
     subexpression_valid = false;
+    flags_valid = false;
 }
 
 // Check if enough cycles for non-interruptable sequence of instructions
@@ -118,15 +125,33 @@ void code::pop(void) {
         everything.push_back(new microcode(M_R, N_PULR, 4, 0, "", 0, 0));
     }
     register_content[4].valid = 0;
+    flags_valid = false;
 }
 
 // Emits an instruction with no operands
+//
+// N_CLRC
+//
 void code::emit(enum opcode type) {
     everything.push_back(new microcode(M_SINGLE, type, 0, 0, "", 0, 0));
     cycles = 0;
+    /* Only used for N_CLRC, doesn't need to change flags_valid */
 }
 
 // Emits instruction with single register operand
+//
+// N_ADCR
+// N_CLRR
+// N_COMR
+// N_DECR
+// N_INCR
+// N_NEGR
+// N_PSHR
+// N_PULR
+// N_RSWD
+// N_SWAP
+// N_TSTR
+//
 void code::emit_r(enum opcode type, int r1) {
     
     if (everything.size() > 0) {
@@ -140,35 +165,27 @@ void code::emit_r(enum opcode type, int r1) {
         if (type == N_NEGR && c == N_NEGR && previous->get_r1() == r1) {
             everything.pop_back();
             delete previous;
+            flags_valid = false;
             return;
         }
         if (type == N_COMR && c == N_COMR && previous->get_r1() == r1) {
             everything.pop_back();
             delete previous;
+            flags_valid = false;
             return;
         }
         if (type == N_PULR && c == N_PSHR && previous->get_r1() == r1) {
             everything.pop_back();
             delete previous;
+            flags_valid = false;
             return;
         }
-        if (type == N_TSTR && (c == N_ADD || c == N_ADDA || c == N_ADDI
-                               || c == N_AND || c == N_ANDA || c == N_ANDI
-                               || c == N_SUB || c == N_SUBA || c == N_SUBI
-                               || c == N_XOR || c == N_XORA || c == N_XORI
-                               || c == N_INCR || c == N_DECR
-                               || c == N_COMR || c == N_NEGR
-                               || c == N_SARC || c == N_SLL || c == N_SLR || c == N_RRC
-                               || c == N_CLRR || c == N_SWAP)
-            && previous->get_r1() == r1) {
-            // There is no need to insert TSTR
-            return;
-        }
-        if (type == N_TSTR && (c == N_ADDR || c == N_ANDR || c == N_SUBR || c == N_XORR || c == N_MOVR)
-            && previous->get_r2() == r1) {
-            // There is no need to insert TSTR
-            return;
-        }
+    }
+    // This single test replaces a ton of old code and keeps track of flags across...
+    // ...two or more instructions
+    if (type == N_TSTR && flags_valid && flags_register == r1) {
+        // There is no need to insert TSTR
+        return;
     }
     
     // Common pattern optimization for zero in register (via CLRR)
@@ -188,10 +205,29 @@ void code::emit_r(enum opcode type, int r1) {
     register_memory[r1].valid = 0;
     if (r1 == 3)
         subexpression_valid = false;
+    if (type == N_PULR) {
+        if (flags_valid && r1 == flags_register)
+            flags_valid = false;
+    } else if (type == N_RSWD) {
+        flags_valid = false;
+    } else {
+        flags_valid = true;
+        flags_register = r1;
+    }
     cycles = 0;
 }
 
 // Emits instruction with register operands
+//
+// N_ADDR -> N_ADDA
+// N_ANDR -> N_ANDA
+// N_CMPR -> N_CMPA
+// N_MOVR
+// N_MVIA
+// N_MVOA
+// N_SUBR -> N_SUBA
+// N_XORR -> N_XORA
+//
 void code::emit_rr(enum opcode type, int r1, int r2) {
     
     // Common pattern optimization: MVI@ followed by ADDR/ANDR/CMPR/SUBR/XORR
@@ -217,8 +253,10 @@ void code::emit_rr(enum opcode type, int r1, int r2) {
     }
     if (type == N_MVOA)
         check_for_cycles(9, 45);
+    else
+        cycles = 0;
     everything.push_back(new microcode(M_RR, type, r1, r2, "", 0, 0));
-    if (type != N_CMPR && type != N_MVOA) {
+    if (type != N_CMPR && type != N_CMPA && type != N_MVOA) {
         register_content[r2].valid = 0;
         register_memory[r2].valid = 0;
         if (r2 == 3)
@@ -230,6 +268,15 @@ void code::emit_rr(enum opcode type, int r1, int r2) {
         register_content[r2].valid = 0;
     if (type == N_MVIA && r2 == 7)  // Jump table
         trash_registers();
+    if (type == N_CMPR || type == N_CMPA) {
+        flags_valid = false;
+    } else if (type == N_MVIA) {
+        if (flags_valid && r2 == flags_register)
+            flags_valid = false;
+    } else if (type != N_MVOA) {
+        flags_valid = true;
+        flags_register = r2;
+    }
 }
 
 // Emits instruction with constant/address in left side
@@ -238,6 +285,14 @@ void code::emit_nr(enum opcode type, string prefix, int value, int r) {
 }
 
 // Emits instruction with constant/address plus offset in left side
+//
+// N_ADDI
+// N_ANDI
+// N_CMPI
+// N_MVII
+// N_SUBI
+// N_XORI
+//
 void code::emit_nor(enum opcode type, string prefix, int value, int offset, int r) {
     int c;
     int d;
@@ -277,43 +332,52 @@ void code::emit_nor(enum opcode type, string prefix, int value, int offset, int 
     }
     
     // Common pattern optimization: constant in register
-    for (c = 0; c < 4; c++) {
-        d = (r + c) % 4;
-        if (type == N_MVII && register_content[d].valid == 1 && register_content[d].prefix == prefix && register_content[d].value == value) {
-            diff = offset - register_content[d].offset;
-            if (diff == 0) {
-                if (d == r) {
-                    // Nothing to do =P
-                } else {
-                    everything.push_back(new microcode(M_RR, N_MOVR, d, r, "", 0, 0));
-                    register_content[r].valid = 1;
-                    register_content[r].prefix = prefix;
-                    register_content[r].value = value;
+    if (type == N_MVII) {
+        for (c = 0; c < 4; c++) {
+            d = (r + c) % 4;
+            if (register_content[d].valid == 1 && register_content[d].prefix == prefix && register_content[d].value == value) {
+                diff = offset - register_content[d].offset;
+                if (diff == 0) {
+                    if (d == r) {
+                        // Nothing to do =P
+                    } else {
+                        everything.push_back(new microcode(M_RR, N_MOVR, d, r, "", 0, 0));
+                        register_content[r].valid = 1;
+                        register_content[r].prefix = prefix;
+                        register_content[r].value = value;
+                        register_content[r].offset = offset;
+                        if (r == 3)
+                            subexpression_valid = false;
+                        flags_valid = true;
+                        flags_register = r;
+                    }
+                    return;
+                }
+                if (diff == 1 && d == r) {
+                    everything.push_back(new microcode(M_R, N_INCR, r, 0, "", 0, 0));
                     register_content[r].offset = offset;
                     if (r == 3)
                         subexpression_valid = false;
+                    flags_valid = true;
+                    flags_register = r;
+                    return;
                 }
-                return;
-            }
-            if (diff == 1 && d == r) {
-                everything.push_back(new microcode(M_R, N_INCR, r, 0, "", 0, 0));
-                register_content[r].offset = offset;
-                if (r == 3)
-                    subexpression_valid = false;
-                return;
-            }
-            if (diff == -1 && d == r) {
-                everything.push_back(new microcode(M_R, N_INCR, r, 0, "", 0, 0));
-                register_content[r].offset = offset;
-                if (r == 3)
-                    subexpression_valid = false;
-                return;
+                if (diff == -1 && d == r) {
+                    everything.push_back(new microcode(M_R, N_DECR, r, 0, "", 0, 0));
+                    register_content[r].offset = offset;
+                    if (r == 3)
+                        subexpression_valid = false;
+                    flags_valid = true;
+                    flags_register = r;
+                    return;
+                }
             }
         }
     }
     everything.push_back(new microcode(M_NR, type, r, 0, prefix, value, offset));
     if (type == N_CMPI) {
         // CMPI doesn't change register so still valid
+        flags_valid = false;
     } else if (type == N_MVII) {
         register_content[r].valid = 1;
         register_content[r].prefix = prefix;
@@ -322,23 +386,31 @@ void code::emit_nor(enum opcode type, string prefix, int value, int offset, int 
         register_memory[r].valid = 0;
         if (r == 3)
             subexpression_valid = false;
+        if (flags_valid && flags_register == r)
+            flags_valid = false;
     } else if (type == N_ADDI) {
         if (register_content[r].valid && register_content[r].prefix != "")
             register_content[r].offset = (register_content[r].offset + value) & 0xffff;
         register_memory[r].valid = 0;
         if (r == 3)
             subexpression_valid = false;
+        flags_valid = true;
+        flags_register = r;
     } else if (type == N_SUBI) {
         if (register_content[r].valid && register_content[r].prefix != "")
             register_content[r].offset = (register_content[r].offset - value) & 0xffff;
         register_memory[r].valid = 0;
         if (r == 3)
             subexpression_valid = false;
+        flags_valid = true;
+        flags_register = r;
     } else {
         register_content[r].valid = 0;
         register_memory[r].valid = 0;
         if (r == 3)
             subexpression_valid = false;
+        flags_valid = true;
+        flags_register = r;
     }
     cycles = 0;
 }
@@ -349,6 +421,14 @@ void code::emit_lr(enum opcode type, string prefix, int value, int r) {
 }
 
 // Emits instruction with label plus offset in left side
+//
+// N_ADD
+// N_AND
+// N_CMP
+// N_MVI
+// N_SUB
+// N_XOR
+//
 void code::emit_lor(enum opcode type, string prefix, int value, int offset, int r) {
     int c;
     int d;
@@ -368,6 +448,8 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
+                flags_valid = true;
+                flags_register = r;
             } else if (type == N_AND) {             // Change AND from memory to AND from register
                 type = N_ANDR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
@@ -375,9 +457,12 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
+                flags_valid = true;
+                flags_register = r;
             } else if (type == N_CMP) {             // Change CMP from memory to CMP from register
                 type = N_CMPR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
+                flags_valid = false;
                 // Note register is still valid
             } else if (type == N_SUB) {             // Change SUB from memory to SUB from register
                 type = N_SUBR;
@@ -386,6 +471,8 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
+                flags_valid = true;
+                flags_register = r;
             } else if (type == N_XOR) {             // Change XOR from memory to XOR from register
                 type = N_XORR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
@@ -393,6 +480,8 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                 register_memory[r].valid = 0;
                 if (r == 3)
                     subexpression_valid = false;
+                flags_valid = true;
+                flags_register = r;
             } else /*if (type == N_MVI)*/ {         // Change MVI to MOVR
                 if (d == r) {
                     // Nothing to do =P
@@ -404,8 +493,11 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                     register_memory[r].offset = register_memory[d].offset;
                     if (r == 3)
                         subexpression_valid = false;
+                    flags_valid = true;
+                    flags_register = r;
                 }
             }
+            cycles = 0;
             return;
         }
     }
@@ -422,12 +514,15 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
     }
     if (type == N_CMP) {  // Comparisons doesn't affect registers state
         // register still valid
+        flags_valid = false;
     } else if (type == N_ADD || type == N_AND || type == N_SUB || type == N_XOR) {
         // Target register ceases to be valid (content or memory alias)
         register_content[r].valid = 0;
         register_memory[r].valid = 0;
         if (r == 3)
             subexpression_valid = false;
+        flags_valid = true;
+        flags_register = r;
     } else /*if (type == N_MVI)*/ {
         // Target register ceases to be valid as value
         register_content[r].valid = 0;
@@ -442,6 +537,8 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
         }
         if (r == 3)
             subexpression_valid = false;
+        if (flags_valid && flags_register == r)
+            flags_valid = false;
     }
     cycles = 0;
 }
@@ -452,15 +549,22 @@ void code::emit_rl(enum opcode type, int r, string prefix, int value) {
 }
 
 // Emits instruction with label in right side (to 8 bits memory)
+//
+// N_MVO
+//
 void code::emit_rlo8(enum opcode type, int r, string prefix, int value, int offset) {
     if (type == N_MVO)
         check_for_cycles(11, 23);
     everything.push_back(new microcode(M_RL, type, r, 0, prefix, value, offset));
     register_memory[r].valid = 0;  // Not valid because: cuts upper 8 bits
     subexpression_valid = false;  // Possibly wrote index variable
+    // Doesn't change flags_valid
 }
 
 // Emits instruction with label plus offset in right side
+//
+// N_MVO
+//
 void code::emit_rlo(enum opcode type, int r, string prefix, int value, int offset) {
     if (type == N_MVO)
         check_for_cycles(11, 23);
@@ -470,25 +574,35 @@ void code::emit_rlo(enum opcode type, int r, string prefix, int value, int offse
     register_memory[r].value = value;
     register_memory[r].offset = offset;
     subexpression_valid = false;  // Possibly wrote index variable
+    // Doesn't change flags_valid
 }
 
 // Emits instruction with single label operand
+//
+// N_BC
+// N_BEQ
+// N_BGE
+// N_BGT
+// N_BLE
+// N_BLT
+// N_BNC
+// N_BNE
+// N_BPL
+// N_CALL
+//
 void code::emit_a(enum opcode type, string prefix, int value) {
-    class microcode *previous;
     int is_zero;
     
-    is_zero = 0;
-    if (type == N_BNE && everything.size() > 0) {
-        previous = everything.back();
-        if (previous->get_type() == N_TSTR)
-            is_zero = 1;
-    }
+    if (type == N_BNE && flags_valid)
+        is_zero = flags_register;
+    else
+        is_zero = -1;
     everything.push_back(new microcode(M_A, type, 0, 0, prefix, value, 0));
-    if (is_zero) {  // Common optimization: assume register contains zero
-        register_content[previous->get_r1()].valid = 1;
-        register_content[previous->get_r1()].prefix = "";
-        register_content[previous->get_r1()].value = 0;
-        register_content[previous->get_r1()].offset = 0;
+    if (is_zero != -1) {  // Common optimization: assume register contains zero
+        register_content[is_zero].valid = 1;
+        register_content[is_zero].prefix = "";
+        register_content[is_zero].value = 0;
+        register_content[is_zero].offset = 0;
     } else if (type == N_B || type == N_CALL) {
         trash_registers();
     }
@@ -496,6 +610,13 @@ void code::emit_a(enum opcode type, string prefix, int value) {
 }
 
 // Emits shift instruction
+//
+// N_RRC
+// N_SARC
+// N_SLL
+// N_SLR
+// N_SWAP
+//
 void code::emit_s(enum opcode type, int r, int s) {
     if (s == 1)
         check_for_cycles(6, 45);
@@ -506,9 +627,16 @@ void code::emit_s(enum opcode type, int r, int s) {
     register_memory[r].valid = 0;
     if (r == 3)
         subexpression_valid = false;
+    flags_valid = true;
+    flags_register = r;
 }
 
 // Emits multiply instruction (macro)
+//
+// r1 is register to multiply
+// r2 is temporary register (not always used)
+// v is constant value
+//
 void code::emit_m(enum opcode type, int r1, int r2, int v) {
     everything.push_back(new microcode(M_M, type, r1, r2, "", v, 0));
     register_content[r1].valid = 0;
@@ -517,6 +645,8 @@ void code::emit_m(enum opcode type, int r1, int r2, int v) {
         subexpression_valid = false;
     register_content[r2].valid = 0;  // Not always
     cycles = 0;
+    flags_valid = true;
+    flags_register = r1;
 }
 
 // Emits label

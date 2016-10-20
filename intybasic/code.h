@@ -20,20 +20,23 @@ class code {
     
     // Relates which registers contains what constants or addresses
     struct {
-        int valid;
-        string prefix;
-        int value;
-        int offset;
+        int valid;          // This content is valid
+        string prefix;      // Refers to this prefix label... (empty string for value)
+        int value;          // ...contains this label number or value...
+        int offset;         // ...plus this offset
     } register_content[8];
     
-    bool subexpression_valid;
+    int flags_valid;        // Flags currently are valid
+    int flags_register;     // Which register evaluation is in flags
+    
+    bool subexpression_valid;   // Subexpression in r3 is valid...
     int subexpression_base;
     int subexpression_offset;
     int subexpression_index;
     
     // Relates which registers are in which memory locations
     struct {
-        int valid;
+        int valid;          // This content is valid
         string prefix;
         int value;
         int offset;
