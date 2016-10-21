@@ -1,8 +1,8 @@
-IntyBASIC compiler v1.2 (pre-release)
+IntyBASIC compiler v1.2.9
 by Oscar Toledo Gutierrez
 http://nanochess.org/
 
-BASIC language compiler for the Intellivision.
+BASIC language cross-compiler for the Intellivision.
 
 IntyBASIC.cpp   The IntyBASIC compiler C++ language source code
 LICENSE         Source code license
@@ -39,6 +39,7 @@ test programs and even support libraries:
   intvnut
   Jess Ragan
   Kiwi
+  mmarrero
   RevEng
   SpiceWare
   Tarzilla

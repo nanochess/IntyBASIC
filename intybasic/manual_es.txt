@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 07-oct-2016
+Última revisión: 21-oct-2016
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -29,6 +29,14 @@ en inglés.
 
 
 >>>>>>>>>>>>>>  Cambios en esta versión
+
+v1.2.9 21-oct-2016  o Se mueve la limpieza de pantalla muy al inicio del
+                      programa para evitar vistazo de título en Intellivision
+                      Sears.
+                    o Se añade una nota C7 faltante en tablas internas.
+                    o MUSIC.PLAYING fallaba con MUSIC JUMP.
+                    o Más optimización conservando el estado de las banderas
+                      entre instrucciones.
 
 v1.2.8 07-oct-2016  o Se agrega DATA PACKED para combinar dos caracteres por
                       palabra de 16 bits.
@@ -1454,7 +1462,7 @@ la resta tienen menos prioridad que la multiplicación y la división)
     Última línea que puede ser leer/escrita de la memoria Flash JLP.
 
   MUSIC.PLAYING
-    Indica si está tocando música, cero si no, uno si está tocando.
+    Indica si está tocando música, cero si no, distinto de cero si está tocando.
 
 
 Los números fijos son útiles para mover elementos del juego en pasos fraccionales, el
@@ -1756,6 +1764,7 @@ valiosas, programas de prueba e incluso librerías de apoyo:
   intvnut
   Jess Ragan
   Kiwi
+  mmarrero
   RevEng
   SpiceWare
   Tarzilla

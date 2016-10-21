@@ -43,6 +43,8 @@
 	;                        for drums. Allows setting music volume.
 	; Revision: Jan/23/2016. Added jump inside of music (for MUSIC JUMP)
 	; Revision: May/03/2016. Preserves current mode in bit 0 of _mode_select
+        ; Revision: Oct/21/2016. Added C7 in notes table, it was missing. (thanks
+        ;                        mmarrero)
 
 	;
 	; Avoids empty programs to crash
@@ -64,7 +66,7 @@ CPYBLK2:	PROC
 	SUBR R1,R3
 
 @@1:    PSHR R3
-	MOVR R1,R3              ; Init line copy
+        MOVR R1,R3              ; Init line copy
 @@2:    MVI@ R4,R2              ; Copy line
         MVO@ R2,R5
         DECR R3
@@ -598,6 +600,7 @@ ntsc_note_table:    PROC
         ; Octave 6 - 49
         DECLE 107,101,95,90,85,80,76,71,67,64,60,57
         ; Octave 7 - 61
+        DECLE 54
         ; Space for two notes more
 	ENDP
 
@@ -616,6 +619,7 @@ pal_note_table:    PROC
         ; Octava 6 - 49
         DECLE 120,113,106,100,95,89,84,80,75,71,67,63
         ; Octava 7 - 61
+        DECLE 60
         ; Space for two notes more
 	ENDP
     ENDI

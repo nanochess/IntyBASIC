@@ -4,19 +4,20 @@
         ;
         ; Revision: Jan/30/2014. Spacing adjustment and more comments.
         ; Revision: Apr/01/2014. It now sets the starting screen pos. for PRINT
-	    ; Revision: Aug/26/2014. Added PAL detection code.
-	    ; Revision: Dec/12/2014. Added optimized constant multiplication routines
-	    ;                        by James Pujals.
-	    ; Revision: Jan/25/2015. Added marker for automatic title replacement.
-	    ;                        (option --title of IntyBASIC)
-	    ; Revision: Aug/06/2015. Turns off ECS sound. Seed random generator using
-	    ;                        trash in 16-bit RAM. Solved bugs and optimized
-	    ;                        macro for constant multiplication.
+        ; Revision: Aug/26/2014. Added PAL detection code.
+        ; Revision: Dec/12/2014. Added optimized constant multiplication routines.
+        ;                        by James Pujals.
+        ; Revision: Jan/25/2015. Added marker for automatic title replacement.
+        ;                        (option --title of IntyBASIC)
+        ; Revision: Aug/06/2015. Turns off ECS sound. Seed random generator using
+        ;                        trash in 16-bit RAM. Solved bugs and optimized
+        ;                        macro for constant multiplication.
         ; Revision: Jan/12/2016. Solved bug in PAL detection.
         ; Revision: May/03/2016. Changed in _mode_select initialization.
-	    ; Revision: Jul/31/2016. Solved bug in multiplication by 126 and 127.
-	; Revision: Sep/08/2016. Now CLRSCR initializes screen position for PRINT, this
-	;                        solves bug when user programs goes directly to PRINT.
+        ; Revision: Jul/31/2016. Solved bug in multiplication by 126 and 127.
+        ; Revision: Sep/08/2016. Now CLRSCR initializes screen position for PRINT, this
+        ;                        solves bug when user programs goes directly to PRINT.
+        ; Revision: Oct/21/2016. Accelerated MEMSET.
         ;
 
         ROMW 16
@@ -56,9 +57,19 @@ CLRSCR: MVII #$200,R4           ; Used also for CLS
 FILLZERO:
         CLRR R0
 MEMSET:
+        SARC R1,2
+        BNOV $+4
+        MVO@ R0,R4
+        MVO@ R0,R4
+        BNC $+3
+        MVO@ R0,R4
+        BEQ $+7
+        MVO@ R0,R4
+        MVO@ R0,R4
+        MVO@ R0,R4
         MVO@ R0,R4
         DECR R1
-        BNE MEMSET
+        BNE $-5
         JR R5
 
         ;
@@ -82,7 +93,6 @@ _MAIN0:
         ;
         CALL CLRSCR             ; Clean up screen, right here to avoid brief
                                 ; screen display of title in Sears Intellivision.
-
         MVII #$00e,R1           ; 14 of sound (ECS)
         MVII #$0f0,R4           ; ECS PSG
         CALL FILLZERO

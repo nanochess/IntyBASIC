@@ -539,14 +539,14 @@ void node::generate(int reg, int decision) {
             if (value == 17)    // FLASH.LAST
                 output->emit_lr(N_MVI, "", 0x8024, reg);
             if (value == 18) {  // MUSIC.PLAYING
-                output->emit_lr(N_MVI, "_music_p", -1, 4);
-                output->emit_r(N_TSTR, 4);
-                output->emit_a(N_BEQ, "", 5); // two words of jump, one word of MVIA, two words of CMPI
-                output->emit_rr(N_MVIA, 4, reg);
-                output->emit_nr(N_CMPI, "", 254, reg);
-                output->emit_nr(N_MVII, "", 1, reg);
-                output->emit_a(N_BNE, "", 3);
-                output->emit_r(N_DECR, reg);
+                output->emit_lr(N_MVI, "_music_p", -1, reg);    // 2
+                output->emit_r(N_TSTR, reg);            // 1, if pointer is zero...
+                output->emit_a(N_BEQ, "", 9);           // 2, ...not playing, jump with reg=zero
+                output->emit_rr(N_MOVR, reg, 4);        // 1, prepare to read
+                output->emit_rr(N_MVIA, 4, reg);        // 1, read first word...
+                output->emit_nr(N_SUBI, "", 254, reg);  // 2, ...if it isn't 254...
+                output->emit_a(N_BNE, "", 3);           // 2, ...jump with reg=non-zero (playing)
+                output->emit_rr(N_MVIA, 4, reg);        // 1, MUSIC JUMP label, will be 0 if MUSIC STOP
                 music_used = true;
             }
             break;
