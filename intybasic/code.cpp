@@ -549,6 +549,8 @@ void code::emit_rl(enum opcode type, int r, string prefix, int value) {
 }
 
 // Emits instruction with label in right side (to 8 bits memory)
+// Always called for assignation to array
+// Optimization info: only access THAT array
 //
 // N_MVO
 //
@@ -556,12 +558,16 @@ void code::emit_rlo8(enum opcode type, int r, string prefix, int value, int offs
     if (type == N_MVO)
         check_for_cycles(11, 23);
     everything.push_back(new microcode(M_RL, type, r, 0, prefix, value, offset));
-    register_memory[r].valid = 0;  // Not valid because: cuts upper 8 bits
+    // MVO doesn't affect registers, so any alias to memory is still valid
+    if (register_memory[r].valid && register_memory[r].prefix == prefix && register_memory[r].value == value)
+        register_memory[r].valid = 0;  // Not valid because: cuts upper 8 bits
     subexpression_valid = false;  // Possibly wrote index variable
     // Doesn't change flags_valid
 }
 
 // Emits instruction with label plus offset in right side
+// Always called for assignation to array
+// Optimization info: only access THAT array
 //
 // N_MVO
 //
@@ -569,10 +575,16 @@ void code::emit_rlo(enum opcode type, int r, string prefix, int value, int offse
     if (type == N_MVO)
         check_for_cycles(11, 23);
     everything.push_back(new microcode(M_RL, type, r, 0, prefix, value, offset));
-    register_memory[r].valid = 1;
-    register_memory[r].prefix = prefix;
-    register_memory[r].value = value;
-    register_memory[r].offset = offset;
+    // Replace only if register is not copy of memory variable
+    // This allows to optimize sequences like this:
+    //    #backtab(50) = #c
+    //    #backtab(70) = #c
+    if (!register_memory[r].valid) {
+        register_memory[r].valid = 1;
+        register_memory[r].prefix = prefix;
+        register_memory[r].value = value;
+        register_memory[r].offset = offset;
+    }
     subexpression_valid = false;  // Possibly wrote index variable
     // Doesn't change flags_valid
 }
