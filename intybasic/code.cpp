@@ -450,6 +450,7 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                     subexpression_valid = false;
                 flags_valid = true;
                 flags_register = r;
+                cycles = 0;
             } else if (type == N_AND) {             // Change AND from memory to AND from register
                 type = N_ANDR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
@@ -459,11 +460,13 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                     subexpression_valid = false;
                 flags_valid = true;
                 flags_register = r;
+                cycles = 0;
             } else if (type == N_CMP) {             // Change CMP from memory to CMP from register
                 type = N_CMPR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
                 flags_valid = false;
                 // Note register is still valid
+                cycles = 0;
             } else if (type == N_SUB) {             // Change SUB from memory to SUB from register
                 type = N_SUBR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
@@ -473,6 +476,7 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                     subexpression_valid = false;
                 flags_valid = true;
                 flags_register = r;
+                cycles = 0;
             } else if (type == N_XOR) {             // Change XOR from memory to XOR from register
                 type = N_XORR;
                 everything.push_back(new microcode(M_RR, type, d, r, "", 0, 0));
@@ -482,6 +486,7 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                     subexpression_valid = false;
                 flags_valid = true;
                 flags_register = r;
+                cycles = 0;
             } else /*if (type == N_MVI)*/ {         // Change MVI to MOVR
                 if (d == r) {
                     // Nothing to do =P
@@ -495,9 +500,9 @@ void code::emit_lor(enum opcode type, string prefix, int value, int offset, int 
                         subexpression_valid = false;
                     flags_valid = true;
                     flags_register = r;
+                    cycles = 0;
                 }
             }
-            cycles = 0;
             return;
         }
     }
@@ -651,14 +656,17 @@ void code::emit_s(enum opcode type, int r, int s) {
 //
 void code::emit_m(enum opcode type, int r1, int r2, int v) {
     everything.push_back(new microcode(M_M, type, r1, r2, "", v, 0));
-    register_content[r1].valid = 0;
-    register_memory[r1].valid = 0;
-    if (r1 == 3)
-        subexpression_valid = false;
-    register_content[r2].valid = 0;  // Not always
-    cycles = 0;
-    flags_valid = true;
-    flags_register = r1;
+    // v == 1 generates no code so state is same
+    if (v != 1) {
+        register_content[r1].valid = 0;
+        register_memory[r1].valid = 0;
+        if (r1 == 3)
+            subexpression_valid = false;
+        register_content[r2].valid = 0;  // Not always
+        cycles = 0;
+        flags_valid = true;
+        flags_register = r1;
+    }
 }
 
 // Emits label
