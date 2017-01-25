@@ -889,6 +889,11 @@ void node::generate(int reg, int decision) {
                     } else if (val == 256) {
                         output->emit_r(N_SWAP, reg);
                         output->emit_nr(N_ANDI, "", 0x00ff, reg);
+                    } else if (val == 4096) {
+                        output->emit_r(N_SWAP, reg);
+                        output->emit_nr(N_ANDI, "", 0x00f0, reg);
+                        output->emit_s(N_SLR, reg, 2);
+                        output->emit_s(N_SLR, reg, 2);
                     } else {
                         if (jlp_used) {
                             output->emit_nr(N_MVII, "", val, 4);
