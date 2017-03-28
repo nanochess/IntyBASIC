@@ -560,6 +560,8 @@ void code::emit_rl(enum opcode type, int r, string prefix, int value) {
 // N_MVO
 //
 void code::emit_rlo8(enum opcode type, int r, string prefix, int value, int offset) {
+    int c;
+    
     if (type == N_MVO)
         check_for_cycles(11, 23);
     everything.push_back(new microcode(M_RL, type, r, 0, prefix, value, offset));
@@ -567,6 +569,16 @@ void code::emit_rlo8(enum opcode type, int r, string prefix, int value, int offs
     if (register_memory[r].valid && register_memory[r].prefix == prefix && register_memory[r].value == value)
         register_memory[r].valid = 0;  // Not valid because: cuts upper 8 bits
     subexpression_valid = false;  // Possibly wrote index variable
+    // Any other register referring to same variable now is wrong.
+    // c = peek(#addr)    #addr passes to r1
+    // #åddr = #addr + 1   #addr still in r1 but new in r0
+    // d = peek(#addr)    #addr taken wrongly from r1 if r0 doesn't reset it here.
+    for (c = 0; c < 4; c++) {
+        if (c == r)
+            continue;
+        if (register_memory[c].valid && register_memory[c].prefix == prefix && register_memory[c].value == value)
+            register_memory[c].valid = 0;
+    }
     // Doesn't change flags_valid
 }
 
@@ -577,6 +589,8 @@ void code::emit_rlo8(enum opcode type, int r, string prefix, int value, int offs
 // N_MVO
 //
 void code::emit_rlo(enum opcode type, int r, string prefix, int value, int offset) {
+    int c;
+    
     if (type == N_MVO)
         check_for_cycles(11, 23);
     everything.push_back(new microcode(M_RL, type, r, 0, prefix, value, offset));
@@ -591,6 +605,16 @@ void code::emit_rlo(enum opcode type, int r, string prefix, int value, int offse
         register_memory[r].offset = offset;
     }
     subexpression_valid = false;  // Possibly wrote index variable
+    // Any other register referring to same variable now is wrong.
+    // #c = peek(#addr)    #addr passes to r1
+    // #åddr = #addr + 1   #addr still in r1 but new in r0
+    // #d = peek(#addr)    #addr taken wrongly from r1 if r0 doesn't reset it here.
+    for (c = 0; c < 4; c++) {
+        if (c == r)
+            continue;
+        if (register_memory[c].valid && register_memory[c].prefix == prefix && register_memory[c].value == value)
+            register_memory[c].valid = 0;
+    }
     // Doesn't change flags_valid
 }
 

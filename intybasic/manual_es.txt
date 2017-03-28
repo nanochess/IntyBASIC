@@ -30,13 +30,15 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.9 21-oct-2016  o Se mueve la limpieza de pantalla muy al inicio del
+v1.2.9 28-mar-2017  o Se mueve la limpieza de pantalla muy al inicio del
                       programa para evitar vistazo de título en Intellivision
                       Sears.
                     o Se añade una nota C7 faltante en tablas internas.
                     o MUSIC.PLAYING fallaba con MUSIC JUMP.
                     o Más optimización conservando el estado de las banderas
                       entre instrucciones.
+                    o Se soluciona un error en optimización de PEEK cuando la
+                      dirección origen se incrementaba entre dos PEEK.
 
 v1.2.8 07-oct-2016  o Se agrega DATA PACKED para combinar dos caracteres por
                       palabra de 16 bits.
@@ -354,9 +356,8 @@ Plataformas disponibles:
 
 Las limitaciones actuales son:
   o La división y resto (módulo) tratan los números como sin signo.
-  o Las constantes 32768-65535 no implican números sin signo, si son utilizadas en
-    una comparación son con signo (-32768 - -1), todas las comparaciones son de
-    16 bits con signo.
+  o Las constantes 32768-65535 no implican números sin signo, pero al comparar
+    con variables se pueden hacer comparación sin signo usando UNSIGNED.
   o ASM no se puede usar dentro de DEF FN.
   o Usar PRINT para números siempre los muestra como sin signo de 0 a 65535.
 
@@ -386,8 +387,8 @@ Y finalmente puede probarlo usando los emuladores jzintv o Nostalgia:
   jzintv --jlp salida.bin  Correr con soporte JLP
   jzintv -v1 salida.bin    Correr con soporte Intellivoice
   
-Otra alternativa es cargar el programa es un CuttleCart o Intellicart para probar en
-un Intellivision de verdad.
+Otra alternativa es cargar el programa es un CuttleCart, Intellicart o LTO-Flash
+para probar en un Intellivision de verdad.
 
 También vea debajo para información sobre depuración a nivel de código fuente.
 

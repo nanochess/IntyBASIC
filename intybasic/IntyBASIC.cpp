@@ -236,7 +236,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.8 Oct/07/2016";      // Compiler version
+const string VERSION = "v1.2.9 Mar/28/2017";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels

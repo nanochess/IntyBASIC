@@ -23,12 +23,14 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.9 Oct/21/2016  o Moved screen clearing at the very start of program
+v1.2.9 Mar/28/2017  o Moved screen clearing at the very start of program
                       to avoid brief title screen in Sears Intellivision.
                     o Added missing C7 note in internal tables.
                     o MUSIC.PLAYING failed with MUSIC JUMP.
                     o More optimization saving flags state across
                       instructions.
+                    o Solved bug in PEEK optimization when source address
+                      was incremented between two PEEKs.
 
 v1.2.8 Oct/07/2016  o Added DATA PACKED for fitting two letters per word.
                     o Added OPTION WARNINGS for enabling/disabling
@@ -324,7 +326,7 @@ Platforms available:
 Current limitations are:
   o Division and remainder (modulus) operators treat numbers as unsigned.
   o The constants 32768-65535 don't imply unsigned numbers, if these are used in a
-    comparison are signed (-32768 - -1), all comparisons are 16-bits signed.
+    comparison with variable, the variable can be marked as UNSIGNED.
   o ASM cannot be used inside DEF FN.
   o Using PRINT for numbers always show numbers as unsigned from 0 to 65535.
 
@@ -353,8 +355,8 @@ And finally you can test it using jzintv or Nostalgia emulators:
   jzintv --jlp output.bin  Run with JLP support
   jzintv -v1 output.bin    Run with Intellivoice support
   
-Alternately you can load the program into a CuttleCart or Intellicart for testing over
-a real Intellivision.
+Alternately you can load the program into a CuttleCart, Intellicart or LTO-Flash for
+testing over a real Intellivision.
 
 Also see below for information of source-level debugging.
 
