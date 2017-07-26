@@ -4040,6 +4040,8 @@ int main(int argc, const char * argv[])
         std::cerr << "    The library path is where the intybasic_prologue.asm and\n";
         std::cerr << "    intybasic_epilogue.asm files are searched for inclusion.\n";
         std::cerr << "\n";
+        std::cerr << "    It will return a zero error code if compilation was\n";
+        std::cerr << "    successful or non-zero otherwise.\n\n";
         std::cerr << "Many thanks to Albert, artrag, atari2600land, awhite2600, carlsson,\n";
         std::cerr << "catsfolly, ckblackm, CrazyBoss, Cybearg, DZ-Jay, First Spear,\n";
         std::cerr << "freewheel, GroovyBee, intvnut, Jess Ragan, Kiwi, RevEng, SpiceWare\n";

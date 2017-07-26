@@ -571,7 +571,7 @@ void code::emit_rlo8(enum opcode type, int r, string prefix, int value, int offs
     subexpression_valid = false;  // Possibly wrote index variable
     // Any other register referring to same variable now is wrong.
     // c = peek(#addr)    #addr passes to r1
-    // #åddr = #addr + 1   #addr still in r1 but new in r0
+    // #addr = #addr + 1   #addr still in r1 but new in r0
     // d = peek(#addr)    #addr taken wrongly from r1 if r0 doesn't reset it here.
     for (c = 0; c < 4; c++) {
         if (c == r)
@@ -607,7 +607,7 @@ void code::emit_rlo(enum opcode type, int r, string prefix, int value, int offse
     subexpression_valid = false;  // Possibly wrote index variable
     // Any other register referring to same variable now is wrong.
     // #c = peek(#addr)    #addr passes to r1
-    // #åddr = #addr + 1   #addr still in r1 but new in r0
+    // #addr = #addr + 1   #addr still in r1 but new in r0
     // #d = peek(#addr)    #addr taken wrongly from r1 if r0 doesn't reset it here.
     for (c = 0; c < 4; c++) {
         if (c == r)
