@@ -3530,8 +3530,12 @@ public:
         asm_output << "\t; IntyBASIC compiler " << VERSION << "\n";
         if (jlp_used) {
             asm_output << "\tIF DEFINED __FEATURE.CFGVAR\n";
-            if (jlp_used)
-                asm_output << "\t\tCFGVAR \"jlp\" = 3\n";
+            if (jlp_used) {
+                if (flash_used)
+                    asm_output << "\t\tCFGVAR \"jlp\" = 3\n";
+                else
+                    asm_output << "\t\tCFGVAR \"jlp\" = 1\n";
+            }
             asm_output << "\tENDI\n";
         }
         strcpy(path, library_path);

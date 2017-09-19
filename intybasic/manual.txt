@@ -1,12 +1,12 @@
 >>>>>>>>>>>>>  IntyBASIC user's manual  <<<<<<<<<<<<<<<
 
                  by Oscar Toledo G.
-       (c) Copyright 2014-2016 Oscar Toledo G.
+       (c) Copyright 2014-2017 Oscar Toledo G.
                 http://nanochess.org/
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Oct/21/2016.
+Last revision: Sep/10/2017.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.2.9 Mar/28/2017  o Moved screen clearing at the very start of program
+v1.2.9 Jul/26/2017  o Moved screen clearing at the very start of program
                       to avoid brief title screen in Sears Intellivision.
                     o Added missing C7 note in internal tables.
                     o MUSIC.PLAYING failed with MUSIC JUMP.
@@ -31,6 +31,8 @@ v1.2.9 Mar/28/2017  o Moved screen clearing at the very start of program
                       instructions.
                     o Solved bug in PEEK optimization when source address
                       was incremented between two PEEKs.
+                    o More indications in manual, including documenting
+                      CONT3 and CONT4.
 
 v1.2.8 Oct/07/2016  o Added DATA PACKED for fitting two letters per word.
                     o Added OPTION WARNINGS for enabling/disabling
@@ -704,7 +706,7 @@ label:
     All data contained in DATA can also be accessed using array-syntax,
     like this:
     
-      FOR A=1 TO 5
+      FOR A=0 TO 4
       PRINT AT TABLE(A),"Z"
       NEXT A
       
@@ -914,7 +916,7 @@ label:
     Allows to select the video mode (Color Stack mode or Foreground/Background mode)
     this happens in the next video frame (WAIT)
     
-    Note you cannot use PRINT AT until WAIT has been used, because the color
+    Note you cannot use PRINT COLOR until WAIT has been used, because the color
     variable is used to save data, after this COLOR will be reset to 7.
     
     In Color Stack mode you can choose the four background colors available in range
@@ -923,6 +925,8 @@ label:
     In Foreground/Background mode you have access to 16 background colors but you
     only can use cards 0-63 (basic character set and uppercase letters) and the
     defined cards 256-319.
+
+    By default IntyBASIC starts in Color Stack mode.
 
   SCREEN label[,origin_offset,target_offset,cols,rows]
   SCREEN label[,origin_offset,target_offset,cols,rows,origin_width]
@@ -1338,6 +1342,25 @@ lesser priority than multiplication and division)
                         ...disc testing...
                     skip_disc:
 
+  CONT3				Contains complemented content of address $00ff (ECS left controller)
+  CONT3.UP          Non-zero if controller pointing up
+  CONT3.DOWN        Non-zero if controller pointing down
+  CONT3.LEFT        Non-zero if controller pointing left
+  CONT3.RIGHT       Non-zero if controller pointing right
+  CONT3.BUTTON      Non-zero if controller button pressed.
+  CONT3.B0          Non-zero if any of top controller buttons pressed (left/right)
+  CONT3.B1          Non-zero if bottom left button pressed
+  CONT3.B2          Non-zero if bottom right button pressed
+
+  CONT4				Contains complemented content of address $00fe (ECS right controller)
+  CONT4.UP          Non-zero if controller pointing up
+  CONT4.DOWN        Non-zero if controller pointing down
+  CONT4.LEFT        Non-zero if controller pointing left
+  CONT4.RIGHT       Non-zero if controller pointing right
+  CONT4.BUTTON      Non-zero if controller button pressed.
+  CONT4.B0          Non-zero if any of top controller buttons pressed (left/right)
+  CONT4.B1          Non-zero if bottom left button pressed
+  CONT4.B2          Non-zero if bottom right button pressed
 
   COL0
   COL1

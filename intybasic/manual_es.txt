@@ -1,12 +1,12 @@
 >>>>>>>>>>>>>  Manual del usuario de IntyBASIC  <<<<<<<<<<<<<<<
 
                  por Oscar Toledo G.
-       (c) Copyright Oscar Toledo G. 2014-2016
+       (c) Copyright Oscar Toledo G. 2014-2017
                 http://nanochess.org/
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 21-oct-2016
+Última revisión: 10-sep-2017
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -746,7 +746,7 @@ label:
     Todos los datos contenidos en DATA también pueden ser accedidos utilizando
     sintaxis de indice, de esta forma:
     
-      FOR A=1 TO 5
+      FOR A=0 TO 4
       PRINT AT TABLA(A),"Z"
       NEXT A
       
@@ -961,7 +961,7 @@ label:
     Permite seleccionar el modo de video (modo Color Stack o Foreground/background)
     esto sucede en el siguiente cuadro de video (WAIT)
 
-    Note que no puede usar PRINT AT hasta que WAIT haya ocurrido, debido a que la
+    Note que no puede usar PRINT COLOR hasta que WAIT haya ocurrido, debido a que la
     variable de color es usada para salvar datos, después de esto COLOR será reiniciado
     a 7.
 
@@ -971,6 +971,8 @@ label:
     En el modo Foreground/Background usted tiene acceso a 16 colores de fondo pero
     sólo puede usar los caracteres 0-63 (conjunto de caracteres básico y letras
     mayúsculas) y los caracteres definidos 256-319.
+
+    Por defecto IntyBASIC comienza en modo Color Stack.
     
   SCREEN etiqueta[,offset_origen,offset_destino,columnas,lineas]
   SCREEN etiqueta[,offset_origen,offset_destino,columnas,lineas,ancho_origen]
