@@ -549,6 +549,24 @@ void node::generate(int reg, int decision) {
                 output->emit_rr(N_MVIA, 4, reg);        // 1, MUSIC JUMP label, will be 0 if MUSIC STOP
                 music_used = true;
             }
+            if (value == 19) {  // VOICE.AVAILABLE
+                output->emit_lr(N_MVI, "", 0x0080, reg);
+                output->emit_r(N_INCR, reg);
+            }
+            if (value == 20) {  // VOICE.PLAYING
+                output->emit_lr(N_MVI, "IV.QT", -1, reg);   // 2
+                output->emit_nr(N_ANDI, "", 7, reg);
+                output->emit_lr(N_SUB, "IV.QH", -1, reg);   // 2
+                output->emit_a(N_BNE, "", 15);          // 2
+                output->emit_lr(N_MVI, "IV.FPTR", -1, reg);   // 2
+                output->emit_r(N_TSTR, reg);            // 1
+                output->emit_a(N_BNE, "", 10);          // 2
+                output->emit_lr(N_MVI, "", 0x0081, reg);    // 2
+                output->emit_r(N_COMR, reg);            // 1
+                output->emit_lr(N_AND, "", 0x0080, reg);    // 2
+                output->emit_r(N_COMR, reg);            // 1
+                output->emit_nr(N_ANDI, "", 0x8000, reg);    // 2
+            }
             break;
         case C_PEEK:    // PEEK()
             if (left->type == C_NUM) {  // Peek directly from memory location

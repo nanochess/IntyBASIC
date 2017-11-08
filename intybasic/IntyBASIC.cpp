@@ -236,7 +236,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.9 Mar/28/2017";      // Compiler version
+const string VERSION = "v1.2.9 Nov/07/2017";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -1198,6 +1198,22 @@ private:
                 if (lex == C_NAME && name == "PLAYING") {
                     get_lex();
                     return new node(C_VAR, 18, NULL, NULL);
+                }
+                emit_error("syntax error in MUSIC");
+                return new node(C_NUM, 0, NULL, NULL);
+            } else if (name == "VOICE") {  // Voice status
+                get_lex();
+                if (lex != C_PERIOD)
+                    emit_error("missing period in VOICE");
+                else
+                    get_lex();
+                if (lex == C_NAME && name == "AVAILABLE") {
+                    get_lex();
+                    return new node(C_VAR, 19, NULL, NULL);
+                }
+                if (lex == C_NAME && name == "PLAYING") {
+                    get_lex();
+                    return new node(C_VAR, 20, NULL, NULL);
                 }
                 emit_error("syntax error in MUSIC");
                 return new node(C_NUM, 0, NULL, NULL);

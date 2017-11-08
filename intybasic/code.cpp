@@ -628,6 +628,7 @@ void code::emit_rlo(enum opcode type, int r, string prefix, int value, int offse
 // N_BLT
 // N_BNC
 // N_BNE
+// N_BMI
 // N_BPL
 // N_CALL
 //

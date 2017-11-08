@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 10-sep-2017
+Última revisión: 07-nov-2017
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,7 +30,7 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.2.9 28-mar-2017  o Se mueve la limpieza de pantalla muy al inicio del
+v1.2.9 07-nov-2017  o Se mueve la limpieza de pantalla muy al inicio del
                       programa para evitar vistazo de título en Intellivision
                       Sears.
                     o Se añade una nota C7 faltante en tablas internas.
@@ -39,6 +39,10 @@ v1.2.9 28-mar-2017  o Se mueve la limpieza de pantalla muy al inicio del
                       entre instrucciones.
                     o Se soluciona un error en optimización de PEEK cuando la
                       dirección origen se incrementaba entre dos PEEK.
+                    o Más indicaciones en el manual, se documentan CONT3 y
+                      CONT4.
+                    o VOICE.AVAILABLE para buscar Intellivoice disponible.
+                    o VOICE.PLAYING para detectar Intellivoice sonando.
 
 v1.2.8 07-oct-2016  o Se agrega DATA PACKED para combinar dos caracteres por
                       palabra de 16 bits.
@@ -1410,6 +1414,26 @@ la resta tienen menos prioridad que la multiplicación y la división)
                         ...comprobación de disco...
                     evita_disco:
 
+  CONT3				Contiene el valor complementado de la dirección $00ff (controlador izq. ECS)
+  CONT3.UP			No cero si el controlador se desplaza arriba
+  CONT3.DOWN		No cero si el controlador se desplaza abajo
+  CONT3.LEFT		No cero si el controlador se desplaza a la izquierda
+  CONT3.RIGHT		No cero si el controlador se desplaza a la derecha
+  CONT3.BUTTON		No cero si algún botón del controlador está oprimido
+  CONT3.B0          No cero si alguno de los dos botones superiores del controlador de oprimen (izq/der)
+  CONT3.B1          No cero si el botón inferior izquierdo del controlador está oprimido.
+  CONT3.B2          No cero si el botón inferior derecho del controlador está oprimido.
+
+  CONT4				Contiene el valor complementado de la dirección $00fe (controlador izq. ECS)
+  CONT4.UP			No cero si el controlador se desplaza arriba
+  CONT4.DOWN		No cero si el controlador se desplaza abajo
+  CONT4.LEFT		No cero si el controlador se desplaza a la izquierda
+  CONT4.RIGHT		No cero si el controlador se desplaza a la derecha
+  CONT4.BUTTON		No cero si algún botón del controlador está oprimido
+  CONT4.B0          No cero si alguno de los dos botones superiores del controlador de oprimen (izq/der)
+  CONT4.B1          No cero si el botón inferior izquierdo del controlador está oprimido.
+  CONT4.B2          No cero si el botón inferior derecho del controlador está oprimido.
+
   COL0
   COL1
   COL2
@@ -1467,6 +1491,13 @@ la resta tienen menos prioridad que la multiplicación y la división)
   MUSIC.PLAYING
     Indica si está tocando música, cero si no, distinto de cero si está tocando.
 
+  VOICE.AVAILABLE
+    Indica si el Intellivoice está disponible, cero si no, distinto de cero si
+    disponible.
+
+  VOICE.PLAYING
+    Indica si el Intellivoice está ejecutando voz, cero si no, distinto de cero si
+    ejecutando voz.
 
 Los números fijos son útiles para mover elementos del juego en pasos fraccionales, el
 truco es preservar la coordenada actual en una variable de 16 bits, y cuando se use para

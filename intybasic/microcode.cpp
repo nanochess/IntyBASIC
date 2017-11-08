@@ -16,7 +16,7 @@ using namespace std;
 
 static const char *opcode_list[] = {
     "ADCR", "ADD", "ADD@", "ADDI", "ADDR", "AND", "AND@", "ANDI", "ANDR",
-    "B", "BC", "BEQ", "BGE", "BGT", "BLE", "BLT", "BNC", "BNE", "BPL",
+    "B", "BC", "BEQ", "BGE", "BGT", "BLE", "BLT", "BMI", "BNC", "BNE", "BPL",
     "CALL", "CLRC", "CLRR", "CMP", "CMP@", "CMPI", "CMPR", "COMR", "DECLE", "DECR",
     "INCR", "MOVR", "MVI", "MVI@", "MVII", "MVO", "MVO@", "MULT", "NEGR", "NOP",
     "PSHR", "PULR", "RRC", "RETURN", "RSWD",
