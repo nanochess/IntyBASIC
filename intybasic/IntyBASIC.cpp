@@ -3901,7 +3901,7 @@ public:
             used_space += 5;
         }
         if (jlp_used || cc3_used) {
-            asm_output << "\tORG $8040, $8040, \"=RW\"\n";
+            asm_output << "\tORG $8040, $8040, \"-RWBN\"\n";
             used_space = 0;
         }
         
