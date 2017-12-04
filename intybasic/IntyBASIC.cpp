@@ -444,7 +444,7 @@ private:
             if (line_pos < line_size && line[line_pos] == ':' && line_start
             && name != "RETURN" && name != "CLS" && name != "WAIT"
             && name != "RESTORE" && name != "STACK_CHECK" && name != "WEND"
-            && name != "DO") {
+            && name != "DO" && name != "NEXT") {
                 lex = C_LABEL;
                 line_pos++;
             } else {
@@ -1579,10 +1579,12 @@ private:
             delete tree2;
             tree2 = NULL;
         }
-        if (bits == 1)
+        if (bits == 1) {
             output->emit_rl(N_MVO, 0, VAR_PREFIX, variables[assigned]);
-        else
+        } else {
+            output->emit_256(0);
             output->emit_rlo8(N_MVO, 0, VAR_PREFIX, variables[assigned], 0);
+        }
         return c;
     }
 

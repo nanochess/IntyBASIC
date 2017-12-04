@@ -128,6 +128,22 @@ void code::pop(void) {
     flags_valid = false;
 }
 
+// Removes ANDI #255,rX
+void code::emit_256(int r1) {
+    class microcode *previous;
+    int c;
+    
+    if (everything.size() > 0) {
+        previous = everything.back();
+        c = previous->get_type();
+        if (c == N_ANDI && previous->get_r1() == r1 && previous->get_prefix() == "" && previous->get_value() == 255) {
+            everything.pop_back();
+            delete previous;
+            flags_valid = false;
+        }
+    }
+}
+
 // Emits an instruction with no operands
 //
 // N_CLRC

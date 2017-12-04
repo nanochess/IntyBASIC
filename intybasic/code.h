@@ -54,6 +54,7 @@ public:
     void check_for_cycles(int how_many, int limit);
     void push(int r);
     void pop(void);
+    void emit_256(int r1);
     void emit(enum opcode type);
     void emit_r(enum opcode type, int r1);
     void emit_rr(enum opcode type, int r1, int r2);

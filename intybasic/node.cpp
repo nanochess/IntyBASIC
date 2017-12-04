@@ -659,6 +659,8 @@ void node::generate(int reg, int decision) {
                 // Optimization for assignation to array with simple index
             } else if (type == C_ASSIGN && right->valid_array()) {
                 left->generate(0, 0);
+                if (value == 0) // 8-bits
+                    output->emit_256(0);
                 right->annotate_index_for_subexpression();
                 output->emit_rr(N_MVOA, 0, 3);
                 // Optimize right side when it's constant
@@ -1142,10 +1144,12 @@ void node::generate(int reg, int decision) {
             } else if (type == C_ASSIGN && right->type == C_PLUS
                        && right->left->type == C_NAME_RO && right->right->type == C_NUM) {
                 left->generate(reg, 0);
-                if (value == 0)
+                if (value == 0) {
+                    output->emit_256(reg);
                     output->emit_rlo8(N_MVO, reg, LABEL_PREFIX, right->left->value, right->right->value);
-                else
+                } else {
                     output->emit_rlo(N_MVO, reg, LABEL_PREFIX, right->left->value, right->right->value);
+                }
             } else {
                 int reversed = 0;
                 
