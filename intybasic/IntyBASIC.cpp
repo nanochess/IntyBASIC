@@ -236,7 +236,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.2.9 Nov/07/2017";      // Compiler version
+const string VERSION = "v1.4.0 Dec/26/2017";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -3579,6 +3579,21 @@ public:
             std::cerr << "Error: Unable to include prologue: " << path << "\n";
             err_code = 2;
         }
+
+        //
+        // Clean JLP/CC3 RAM
+        //
+        if (jlp_used || cc3_used) {
+            asm_output << "\n";
+            asm_output << "\tMVII #SYSTEM2,R5\n";
+            asm_output << "\tMVII #_SYSTEM2-SYSTEM2-1,R1\n";
+            asm_output << "\tCLRR R0\n";
+            asm_output << "\tMVO@ R0,R5\n";
+            asm_output << "\tDECR R1\n";
+            asm_output << "\tBPL $-2\n";
+            asm_output << "\n";
+        }
+
         asm_output << "\t;FILE " << input_file << "\n";
         bitmap_byte = 0;
         inside_proc = 0;
@@ -3903,7 +3918,8 @@ public:
             used_space += 5;
         }
         if (jlp_used || cc3_used) {
-            asm_output << "\tORG $8040, $8040, \"-RWBN\"\n";
+            asm_output << "_SYSTEM:\tEQU $\n";
+            asm_output << "\nSYSTEM2:\tORG $8040, $8040, \"-RWBN\"\n";
             used_space = 0;
         }
         
@@ -3972,8 +3988,12 @@ public:
             std::cerr << used_space << " used 16-bit variables of " << available_vars << " available\n";
         }
         
-        asm_output << "_SYSTEM:\tEQU $\n";
-
+        if (jlp_used || cc3_used) {
+            asm_output << "_SYSTEM2:\tEQU $\n";
+        } else {
+            asm_output << "_SYSTEM:\tEQU $\n";
+        }
+        
         // Dumps functions reference
         for (access = functions.begin(); access != functions.end(); access++) {
             if (access->second != 0)
