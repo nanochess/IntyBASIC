@@ -18,6 +18,7 @@
         ; Revision: Sep/08/2016. Now CLRSCR initializes screen position for PRINT, this
         ;                        solves bug when user programs goes directly to PRINT.
         ; Revision: Oct/21/2016. Accelerated MEMSET.
+        ; Revision: Jan/09/2018. Adjusted PAL/NTSC constant.
         ;
 
         ROMW 16
@@ -124,18 +125,17 @@ _MAIN4:                         ; This loop is courtesy of GroovyBee
 
         EIS
 
-_MAIN1:	MVI _ntsc,R0
-	CMPI #3,R0
+_MAIN1:	MVI _ntsc,R2
+	SUBI #3,R2
 	BNE _MAIN1
-	CLRR R2
 _MAIN2:	INCR R2
 	MVI _ntsc,R0
 	CMPI #4,R0
 	BNE _MAIN2
 
-        ; 596 for PAL in jzintv
-        ; 444 for NTSC in jzintv
-        CMPI #520,R2
+        ; $01f9 for PAL in jzintv
+        ; $01bb for NTSC in jzintv
+        CMPI #$01db,R2
         MVII #1,R0
         BLE _MAIN3
         CLRR R0
@@ -143,11 +143,11 @@ _MAIN3: MVO R0,_ntsc
 
         CALL _wait
 	CALL _init_music
-        MVII #2,R0
+        MVII #2,R0		; Color Stack mode
         MVO R0,_mode_select
         MVII #$038,R0
-        MVO R0,$01F8            ; Configures sound
-        MVO R0,$00F8            ; Configures sound (ECS)
+        MVO R0,$01F8          ; Configures sound
+        MVO R0,$00F8          ; Configures sound (ECS)
         CALL _wait
 
 ;* ======================================================================== *;

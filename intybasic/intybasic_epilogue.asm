@@ -45,6 +45,8 @@
 	; Revision: May/03/2016. Preserves current mode in bit 0 of _mode_select
         ; Revision: Oct/21/2016. Added C7 in notes table, it was missing. (thanks
         ;                        mmarrero)
+        ; Revision: Jan/09/2018. Initializes scroll offset registers (useful when
+        ;                        starting from $4800). Uses slightly less space.
 
 	;
 	; Avoids empty programs to crash
@@ -175,30 +177,28 @@ _keypad_table:          PROC
         DECLE $48,$81,$41,$21,$82,$42,$22,$84,$44,$24,$88,$28
         ENDP
 
-_pal1_vector:    PROC
-        MVII #_pal2_vector,R0
+_pal1_vector:	PROC
+        MVII #_pal2_vector,R0	; Point to next interruption handler
+        MVII #3,R1
+_irq_setup:
         MVO R0,ISRVEC
         SWAP R0
         MVO R0,ISRVEC+1
-        MVII #3,R0
-        MVO R0,_ntsc
+        MVO R1,_ntsc
         JR R5
         ENDP
 
 _pal2_vector:    PROC
-        MVII #_int_vector,R0     ; Point to "real" interruption handler
-        MVO R0,ISRVEC
-        SWAP R0
-        MVO R0,ISRVEC+1
-        MVII #4,R0
-        MVO R0,_ntsc
-	CLRR R0
-	CLRR R4
-	MVII #$18,R1
-@@1:	MVO@ R0,R4
-	DECR R1
-	BNE @@1
-        JR R5
+        CLRR R0
+        CLRR R4			; Reset MOB X/Y/Attribute registers
+@@1:    MVO@ R0,R4
+        CMPI #$18,R4
+        BNE @@1
+        MVO R0,$30		; Reset horizontal delay register
+        MVO R0,$31		; Reset vertical delay register
+        MVII #_int_vector,R0	; Point to "real" interruption handler
+        MVII #4,R1
+        B _irq_setup
         ENDP
 
         ;

@@ -1,12 +1,12 @@
 >>>>>>>>>>>>>  Manual del usuario de IntyBASIC  <<<<<<<<<<<<<<<
 
                  por Oscar Toledo G.
-       (c) Copyright Oscar Toledo G. 2014-2017
+       (c) Copyright Oscar Toledo G. 2014-2018
                 http://nanochess.org/
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 07-nov-2017
+Última revisión: 09-ene-2018
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -1626,6 +1626,11 @@ siguientes direcciones adicionales sin programación extra:
      $A000-$BFFF
      $C100-$FFFF
      
+Como nota técnica, el uso de cualquier característica ECS dentro su programa
+IntyBASIC (tal como SOUND 5-9, CONT3 o CONT4) hará que su programa arranque a partir
+de $4800 para desactivar las ROM de ECS. Esto tiene la ventaja adicional de que
+desaparece la pantalla estándar de Mattel que puede llegar a verse una fracción de
+segundo antes de que inicie su programa.
      
 >>>>>>>>>>>>>>  Número total de variables permitidas
 
