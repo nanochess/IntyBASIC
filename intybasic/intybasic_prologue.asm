@@ -19,6 +19,8 @@
         ;                        solves bug when user programs goes directly to PRINT.
         ; Revision: Oct/21/2016. Accelerated MEMSET.
         ; Revision: Jan/09/2018. Adjusted PAL/NTSC constant.
+        ; Revision: Feb/05/2018. Forces initialization of Intellivoice if included.
+        ;                        So VOICE INIT ceases to be dangerous.
         ;
 
         ROMW 16
@@ -148,7 +150,7 @@ _MAIN3: MVO R0,_ntsc
         MVII #$038,R0
         MVO R0,$01F8          ; Configures sound
         MVO R0,$00F8          ; Configures sound (ECS)
-        CALL _wait
+        CALL IV_INIT_and_wait
 
 ;* ======================================================================== *;
 ;*  These routines are placed into the public domain by their author.  All  *;

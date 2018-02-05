@@ -210,6 +210,7 @@
 //                         detect correctly the ROM type.
 //  Revision: Oct/06/2016. Added OPTION EXPLICIT.
 //  Revision: Oct/07/2016. Added DATA PACKED and OPTION WARNINGS.
+//  Revision: Feb/05/2018. VOICE INIT now calls IV_HUSH.
 //
 
 //  TODO:
@@ -236,7 +237,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.4.0 Dec/26/2017";      // Compiler version
+const string VERSION = "v1.4.0 Feb/05/2018";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -3208,7 +3209,7 @@ private:
                     } else if (lex == C_NAME && name == "INIT") {
                         voice_used = true;
                         get_lex();
-                        output->emit_a(N_CALL, "IV_INIT", -1);
+                        output->emit_a(N_CALL, "IV_HUSH", -1);
                     } else if (lex == C_NAME && name == "WAIT") {
                         voice_used = true;
                         get_lex();

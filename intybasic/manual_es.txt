@@ -30,6 +30,13 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
+v1.4.0 05-feb-2018  o Se agrega contrib/accel.bas como muestra de movimiento
+                      de sprites por fracciones de pixel (contribución de
+                      intvnut)
+                    o VOICE INIT ahora "calla" el Intellivoice (contribución
+                      de intvnut) y la inicialización se realiza de forma
+                      automática al inicio del programa.
+
 v1.2.9 07-nov-2017  o Se mueve la limpieza de pantalla muy al inicio del
                       programa para evitar vistazo de título en Intellivision
                       Sears.
@@ -417,6 +424,7 @@ Los siguientes programas de ejemplo están incluídos:
   samples/voice.bas           Ejemplo sencillo del uso de Intellivoice
 
   contrib/42k.bas             Ejemplo de como usar el mapa máximo de 42K palabras
+  contrib/accel.bas           Moviendo sprites por fracciones de pixel (intvnut)
   contrib/AppleCatcher.bas    Juego Apple Catcher por Kiwi
   contrib/clowns.bas          Juego Clowns & Ballons por catsfolly
   contrib/ColouredSquares.bas Utiliza el modo de cuadros coloreados para dibujar líneas
@@ -1131,20 +1139,31 @@ label:
     
   VOICE INIT
   
-    Inicia el soporte Intellivision, debe ser lo primero antes de usar Intellivoice.
-    
-    Detectará automáticamente si el Intellivoice está conectado para poder usarlo.
+    Deja de hablar y vacia la cola del Intellivoice.
+
+    El uso de cualquier sentencia VOICE causará que IntyBASIC incluya
+    automáticamente código extra para inicializar el Intellivoice al inicio
+    del programa.
+
+    Por ninguna razón su programa debe recomenzar su ejecución (mediante
+    código ensamblador) desde el comienzo del código (direcciones $5000 o
+    $4800) porque el Intellivoice podría "colgar" el sistema.
 
   VOICE PLAY etiqueta
   
-    Comienza a hablar, si la cola está llena entonces algunas frases pueden perderse.
+    Comienza a hablar la voz indicada por la etiqueta.
+
+    Si hay otra frase en ejecución, la nueva será añadida al final de la cola.
+
+    Si la cola está llena entonces la frase se perderá.
 
     La etiqueta puede ser una matriz de 16 bits, esto permite construir frases
     dinámicamente.
 
   VOICE PLAY WAIT etiqueta
   
-    Comienza a hablar, pero espera a que la frase se halla hablado por completo.
+    Lo mismo que VOICE PLAY pero detendrá la ejecución del programa hasta que
+    la cola quede vacía.
   
     La etiqueta puede ser una matriz de 16 bits, esto permite construir frases
     dinámicamente.
@@ -1155,7 +1174,9 @@ label:
 
   VOICE NUMBER expr
   
-    Convierte una expresión a un número hablado (en inglés)
+    Convierte una expresión a un número hablado (en inglés). Lo mismo que VOICE
+    PLAY acumulará la frase en el buffer si ya está en proceso de decir una
+    frase.
 
   VOICE phrases[,phrases]
   

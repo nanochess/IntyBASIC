@@ -47,6 +47,7 @@
         ;                        mmarrero)
         ; Revision: Jan/09/2018. Initializes scroll offset registers (useful when
         ;                        starting from $4800). Uses slightly less space.
+        ; Revision: Feb/05/2018. Added IV_HUSH.
 
 	;
 	; Avoids empty programs to crash
@@ -2002,7 +2003,8 @@ IV_INIT     PROC
             DECR    R0
             MVO     R0,     IV.QH       ; Set queue to -1 ("No Intellivoice")
             MVO     R0,     IV.QT       ; Set queue to -1 ("No Intellivoice")
-            JR      R5                  ; Done!
+;            JR      R5                 ; Done!
+            B       _wait               ; Special for IntyBASIC!
             ENDP
 
 ;; ======================================================================== ;;
@@ -2272,6 +2274,66 @@ IV_PLAYW    PROC
 
 ;; ======================================================================== ;;
 ;;  NAME                                                                    ;;
+;;      IV_HUSH     Flush the speech queue, and hush the Intellivoice.      ;;
+;;                                                                          ;;
+;;  AUTHOR                                                                  ;;
+;;      Joseph Zbiciak <intvnut AT gmail.com>                               ;;
+;;                                                                          ;;
+;;  REVISION HISTORY                                                        ;;
+;;      02-Feb-2018 Initial revision . . . . . . . . . . .  J. Zbiciak      ;;
+;;                                                                          ;;
+;;  INPUTS for IV_HUSH                                                      ;;
+;;      None.                                                               ;;
+;;                                                                          ;;
+;;  OUTPUTS                                                                 ;;
+;;      R0 trashed.                                                         ;;
+;;                                                                          ;;
+;;  NOTES                                                                   ;;
+;;      Returns via IV_WAIT.                                                ;;
+;;                                                                          ;;
+;; ======================================================================== ;;
+IV_HUSH:    PROC
+            MVI     IV.QH,  R0
+            SWAP    R0,     2
+            BMI     IV_WAIT.leave
+
+            DIS
+            ;; We can't stop a phrase segment that's being FIFOed down.
+            ;; We need to remember if we've committed to pushing ALD.
+            ;; We _can_ stop new phrase segments from going down, and _can_
+            ;; stop new phrases from being started.
+
+            ;; Set head pointer to indicate we've inserted one item.
+            MVI     IV.QH,  R0  ; Re-read, as an interrupt may have occurred
+            ANDI    #$F0,   R0
+            INCR    R0
+            MVO     R0,     IV.QH
+
+            ;; Reset tail pointer, keeping "need ALD" bit and other flags.
+            MVI     IV.QT,  R0
+            ANDI    #$F0,   R0
+            MVO     R0,     IV.QT
+
+            ;; Reset the phrase pointer, to stop a long phrase.
+            CLRR    R0
+            MVO     R0,     IV.PPTR
+
+            ;; Queue a PA1 in the queue.  Since we're can't guarantee the user
+            ;; has included resrom.asm, let's just use the raw number (5).
+            MVII    #5,     R0
+            MVO     R0,     IV.Q
+
+            ;; Re-enable interrupts and wait for Intellivoice to shut up.
+            ;;
+            ;; We can't just jump to IV_WAIT.q_loop, as we need to reload
+            ;; IV.QH into R0, and I'm really committed to only using R0.
+;           JE      IV_WAIT
+            EIS
+            ; fallthrough into IV_WAIT
+            ENDP
+
+;; ======================================================================== ;;
+;;  NAME                                                                    ;;
 ;;      IV_WAIT     Wait for voice queue to empty.                          ;;
 ;;                                                                          ;;
 ;;  AUTHOR                                                                  ;;
@@ -2296,9 +2358,8 @@ IV_PLAYW    PROC
 ;; ======================================================================== ;;
 IV_WAIT     PROC
             MVI     IV.QH,  R0
-            SWAP    R0                  ;\___ test bit 7, leave if set.
-            SWAP    R0                  ;/    (SWAP2 corrupts upper byte.)
-            BMI     @@leave
+            CMPI    #$80, R0            ; test bit 7, leave if set.
+            BC      @@leave
 
             ; Wait for queue to drain.
 @@q_loop:   CMP     IV.QT,  R0
@@ -2334,7 +2395,7 @@ IV_WAIT     PROC
 ;;  REVISION HISTORY                                                        ;;
 ;;      16-Sep-2002 Initial revision . . . . . . . . . . .  J. Zbiciak      ;;
 ;;                                                                          ;;
-;;  INPUTS for IV_INIT                                                      ;;
+;;  INPUTS for IV_SAYNUM16                                                  ;;
 ;;      R0      Number to "speak"                                           ;;
 ;;      R5      Return address                                              ;;
 ;;                                                                          ;;
@@ -2431,6 +2492,12 @@ IV_SAYNUM16 PROC
 ;; ======================================================================== ;;
 ;;  End of File:  saynum16.asm                                              ;;
 ;; ======================================================================== ;;
+
+IV_INIT_and_wait:     EQU IV_INIT
+
+    ELSE
+
+IV_INIT_and_wait:     EQU _wait	; No voice init; just WAIT.
 
     ENDI
 
