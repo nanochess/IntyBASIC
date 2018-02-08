@@ -211,6 +211,7 @@
 //  Revision: Oct/06/2016. Added OPTION EXPLICIT.
 //  Revision: Oct/07/2016. Added DATA PACKED and OPTION WARNINGS.
 //  Revision: Feb/05/2018. VOICE INIT now calls IV_HUSH.
+//  Revision: Feb/08/2018. Size of Flash memory is now configurable.
 //
 
 //  TODO:
@@ -252,6 +253,7 @@ ofstream asm_output;
 
 bool optimized;      // Indicates if expression for IF statement jump was optimized
 bool jlp_used;       // Indicates if JLP is used
+int jlp_flash_size;  // Indicates JLP flash size
 bool cc3_used;       // Indicates if CC3 is used
 bool fastmult_used;  // Indicates if fast multiplication is used
 bool fastdiv_used;   // Indicates if fast division/remainder is used
@@ -3332,6 +3334,18 @@ private:
                         emit_error("Syntax error in FLASH statement");
                     } else if (name == "INIT") {
                         get_lex();
+                        if (lex == C_NAME && name == "SIZE") {
+                            class node *tree;
+                            int type2;
+
+                            get_lex();
+                            tree = eval_level0(&type2);
+                            if (tree->node_type() != C_NUM) {
+                                emit_error("not a constant expression in FLASH INIT SIZE");
+                            } else {
+                                jlp_flash_size = tree->node_value();
+                            }
+                        }
                         output->emit_a(N_CALL, "JF.INIT", -1);
                     } else if (name == "ERASE") {
                         get_lex();
@@ -3521,6 +3535,7 @@ public:
         flash_used = false;
         playvol_used = false;
         jlp_used = ((flags & 1) != 0);
+        jlp_flash_size = 16;
         cc3_used = ((flags & 2) != 0);
         warnings = ((flags & 4) == 0);
         option_warnings = true;
@@ -3793,7 +3808,7 @@ public:
             if (ecs_used)
                 asm_output << "\t\tCFGVAR \"ecs\" = 1\n";
             if (flash_used)
-                asm_output << "\t\tCFGVAR \"jlpflash\" = 100\n";  // Currently hard-coded 100 sectors
+                asm_output << "\t\tCFGVAR \"jlpflash\" = " << jlp_flash_size << "\n";  // Currently hard-coded 100 sectors
             asm_output << "\tENDI\n";
         }
         if (scroll_used)

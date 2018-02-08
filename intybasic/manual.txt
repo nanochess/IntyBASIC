@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Nov/07/2018.
+Last revision: Feb/08/2018.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,11 +23,12 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4.0 Feb/05/2018  o Added contrib/accel.bas it shows how to move sprites
+v1.4.0 Feb/08/2018  o Added contrib/accel.bas it shows how to move sprites
                       by fractions of pixel (contributed by intvnut)
                     o VOICE INIT now "shuts up" the Intellivision (contributed
                       by intvnut) and the initializatin is done in automatic
                       form at start of program.
+                    o FLASH INIT SIZE to choose Flash memory size.
 
 v1.2.9 Nov/07/2017  o Moved screen clearing at the very start of program
                       to avoid brief title screen in Sears Intellivision.
@@ -1153,6 +1154,18 @@ label:
     functions.
     
     It only needs to be put one time at start of program.
+
+    The default size will be 16, equivalente to 128 rows of Flash memory.
+
+  FLASH INIT SIZE constant_expression
+
+    Same as FLASH INIT but sets the default size.
+
+    A size of 1 will assign 8 rows for Flash memory (one erasable sector)
+
+    A size of 2 will assign 16 rows for Flash memory (two erasable sectors)
+
+    And so on.
 
   FLASH ERASE row
   
