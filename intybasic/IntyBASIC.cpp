@@ -3901,9 +3901,11 @@ public:
             }
             if ((access->second & (CALLED_BY_GOTO | IT_IS_PROCEDURE)) == (CALLED_BY_GOTO | IT_IS_PROCEDURE)) {
                 std::cerr << "Error: PROCEDURE '" << access->first << "' jumped in by GOTO (guaranteed crash)\n";
+                err_code = 1;
             }
             if ((access->second & (CALLED_BY_GOSUB | IT_IS_PROCEDURE)) == CALLED_BY_GOSUB) {
                 std::cerr << "Error: Common label '" << access->first << "' jumped in by GOSUB (guaranteed crash)\n";
+                err_code = 1;
             }
         }
         
