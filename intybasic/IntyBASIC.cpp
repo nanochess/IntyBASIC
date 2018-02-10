@@ -212,6 +212,9 @@
 //  Revision: Oct/07/2016. Added DATA PACKED and OPTION WARNINGS.
 //  Revision: Feb/05/2018. VOICE INIT now calls IV_HUSH.
 //  Revision: Feb/08/2018. Size of Flash memory is now configurable.
+//  Revision: Feb/10/2018. Added data of what labels are procedures and if called
+//                         by GOTO and GOSUB to detect blatant errors that cause
+//                         crashes. (Miner 2049er)
 //
 
 //  TODO:
@@ -244,6 +247,10 @@ const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
 const string FUNC_PREFIX = "F";     // Prefix for USR functions
+
+const int CALLED_BY_GOTO = 0x04;
+const int CALLED_BY_GOSUB = 0x08;
+const int IT_IS_PROCEDURE = 0x10;
 
 class code *output;
 
@@ -1621,6 +1628,7 @@ private:
                             next_label++;
                         }
                         label_used[name] |= 1;
+                        label_used[name] |= CALLED_BY_GOTO;
                         output->emit_a(N_B, LABEL_PREFIX, labels[name]);
                         get_lex();
                     }
@@ -1634,6 +1642,7 @@ private:
                             next_label++;
                         }
                         label_used[name] |= 1;
+                        label_used[name] |= CALLED_BY_GOSUB;
                         output->emit_a(N_CALL, LABEL_PREFIX, labels[name]);
                         get_lex();
                     }
@@ -3135,6 +3144,10 @@ private:
                                     next_label++;
                                 }
                                 label_used[name] |= 1;
+                                if (gosub != 0)
+                                    label_used[name] |= CALLED_BY_GOSUB;
+                                else
+                                    label_used[name] |= CALLED_BY_GOTO;
                                 options[max_value++] = labels[name];
                                 get_lex();
                             } else {
@@ -3521,6 +3534,7 @@ public:
         int inside_proc;
         char *p;
         int eof;
+        string procedure;
         
         line_number = 0;
         next_label = 1;
@@ -3675,13 +3689,19 @@ public:
                 asm_output << LABEL_PREFIX << labels[name] << ":";
                 next_label++;
                 label_exists = 1;
+                procedure = name;
                 get_lex();
                 output->trash_registers();
             } else {
                 label_exists = 0;
+                procedure = "";
             }
             if (lex == C_NAME) {
                 if (name == "PROCEDURE") {
+                    if (!label_exists)
+                        emit_error("PROCEDURE without label in same line");
+                    else
+                        label_used[procedure] |= IT_IS_PROCEDURE;
                     if (inside_proc)
                         emit_error("starting PROCEDURE without ENDing previous PROCEDURE");
                     // as1600 requires that label and PROC are on same line
@@ -3872,12 +3892,18 @@ public:
         
         // Warns of unused or undefined labels
         for (access = label_used.begin(); access != label_used.end(); access++) {
-            if (access->second == 1) {
+            if ((access->second & 3) == 1) {
                 std::cerr << "Error: label '" << access->first << "' undefined\n";
                 err_code = 1;
-            } else if (access->second == 2) {
+            } else if ((access->second & 3) == 2) {
                 if (warnings && option_warnings)
                     std::cerr << "Warning: label '" << access->first << "' defined but never used\n";
+            }
+            if ((access->second & (CALLED_BY_GOTO | IT_IS_PROCEDURE)) == (CALLED_BY_GOTO | IT_IS_PROCEDURE)) {
+                std::cerr << "Error: PROCEDURE '" << access->first << "' jumped in by GOTO (guaranteed crash)\n";
+            }
+            if ((access->second & (CALLED_BY_GOSUB | IT_IS_PROCEDURE)) == CALLED_BY_GOSUB) {
+                std::cerr << "Error: Common label '" << access->first << "' jumped in by GOSUB (guaranteed crash)\n";
             }
         }
         
