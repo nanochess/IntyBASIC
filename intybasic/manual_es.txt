@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 08-feb-2018
+Última revisión: 10-feb-2018
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,13 +30,15 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.4.0 05-feb-2018  o Se agrega contrib/accel.bas como muestra de movimiento
+v1.4.0 10-feb-2018  o Se agrega contrib/accel.bas como muestra de movimiento
                       de sprites por fracciones de pixel (contribución de
                       intvnut)
                     o VOICE INIT ahora "calla" el Intellivoice (contribución
                       de intvnut) y la inicialización se realiza de forma
                       automática al inicio del programa.
                     o FLASH INIT SIZE to choose Flash memory size.
+                    o Detecta flujo incorrecto de control (GOTO a PROCEDURE
+                      o GOSUB a etiqueta que no es PROCEDURE)
 
 v1.2.9 07-nov-2017  o Se mueve la limpieza de pantalla muy al inicio del
                       programa para evitar vistazo de título en Intellivision
