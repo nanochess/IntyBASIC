@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 10-feb-2018
+Última revisión: 18-feb-2018
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,13 +30,15 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.4.0 10-feb-2018  o Se agrega contrib/accel.bas como muestra de movimiento
+v1.4.0 18-feb-2018  o Se agrega contrib/accel.bas como muestra de movimiento
                       de sprites por fracciones de pixel (contribución de
                       intvnut)
                     o VOICE INIT ahora "calla" el Intellivoice (contribución
                       de intvnut) y la inicialización se realiza de forma
                       automática al inicio del programa.
-                    o FLASH INIT SIZE to choose Flash memory size.
+                    o FLASH INIT SIZE para escoger el tamaño de la memoria
+                      Flash.
+                    o Permite constantes in DATA PACKED.
                     o Detecta flujo incorrecto de control (GOTO a PROCEDURE
                       o GOSUB a etiqueta que no es PROCEDURE)
 
@@ -746,6 +748,7 @@ label:
   DATA expr_constante[,expr_constante]
   DATA cadena
   DATA PACKED cadena
+  DATA PACKED expr_constante[,expr_constante]
   DATA VARPTR a
   DATA VARPTR b(expr_constante)
 
@@ -774,6 +777,10 @@ label:
     Los datos de cadena con DATA PACKED combinaran dos códigos de caracter
     de Intellivision en una palabra (el byte alto de la palabra contiene la primera
     letra, el byte bajo de la palabara contiene la letra subsecuente)
+
+    Las constantes con DATA PACKED se comportan de la misma forma. Si los datos en
+    la línea de entrada no llenan una palabra, se insertará un cero para
+    acompletar la palabra.
 
   DEFINE num_car,total,etiqueta
   DEFINE num_car,total,VARPTR etiqueta(expr)
@@ -826,7 +833,7 @@ label:
 
        valor = (4000000 / 32 / frec)
        
-    El primer parametro sólo puede ser constante (0-4)
+    El primer parametro sólo puede ser una constante (0-9)
     
     Para los canales A, B y C, si usted utiliza el volumen 48 entonces el PSG utilizará
     la envolvente de volumen (vea SOUND 3)

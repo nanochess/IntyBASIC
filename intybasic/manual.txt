@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Feb/10/2018.
+Last revision: Feb/18/2018.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,12 +23,13 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4.0 Feb/10/2018  o Added contrib/accel.bas it shows how to move sprites
+v1.4.0 Feb/18/2018  o Added contrib/accel.bas it shows how to move sprites
                       by fractions of pixel (contributed by intvnut)
                     o VOICE INIT now "shuts up" the Intellivision (contributed
                       by intvnut) and the initializatin is done in automatic
                       form at start of program.
                     o FLASH INIT SIZE to choose Flash memory size.
+                    o Allows constants in DATA PACKED.
                     o Detects wrong flow of control (GOTO to PROCEDURE or
                       GOSUB to non-PROCEDURE)
 
@@ -703,6 +704,7 @@ label:
   DATA constant_expr[,constant_expr]
   DATA string
   DATA PACKED string
+  DATA PACKED constant_expr[,constant_expr]
   DATA VARPTR a
   DATA VARPTR b(constant_expr)
 
@@ -731,6 +733,10 @@ label:
     The string data with DATA PACKED will fit two Intellivision character
     codes per word (higher byte of word contains first letter, lower
     byte of word contains following letter)
+
+    The constant data with DATA PACKED will be same. If DATA PACKED
+    doesn't fill the last word in one row, it will add a zero byte to
+    complete.
 
   DEFINE card_num,total,label
   DEFINE card_num,total,VARPTR label(expr)
@@ -782,7 +788,7 @@ label:
        
        value = (4000000 / 32 / frec)
        
-    Only constant (0-4) can be used in first parameter for SOUND.
+    Only a constant (0-9) can be used in first parameter for SOUND.
     
     For channels A, B and C, if you use volume 48 the PSG will use the
     volume envolvent (see SOUND 3)

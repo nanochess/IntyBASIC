@@ -215,6 +215,7 @@
 //  Revision: Feb/10/2018. Added data of what labels are procedures and if called
 //                         by GOTO and GOSUB to detect blatant errors that cause
 //                         crashes. (Miner 2049er)
+//  Revision: Feb/18/2018. Allows numbers in DATA PACKED (ARTRAG suggestion).
 //
 
 //  TODO:
@@ -2109,126 +2110,154 @@ private:
                     }
                 } else if (name == "DATA") {
                     get_lex();
-                    while (1) {
-                        if (lex == C_NAME && name == "VARPTR") {  // Access to variable/array/label address
-                            int temp;
-                            int index;
-                            int type2;
-                            
-                            get_lex();
-                            if (lex != C_NAME) {
-                                emit_error("missing variable name for VARPTR");
-                            } else {
-                                if (sneak_peek() == '(') {  // Indexed access
-                                    class node *tree;
-                                    
-                                    if (arrays[name] != 0) {
-                                        temp = arrays[name] >> 16;
-                                    } else if (labels[name] != 0) {
-                                        temp = labels[name];
-                                        label_used[name] |= 1;
-                                    } else {
-                                        labels[name] = temp = next_label++;
-                                        label_used[name] |= 1;
-                                    }
-                                    get_lex();
-                                    if (lex != C_LPAREN)
-                                        emit_error("missing left parenthesis in array access");
-                                    else
-                                        get_lex();
-                                    tree = eval_level0(&type2);
-                                    if (tree->node_type() != C_NUM) {
-                                        index = 0;
-                                        emit_error("not a constant expression in array access");
-                                    } else {
-                                        index = tree->node_value();
-                                    }
-                                    if (lex != C_RPAREN)
-                                        emit_error("missing right parenthesis in array access");
-                                    else
-                                        get_lex();
-                                    output->emit_dlo(N_DECLE, LABEL_PREFIX, temp, index);
-                                    delete tree;
-                                    tree = NULL;
-                                } else {
-                                    if ((constants[name] & 0x10000) != 0) {
-                                        emit_error("constants doesn't have address for VARPTR");
-                                        get_lex();
-                                    } else {
-                                        if (variables[name] == 0) {
-                                            check_for_explicit(name);
-                                            variables[name] = next_var++;
-                                        }
-                                        temp = variables[name];
-                                        get_lex();
-                                        output->emit_dl(N_DECLE, VAR_PREFIX, temp);
-                                    }
-                                }
-                            }
-                        } else if (lex == C_NAME && name == "PACKED") {
-                            int c;
-                            int v1;
-                            int v2;
-                            
-                            get_lex();
-                            if (lex != C_STRING) {
-                                emit_error("no string after PACKED in DATA");
-                            } else {
+                    if (lex == C_NAME && name == "PACKED") {
+                        int c;
+                        int v;
+                        int v1;
+                        int v2;
+                        
+                        get_lex();
+                        v = 0;
+                        while (1) {
+                            if (lex == C_STRING) {  // String found
                                 for (c = 0; c < name.length(); c++) {
                                     if (name[c] == 127 && c + 1 < name.length()) {
                                         c++;
-                                        v1 = (name[c] & 0xff) + 127;
-                                    } else {
-                                        v1 = (name[c] & 0xff);
-                                    }
-                                    if (c + 1 < name.length()) {
-                                        c++;
-                                        if (name[c] == 127 && c + 1 < name.length()) {
-                                            c++;
+                                        if (v == 0)
+                                            v1 = (name[c] & 0xff) + 127;
+                                        else
                                             v2 = (name[c] & 0xff) + 127;
-                                        } else {
-                                            v2 = (name[c] & 0xff);
-                                        }
                                     } else {
-                                        v2 = 0;
+                                        if (v == 0)
+                                            v1 = (name[c] & 0xff);
+                                        else
+                                            v2 = (name[c] & 0xff);
                                     }
-                                    if (v1 > 255 || v2 > 255)
-                                        emit_error("character out of 8-bits range in DATA PACKED");
-                                    output->emit_d(N_DECLE, (v1 << 8) | v2);
+                                    v = !v;
+                                    if (v == 0)
+                                        output->emit_d(N_DECLE, (v1 << 8) | v2);
                                 }
                                 get_lex();
-                            }
-                            
-                        } else if (lex == C_STRING) {
-                            int c;
-                            int v;
-                            
-                            for (c = 0; c < name.length(); c++) {
-                                if (name[c] == 127 && c + 1 < name.length()) {
-                                    c++;
-                                    v = (name[c] & 0xff) + 127;
-                                } else {
-                                    v = (name[c] & 0xff);
+                            } else {
+                                class node *tree;
+                                int type;
+                                
+                                tree = eval_level0(&type);
+                                if (tree->node_type() != C_NUM) {
+                                    emit_error("not a constant expression in DATA");
+                                    break;
                                 }
-                                output->emit_d(N_DECLE, v);
+                                if (v == 0) {
+                                    v1 = tree->node_value();
+                                    if (v1 < -128 || v1 > 255)
+                                        emit_error("integer out of 8-bits range in DATA PACKED");
+                                } else {
+                                    v2 = tree->node_value();
+                                    if (v2 < -128 || v2 > 255)
+                                        emit_error("integer out of 8-bits range in DATA PACKED");
+                                }
+                                delete tree;
+                                tree = NULL;
+                                v = !v;
+                                if (v == 0)
+                                    output->emit_d(N_DECLE, (v1 << 8) | v2);
                             }
-                            get_lex();
-                        } else {
-                            class node *tree;
-                            int type;
-                            
-                            tree = eval_level0(&type);
-                            if (tree->node_type() != C_NUM) {
-                                emit_error("not a constant expression in DATA");
+                            if (lex != C_COMMA)
                                 break;
-                            }
-                            output->emit_d(N_DECLE, tree->node_value());
-                            delete tree;
-                            tree = NULL;
+                            get_lex();
                         }
-                        if (lex != C_COMMA)
-                            break;
-                        get_lex();
+                        if (v != 0) {
+                            v2 = 0;
+                            output->emit_d(N_DECLE, (v1 << 8) | v2);
+                        }
+                    } else {
+                        while (1) {
+                            if (lex == C_NAME && name == "VARPTR") {  // Access to variable/array/label address
+                                int temp;
+                                int index;
+                                int type2;
+                                
+                                get_lex();
+                                if (lex != C_NAME) {
+                                    emit_error("missing variable name for VARPTR");
+                                } else {
+                                    if (sneak_peek() == '(') {  // Indexed access
+                                        class node *tree;
+                                        
+                                        if (arrays[name] != 0) {
+                                            temp = arrays[name] >> 16;
+                                        } else if (labels[name] != 0) {
+                                            temp = labels[name];
+                                            label_used[name] |= 1;
+                                        } else {
+                                            labels[name] = temp = next_label++;
+                                            label_used[name] |= 1;
+                                        }
+                                        get_lex();
+                                        if (lex != C_LPAREN)
+                                            emit_error("missing left parenthesis in array access");
+                                        else
+                                            get_lex();
+                                        tree = eval_level0(&type2);
+                                        if (tree->node_type() != C_NUM) {
+                                            index = 0;
+                                            emit_error("not a constant expression in array access");
+                                        } else {
+                                            index = tree->node_value();
+                                        }
+                                        if (lex != C_RPAREN)
+                                            emit_error("missing right parenthesis in array access");
+                                        else
+                                            get_lex();
+                                        output->emit_dlo(N_DECLE, LABEL_PREFIX, temp, index);
+                                        delete tree;
+                                        tree = NULL;
+                                    } else {
+                                        if ((constants[name] & 0x10000) != 0) {
+                                            emit_error("constants doesn't have address for VARPTR");
+                                            get_lex();
+                                        } else {
+                                            if (variables[name] == 0) {
+                                                check_for_explicit(name);
+                                                variables[name] = next_var++;
+                                            }
+                                            temp = variables[name];
+                                            get_lex();
+                                            output->emit_dl(N_DECLE, VAR_PREFIX, temp);
+                                        }
+                                    }
+                                }
+                            } else if (lex == C_STRING) {
+                                int c;
+                                int v;
+                                
+                                for (c = 0; c < name.length(); c++) {
+                                    if (name[c] == 127 && c + 1 < name.length()) {
+                                        c++;
+                                        v = (name[c] & 0xff) + 127;
+                                    } else {
+                                        v = (name[c] & 0xff);
+                                    }
+                                    output->emit_d(N_DECLE, v);
+                                }
+                                get_lex();
+                            } else {
+                                class node *tree;
+                                int type;
+                                
+                                tree = eval_level0(&type);
+                                if (tree->node_type() != C_NUM) {
+                                    emit_error("not a constant expression in DATA");
+                                    break;
+                                }
+                                output->emit_d(N_DECLE, tree->node_value());
+                                delete tree;
+                                tree = NULL;
+                            }
+                            if (lex != C_COMMA)
+                                break;
+                            get_lex();
+                        }
                     }
                 } else if (name == "DEFINE") {
                     int label;
