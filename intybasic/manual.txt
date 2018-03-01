@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Feb/18/2018.
+Last revision: Mar/01/2018.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4.0 Feb/18/2018  o Added contrib/accel.bas it shows how to move sprites
+v1.4.0 Mar/01/2018  o Added contrib/accel.bas it shows how to move sprites
                       by fractions of pixel (contributed by intvnut)
                     o VOICE INIT now "shuts up" the Intellivision (contributed
                       by intvnut) and the initializatin is done in automatic
@@ -32,6 +32,10 @@ v1.4.0 Feb/18/2018  o Added contrib/accel.bas it shows how to move sprites
                     o Allows constants in DATA PACKED.
                     o Detects wrong flow of control (GOTO to PROCEDURE or
                       GOSUB to non-PROCEDURE)
+                    o Tracker allows playing 8 channels of music (using ECS
+                      PSG)
+                    o Added MUSIC GOSUB, MUSIC RETURN, MUSIC VOLUME and
+                      MUSIC SPEED.
 
 v1.2.9 Nov/07/2017  o Moved screen clearing at the very start of program
                       to avoid brief title screen in Sears Intellivision.
@@ -1042,7 +1046,7 @@ label:
     
     IntyBASIC will include automatically extra code for a music player.
     
-    Music must be in this format: (each MUSIC statement can contain upto 4 arguments)
+    Music must be in this format: (each MUSIC statement can contain upto 8 arguments)
     
         label:  DATA 8       ' Ticks per note (there are 50 ticks per second)
                 MUSIC F4,A4#,C5
@@ -1052,6 +1056,12 @@ label:
                 MUSIC REPEAT
                 MUSIC STOP
                 MUSIC JUMP label    ' Jump to label (useful for separate intro in looping music)
+
+                MUSIC GOSUB label   ' Go to subroutine at label (only one level)
+                MUSIC RETURN        ' Return from subroutine
+
+                MUSIC SPEED const   ' Set ticks per note starting here
+                MUSIC VOLUME const  ' Set volume for music starting here (same as PLAY VOLUME)
 
                 MUSIC C4,F4,- ' Note how C4 extends along 4 tempos and F4 only 2
                 MUSIC S,S,-
@@ -1075,7 +1085,7 @@ label:
                            Also user can put S to sustain previous note.
                            Also user can put - for silence.
         
-                           The fourth argument for MUSIC allows simple drums:
+                           The fourth/eight argument for MUSIC allows simple drums:
                              Valid values are:
                                 -  none
                                 M1 strong
@@ -1084,6 +1094,14 @@ label:
 
     IntyBASIC will detect automatically PAL/NTSC Intellivision and will adjust 
     music timing accordingly.
+
+    Note that if you use more than 4 channels, then the tracker automatically will
+    turn on ECS support to allow you to play 8 channels. (4 in base PSG and 4 in ECS
+    PSG)
+
+    Note also if you use ECS support then all your MUSIC statements should integrate
+    more than 4 arguments, use at least one silence in 5th argument as play format
+    will be 64 bits instead of 32 bits.
 
   PLAY OFF
   

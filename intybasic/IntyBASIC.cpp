@@ -216,6 +216,9 @@
 //                         by GOTO and GOSUB to detect blatant errors that cause
 //                         crashes. (Miner 2049er)
 //  Revision: Feb/18/2018. Allows numbers in DATA PACKED (ARTRAG suggestion).
+//  Revision: Mar/01/2018. Music now allows 8 channels (ECS support). Added
+//                         MUSIC SPEED, MUSIC GOSUB, MUSIC RETURN and MUSIC
+//                         VOLUME.
 //
 
 //  TODO:
@@ -266,6 +269,7 @@ bool cc3_used;       // Indicates if CC3 is used
 bool fastmult_used;  // Indicates if fast multiplication is used
 bool fastdiv_used;   // Indicates if fast division/remainder is used
 bool music_used;     // Indicates if music used
+bool music_ecs_used; // Indicates if ECS music used
 bool warnings;       // Indicates if warnings are generated
 
 int program_year;
@@ -3008,17 +3012,18 @@ private:
                     }
                 } else if (name == "MUSIC") {
                     int arg;
-                    static int previous[4];
+                    static int previous[8];
                     unsigned int notes;
                     int note;
                     int c;
                     int label;
                     
                     get_lex();
-                    notes = 0;
                     label = 0;
                     arg = 0;
                     while (1) {
+                        if (arg == 0 || arg == 4)
+                            notes = 0;
                         if (lex != C_NAME && lex != C_MINUS) {
                             emit_error("bad syntax for MUSIC");
                             break;
@@ -3027,15 +3032,65 @@ private:
                             // Nothing to do
                         } else if (arg == 0 && name == "REPEAT") {
                             get_lex();
-                            notes = 0xfd;
+                            notes = 0xfd000000;
                             break;
                         } else if (arg == 0 && name == "STOP") {
                             get_lex();
-                            notes = 0xfe;
+                            notes = 0xfe000000;
                             break;
-                        } else if (arg == 0 && name == "JUMP") {
+                        } else if (arg == 0 && name == "VOLUME") {
+                            class node *tree;
+                            int type;
+                            int v;
+                            
                             get_lex();
-                            notes = 0xfe;
+                            notes = 0xfa000000;
+                            tree = eval_level0(&type);
+                            if (tree->node_type() != C_NUM) {
+                                emit_error("not a constant expression in MUSIC VOLUME");
+                                v = 4;
+                            } else {
+                                v = tree->node_value();
+                                if (v < 0 || v > 15) {
+                                    emit_error("MUSIC VOLUME out of range (0-15)");
+                                }
+                            }
+                            notes |= v;
+                            delete tree;
+                            tree = NULL;
+                            playvol_used = true;
+                            break;
+                        } else if (arg == 0 && name == "SPEED") {
+                            class node *tree;
+                            int type;
+                            int v;
+                            
+                            get_lex();
+                            notes = 0xff000000;
+                            tree = eval_level0(&type);
+                            if (tree->node_type() != C_NUM) {
+                                emit_error("not a constant expression in MUSIC SPEED");
+                                v = 4;
+                            } else {
+                                v = tree->node_value();
+                                if (v == 0) {
+                                    emit_error("MUSIC SPEED is zero");
+                                }
+                            }
+                            notes |= v;
+                            delete tree;
+                            tree = NULL;
+                            break;
+                        } else if (arg == 0 && name == "RETURN") {
+                            get_lex();
+                            notes = 0xfb000000;
+                            break;
+                        } else if (arg == 0 && (name == "JUMP" || name == "GOSUB")) {
+                            if (name == "JUMP")
+                                notes = 0xfe000000;
+                            else
+                                notes = 0xfc000000;
+                            get_lex();
                             if (lex != C_NAME) {
                                 emit_error("missing label for MUSIC JUMP");
                                 break;
@@ -3052,16 +3107,16 @@ private:
                             }
                             get_lex();
                             break;
-                        } else if (arg == 3) {
+                        } else if (arg == 3 || arg == 7) {
                             if (name[0] != 'M' || name[1] < '1' || name[1] > '3') {
                                 emit_error("bad syntax for drum in MUSIC");
                                 break;
                             }
-                            notes |= (name[1] - '0') << (arg * 8);
+                            notes |= (name[1] - '0') << ((arg & 3) * 8);
                         } else if (name == "S") {
-                            notes |= 0x3f << (arg * 8);
+                            notes |= 0x3f << ((arg & 3) * 8);
                         } else {
-                            notes |= previous[arg] << (arg * 8);
+                            notes |= previous[arg] << ((arg & 3) * 8);
                             c = 0;
                             switch (name[c++]) {
                                 case 'C': note = 0; break;
@@ -3089,36 +3144,40 @@ private:
                             }
                             if (name[c] == 'W') {
                                 previous[arg] = 0x00;
-                                notes &= ~(0xc0 << (arg * 8));
-                                notes |= previous[arg] << (arg * 8);
+                                notes &= ~(0xc0 << ((arg & 3) * 8));
+                                notes |= previous[arg] << ((arg & 3) * 8);
                             } else if (name[c] == 'X') {
                                 previous[arg] = 0x40;
-                                notes &= ~(0xc0 << (arg * 8));
-                                notes |= previous[arg] << (arg * 8);
+                                notes &= ~(0xc0 << ((arg & 3) * 8));
+                                notes |= previous[arg] << ((arg & 3) * 8);
                             } else if (name[c] == 'Y') {
                                 previous[arg] = 0x80;
-                                notes &= ~(0xc0 << (arg * 8));
-                                notes |= previous[arg] << (arg * 8);
+                                notes &= ~(0xc0 << ((arg & 3) * 8));
+                                notes |= previous[arg] << ((arg & 3) * 8);
                             } else if (name[c] == 'Z') {
                                 previous[arg] = 0xc0;
-                                notes &= ~(0xc0 << (arg * 8));
-                                notes |= previous[arg] << (arg * 8);
+                                notes &= ~(0xc0 << ((arg & 3) * 8));
+                                notes |= previous[arg] << ((arg & 3) * 8);
                             }
-                            notes |= note << (arg * 8);
+                            notes |= note << ((arg & 3) * 8);
                         }
                         get_lex();
                         arg++;
                         if (lex != C_COMMA)
                             break;
-                        if (arg == 4) {
+                        if (arg == 8) {
                             emit_error("too many arguments for MUSIC");
                             break;
+                        }
+                        if (arg == 4) {
+                            output->emit_d2(N_DECLE, (notes & 0xffff), (notes >> 16 & 0xffff));
+                            music_ecs_used = 1;
                         }
                         get_lex();
                     }
                     if (label) {
-                        output->emit_d(N_DECLE, notes & 0xffff);
                         output->emit_dl(N_DECLE, LABEL_PREFIX, label);
+                        output->emit_d(N_DECLE, (notes >> 16 & 0xffff));
                     } else {
                         output->emit_d2(N_DECLE, (notes & 0xffff), (notes >> 16 & 0xffff));
                     }
@@ -3571,6 +3630,7 @@ public:
         scroll_used = false;
         keypad_used = false;
         music_used = false;
+        music_ecs_used = false;
         stack_used = false;
         numbers_used = false;
         voice_used = false;
@@ -3866,6 +3926,8 @@ public:
             asm_output << "intybasic_keypad:\tequ 1\t; Forces to include keypad library\n";
         if (music_used)
             asm_output << "intybasic_music:\tequ 1\t; Forces to include music library\n";
+        if (music_ecs_used)
+            asm_output << "intybasic_music_ecs:\tequ 1\t; Forces to include music library\n";
         if (playvol_used)
             asm_output << "intybasic_music_volume:\tequ 1\t; Forces to include music volume change\n";
         if (stack_used)
@@ -3971,7 +4033,9 @@ public:
         if (keypad_used)
             available_vars -= 6;
         if (music_used)
-            available_vars -= 26;
+            available_vars -= 28;
+        if (music_ecs_used)
+            available_vars -= 22;
         if (playvol_used)
             available_vars -= 1;
         if (used_space > available_vars) {

@@ -1,4 +1,4 @@
-IntyBASIC compiler v1.2.9
+IntyBASIC compiler v1.4.0
 by Oscar Toledo Gutierrez
 http://nanochess.org/
 

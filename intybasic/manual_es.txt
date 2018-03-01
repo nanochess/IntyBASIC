@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 18-feb-2018
+Última revisión: 01-mar-2018
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,7 +30,7 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.4.0 18-feb-2018  o Se agrega contrib/accel.bas como muestra de movimiento
+v1.4.0 01-mar-2018  o Se agrega contrib/accel.bas como muestra de movimiento
                       de sprites por fracciones de pixel (contribución de
                       intvnut)
                     o VOICE INIT ahora "calla" el Intellivoice (contribución
@@ -41,6 +41,10 @@ v1.4.0 18-feb-2018  o Se agrega contrib/accel.bas como muestra de movimiento
                     o Permite constantes in DATA PACKED.
                     o Detecta flujo incorrecto de control (GOTO a PROCEDURE
                       o GOSUB a etiqueta que no es PROCEDURE)
+                    o Permite utilizar MUSIC para hasta 8 canales (activa
+                      ejecución de música en PSG de ECS)
+                    o Se agrega MUSIC GOSUB, MUSIC RETURN, MUSIC SPEED y
+                      MUSIC VOLUME.
 
 v1.2.9 07-nov-2017  o Se mueve la limpieza de pantalla muy al inicio del
                       programa para evitar vistazo de título en Intellivision
@@ -1097,16 +1101,22 @@ label:
     IntyBASIC incluirá automáticamente el código extra para un reproductor musical.
 
     La música debe estar en este formato: (cada sentencia MUSIC puede tener hasta
-    4 argumentos)
+    8 argumentos)
 
-        label:  DATA 8       ' Ticks por nota (hay 50 ticks en un segundo)
+        etiq:   DATA 8       ' Ticks por nota (hay 50 ticks en un segundo)
                 MUSIC F4,A4#,C5
                 MUSIC S,S,S
                 MUSIC -,-,-
 
                 MUSIC REPEAT
                 MUSIC STOP
-                MUSIC JUMP etiq    ' Salta a etiqueta (útil para intro separada en música repetitiva)
+                MUSIC JUMP etiq     ' Salta a etiqueta (útil para intro separada en música repetitiva)
+
+                MUSIC GOSUB etiq    ' Va a subrutina etiq (solo se admite un nivel)
+                MUSIC RETURN        ' Retorna de subrutina
+
+                MUSIC SPEED const   ' Ticks por nota a partir de aquí
+                MUSIC VOLUME const  ' Volumen de música a partir de aquí (mismo que PLAY VOLUME)
 
                 MUSIC C4,F4,- ' Note como C4 se extiende por 4 tempos y F4 sólo 2
                 MUSIC S,S,-
@@ -1133,7 +1143,8 @@ label:
                            
                            El usuario también puede usar - para silencio.
 
-                           El cuarto argumento para MUSIC también permite tambores:
+                           El cuarto/octavo argumento para MUSIC también permite
+                           tambores:
                              Los valores válidos son:
                                 -  ninguno
                                 M1 fuerte
@@ -1142,6 +1153,14 @@ label:
 
     IntyBASIC detectará automáticamente Intellivision PAL/NTSC y ajustará el tiempo de
     la música de forma acorde.
+
+    Note que si usa más de 4 argumentos para MUSIC, automáticamente se activará el
+    reproductor de música para ECS para admitir 8 canales (4 en PSG base y 4 en PSG
+    ECS)
+
+    Note también que si usa el soporte ECS todas sus sentencias MUSIC deben tener un
+    5to argumento conteniendo silencio al menos, ya que el formato interno pasa de ser
+    32 bits a 64 bits.
 
   PLAY OFF
   
