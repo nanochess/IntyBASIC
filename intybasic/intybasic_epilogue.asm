@@ -708,7 +708,9 @@ _generate_music:	PROC
 	MVI _music_t,R2
 	CMPI #$FA00,R1	; Volume?
 	BNC @@42
+    IF DEFINED intybasic_music_volume
 	BEQ @@40
+    ENDI
 	CMPI #$FF00,R1	; Speed?
 	BEQ @@39
 	CMPI #$FB00,R1	; Return?
@@ -725,8 +727,11 @@ _generate_music:	PROC
 	MOVR R0,R4
 	B @@15
 
-@@40:	MVO R0,_music_vol
+    IF DEFINED intybasic_music_volume
+@@40:	
+	MVO R0,_music_vol
 	B @@41
+    ENDI
 
 @@39:	MVO R0,_music_t
 	MOVR R0,R2
