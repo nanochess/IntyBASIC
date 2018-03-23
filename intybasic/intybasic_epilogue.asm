@@ -973,7 +973,7 @@ _generate_music:	PROC
 @@26:	MVO R0,_music_s6
 
 @@25:	MVI _music_n7,R3	; Read note
-	TSTR R7		; There is note?
+	TSTR R3		; There is note?
 	BEQ @@27		; No, jump
 	MVI _music_s7,R1
 	MVI _music_i7,R2
