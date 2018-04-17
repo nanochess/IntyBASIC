@@ -219,6 +219,8 @@
 //  Revision: Mar/01/2018. Music now allows 8 channels (ECS support). Added
 //                         MUSIC SPEED, MUSIC GOSUB, MUSIC RETURN and MUSIC
 //                         VOLUME.
+//  Revision: Apr/17/2018. Can optimize VARPTR array1(x) - VARPTR array2(y) like
+//                         in array optimization.
 //
 
 //  TODO:
