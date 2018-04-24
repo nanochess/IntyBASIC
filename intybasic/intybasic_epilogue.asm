@@ -208,9 +208,10 @@ _pal2_vector:    PROC
 	; Interruption routine
 	;
 _int_vector:     PROC
-	BEGIN
 
 	MVO     R0,     $20     ; Activates display
+
+	BEGIN
 
     IF DEFINED intybasic_stack
 	CMPI #$308,R6
