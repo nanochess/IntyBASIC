@@ -696,12 +696,19 @@ private:
         class node *left;
         class node *right;
         int type2;
+        int small_ops;
         
-        left = eval_level1(type);
+        small_ops = 0;
+        left = eval_level1(type, &small_ops);
         while (1) {
             if (lex == C_NAME && name == "OR") {
                 get_lex();
-                right = eval_level1(&type2);
+                if (small_ops)
+                    emit_warning("Small operators used at left side of OR (parenthesis required?)");
+                small_ops = 0;
+                right = eval_level1(&type2, &small_ops);
+                if (small_ops)
+                    emit_warning("Small operators used at right side of OR (parenthesis required?)");
                 left = new node(C_OR, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else {
@@ -714,17 +721,22 @@ private:
     //
     // Expression evaluation: Level 1 (XOR)
     //
-    class node *eval_level1(int *type)
+    class node *eval_level1(int *type, int *small_ops)
     {
         class node *left;
         class node *right;
         int type2;
         
-        left = eval_level2(type);
+        left = eval_level2(type, small_ops);
         while (1) {
             if (lex == C_NAME && name == "XOR") {
                 get_lex();
-                right = eval_level2(&type2);
+                if (*small_ops)
+                    emit_warning("Small operators used at left side of XOR (parenthesis required?");
+                *small_ops = 0;
+                right = eval_level2(&type2, small_ops);
+                if (*small_ops)
+                    emit_warning("Small operators used at right side of XOR (parenthesis required?");
                 left = new node(C_XOR, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else {
@@ -737,17 +749,22 @@ private:
     //
     // Expression evaluation: Level 2 (AND)
     //
-    class node *eval_level2(int *type)
+    class node *eval_level2(int *type, int *small_ops)
     {
         class node *left;
         class node *right;
         int type2;
         
-        left = eval_level3(type);
+        left = eval_level3(type, small_ops);
         while (1) {
             if (lex == C_NAME && name == "AND") {
                 get_lex();
-                right = eval_level3(&type2);
+                if (*small_ops)
+                    emit_warning("Small operators used at left side of AND (parenthesis required?");
+                *small_ops = 0;
+                right = eval_level3(&type2, small_ops);
+                if (*small_ops)
+                    emit_warning("Small operators used at right side of AND (parenthesis required?");
                 left = new node(C_AND, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else {
@@ -760,47 +777,48 @@ private:
     //
     // Expression evaluation: Level 3 (= <> < <= > >=)
     //
-    class node *eval_level3(int *type)
+    class node *eval_level3(int *type, int *small_ops)
     {
         class node *left;
         class node *right;
         int type2;
         
-        left = eval_level4(type);
+        left = eval_level4(type, small_ops);
         while (1) {
             if (lex == C_EQUAL) {
                 get_lex();
-                right = eval_level4(&type2);
+                right = eval_level4(&type2, small_ops);
                 left = new node(C_EQUAL, 0, left, right);
                 *type = 0;
             } else if (lex == C_NOTEQUAL) {
                 get_lex();
-                right = eval_level4(&type2);
+                right = eval_level4(&type2, small_ops);
                 left = new node(C_NOTEQUAL, 0, left, right);
                 *type = 0;
             } else if (lex == C_LESS) {
                 get_lex();
-                right = eval_level4(&type2);
+                right = eval_level4(&type2, small_ops);
                 left = new node(C_LESS, *type | type2, left, right);
                 *type = 0;
             } else if (lex == C_LESSEQUAL) {
                 get_lex();
-                right = eval_level4(&type2);
+                right = eval_level4(&type2, small_ops);
                 left = new node(C_LESSEQUAL, *type | type2, left, right);
                 *type = 0;
             } else if (lex == C_GREATER) {
                 get_lex();
-                right = eval_level4(&type2);
+                right = eval_level4(&type2, small_ops);
                 left = new node(C_GREATER, *type | type2, left, right);
                 *type = 0;
             } else if (lex == C_GREATEREQUAL) {
                 get_lex();
-                right = eval_level4(&type2);
+                right = eval_level4(&type2, small_ops);
                 left = new node(C_GREATEREQUAL, *type | type2, left, right);
                 *type = 0;
             } else {
                 break;
             }
+            *small_ops = 0;
         }
         return left;
     }
@@ -808,32 +826,36 @@ private:
     //
     // Expression evaluation: Level 4 (+ -)
     //
-    class node *eval_level4(int *type)
+    class node *eval_level4(int *type, int *small_ops)
     {
         class node *left;
         class node *right;
         int type2;
         
-        left = eval_level5(type);
+        left = eval_level5(type, small_ops);
         while (1) {
             if (lex == C_PLUS) {
                 get_lex();
-                right = eval_level5(&type2);
+                *small_ops = 1;
+                right = eval_level5(&type2, small_ops);
                 left = new node(C_PLUS, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else if (lex == C_MINUS) {
                 get_lex();
-                right = eval_level5(&type2);
+                *small_ops = 1;
+                right = eval_level5(&type2, small_ops);
                 left = new node(C_MINUS, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else if (lex == C_PLUSF) {
                 get_lex();
-                right = eval_level5(&type2);
+                *small_ops = 1;
+                right = eval_level5(&type2, small_ops);
                 left = new node(C_PLUSF, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else if (lex == C_MINUSF) {
                 get_lex();
-                right = eval_level5(&type2);
+                *small_ops = 1;
+                right = eval_level5(&type2, small_ops);
                 left = new node(C_MINUSF, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else {
@@ -846,7 +868,7 @@ private:
     //
     // Expression evaluation: Level 5 (* / %)
     //
-    class node *eval_level5(int *type)
+    class node *eval_level5(int *type, int *small_ops)
     {
         class node *left;
         class node *right;
@@ -856,16 +878,19 @@ private:
         while (1) {
             if (lex == C_MUL) {
                 get_lex();
+                *small_ops = 1;
                 right = eval_level6(&type2);
                 left = new node(C_MUL, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else if (lex == C_DIV) {
                 get_lex();
+                *small_ops = 1;
                 right = eval_level6(&type2);
                 left = new node(C_DIV, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else if (lex == C_MOD) {
                 get_lex();
+                *small_ops = 1;
                 right = eval_level6(&type2);
                 left = new node(C_MOD, 0, left, right);
                 *type = mix_signedness(*type, type2);
@@ -3189,6 +3214,7 @@ private:
                     int c;
                     int max_value;
                     int gosub;
+                    int fast;
                     int options[256];
                     
                     get_lex();
@@ -3213,6 +3239,11 @@ private:
                         get_lex();
                     } else {
                         eval_expr(0, 0);
+                        fast = 0;
+                        if (lex == C_NAME && name == "FAST") {
+                            get_lex();
+                            fast = 1;
+                        }
                         gosub = 0;
                         if (lex != C_NAME || (name != "GOTO" && name != "GOSUB")) {
                             emit_error("required GOTO or GOSUB after ON");
@@ -3249,8 +3280,10 @@ private:
                         }
                         table = next_local++;
                         label = next_local++;
-                        output->emit_nr(N_CMPI, "", max_value, 0);
-                        output->emit_a(N_BC, TEMP_PREFIX, label);
+                        if (fast == 0) {
+                            output->emit_nr(N_CMPI, "", max_value, 0);
+                            output->emit_a(N_BC, TEMP_PREFIX, label);
+                        }
                         if (gosub)
                             output->emit_nr(N_MVII, TEMP_PREFIX, label, 5);
                         output->emit_nr(N_ADDI, TEMP_PREFIX, table, 0);

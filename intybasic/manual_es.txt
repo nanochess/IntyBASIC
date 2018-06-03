@@ -30,7 +30,7 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.4.0 01-mar-2018  o Se agrega contrib/accel.bas como muestra de movimiento
+v1.4.0 03-jun-2018  o Se agrega contrib/accel.bas como muestra de movimiento
                       de sprites por fracciones de pixel (contribución de
                       intvnut)
                     o VOICE INIT ahora "calla" el Intellivoice (contribución
@@ -45,6 +45,9 @@ v1.4.0 01-mar-2018  o Se agrega contrib/accel.bas como muestra de movimiento
                       ejecución de música en PSG de ECS)
                     o Se agrega MUSIC GOSUB, MUSIC RETURN, MUSIC SPEED y
                       MUSIC VOLUME.
+                    o Se agrega ON expr FAST para evitar dos instrucciones.
+                    o Avisa del uso de operadores simples dentro de
+                      AND/OR/XOR sin parentesis.
 
 v1.2.9 07-nov-2017  o Se mueve la limpieza de pantalla muy al inicio del
                       programa para evitar vistazo de título en Intellivision
@@ -670,6 +673,8 @@ Las siguientes sentencias están disponibles:
   ON expr GOSUB [etiqueta],[etiqueta],[etiqueta]
   ON expr GOSUB [etiqueta],,[etiqueta]
   ON expr GOSUB ,,[etiqueta]
+  ON expr FAST GOSUB
+  ON expr FAST GOTO
 
      Sentencia de decisión
      
@@ -682,7 +687,12 @@ Las siguientes sentencias están disponibles:
      entonces el flujo de ejecución continúa en la siguiente sentencia después
      del ON.
 
-  ON FRAME GOSUB label
+     Esta sentencia puede ser más rápida de ejecutar utilizando el modificador
+     FAST, evitará checar limites, si su lista de etiquetas no cubre la expresión
+     completa entonces su PROGRAMA FALLARA.
+
+
+  ON FRAME GOSUB etiqueta
   
      En cada cuadro de video, el código de apoyo de IntyBASIC llamará la etiqueta
      indicada.
