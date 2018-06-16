@@ -4089,9 +4089,13 @@ public:
             asm_output << "JF.SYSRAM:\tRMB 5\t; 5 words in Intv for support routine\n";
             used_space += 5;
         }
-        if (jlp_used || cc3_used) {
+        if (jlp_used) {
             asm_output << "_SYSTEM:\tEQU $\n";
             asm_output << "\nSYSTEM2:\tORG $8040, $8040, \"-RWBN\"\n";
+            used_space = 0;
+        } else if (cc3_used) {
+            asm_output << "_SYSTEM:\tEQU $\n";
+            asm_output << "\nSYSTEM2:\tORG $8040, $8040, \"=RW\"\n";
             used_space = 0;
         }
         
