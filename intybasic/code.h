@@ -51,6 +51,7 @@ public:
     bool subexpression_available(int base, int offset, int index);
     void annotate_subexpression(int base, int offset, int index);
     void trash_registers(void);
+    void trash_partial(int r);
     void check_for_cycles(int how_many, int limit);
     void push(int r);
     void pop(void);

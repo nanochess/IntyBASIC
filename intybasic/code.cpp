@@ -84,6 +84,15 @@ void code::trash_registers(void) {
     flags_valid = false;
 }
 
+// Trash register
+void code::trash_partial(int r) {
+    register_content[r].valid = 0;
+    register_memory[r].valid = 0;
+    if (r == 3)
+        subexpression_valid = false;
+    flags_valid = false;
+}
+
 // Check if enough cycles for non-interruptable sequence of instructions
 void code::check_for_cycles(int how_many, int limit) {
     if (cycles + how_many >= limit) {

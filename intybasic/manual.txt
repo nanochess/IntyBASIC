@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jun/03/2018.
+Last revision: Jul/13/2018.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4.0 Jun/03/2018  o Added contrib/accel.bas it shows how to move sprites
+v1.4.0 Jul/13/2018  o Added contrib/accel.bas it shows how to move sprites
                       by fractions of pixel (contributed by intvnut)
                     o VOICE INIT now "shuts up" the Intellivision (contributed
                       by intvnut) and the initializatin is done in automatic
@@ -39,6 +39,7 @@ v1.4.0 Jun/03/2018  o Added contrib/accel.bas it shows how to move sprites
                       MUSIC SPEED.
                     o Generates warnings for AND/OR/XOR and small operators
                       non-parenthesized.
+                    o Solved bug where IF CONT.B0 THEN wouldn't work.
 
 v1.2.9 Nov/07/2017  o Moved screen clearing at the very start of program
                       to avoid brief title screen in Sears Intellivision.

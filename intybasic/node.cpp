@@ -531,6 +531,7 @@ void node::generate(int reg, int decision) {
                 output->emit_nr(N_CMPI, "", 12, reg);
                 output->emit_a(N_BNE, "", 4);   // two words of jump and two words of MVI
                 output->emit_lr(N_MVI, "_cnt2_key", -1, reg);
+                output->trash_partial(reg);
             }
             if (value == 15)
                 output->emit_lr(N_MVI, "_screen", -1, reg);
@@ -547,6 +548,7 @@ void node::generate(int reg, int decision) {
                 output->emit_nr(N_SUBI, "", 254, reg);  // 2, ...if it isn't 254...
                 output->emit_a(N_BNE, "", 3);           // 2, ...jump with reg=non-zero (playing)
                 output->emit_rr(N_MVIA, 4, reg);        // 1, MUSIC JUMP label, will be 0 if MUSIC STOP
+                output->trash_partial(reg);
                 music_used = true;
             }
             if (value == 19) {  // VOICE.AVAILABLE
@@ -566,6 +568,7 @@ void node::generate(int reg, int decision) {
                 output->emit_lr(N_AND, "", 0x0080, reg);    // 2
                 output->emit_r(N_COMR, reg);            // 1
                 output->emit_nr(N_ANDI, "", 0x8000, reg);    // 2
+                output->trash_partial(reg);
             }
             break;
         case C_PEEK:    // PEEK()
@@ -596,6 +599,7 @@ void node::generate(int reg, int decision) {
             }
             output->emit_a(N_BPL, "", 3);  // two words of jump and one word of NEGR
             output->emit_r(N_NEGR, reg);
+            output->trash_partial(reg);
             break;
         case C_SGN:    // SGN()
             if (left->type == C_EXTEND) {
@@ -609,6 +613,7 @@ void node::generate(int reg, int decision) {
             output->emit_nr(N_MVII, "", 1, reg);    // 2
             output->emit_a(N_BPL, "", 3);   // 2 two words of jump and one word of NEGR
             output->emit_r(N_NEGR, reg);    // 1
+            output->trash_partial(reg);
             break;
         case C_ASSIGN:
         case C_PLUS:
@@ -727,6 +732,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_MVII, "", -1, reg);
                         output->emit_a(N_BEQ, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_NOTEQUAL) {
                     if ((right->value) & 0xffff)
@@ -741,6 +747,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_MVII, "", -1, reg);
                         output->emit_a(N_BNE, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_LESS) {
                     output->emit_nr(N_CMPI, "", val, reg);
@@ -751,6 +758,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_MVII, "", -1, reg);
                         output->emit_a(value ? N_BNC : N_BLT, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_LESSEQUAL) {
                     output->emit_nr(N_CMPI, "", val, reg);
@@ -771,6 +779,7 @@ void node::generate(int reg, int decision) {
                             output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
                         }
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_GREATER) {
                     output->emit_nr(N_CMPI, "", val, reg);
@@ -791,6 +800,7 @@ void node::generate(int reg, int decision) {
                             output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
                         }
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_GREATEREQUAL) {
                     output->emit_nr(N_CMPI, "", val, reg);
@@ -801,6 +811,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_MVII, "", -1, reg);
                         output->emit_a(value ? N_BC : N_BGE, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_MUL) {
                     if (val == 0) {
@@ -878,6 +889,7 @@ void node::generate(int reg, int decision) {
                             output->emit_a(N_BNC, "", 3);  // Two words of jump and one of ADDR
                             output->emit_rr(N_ADDR, 5, 4);
                             output->emit_rr(N_MOVR, 4, reg);
+                            output->trash_partial(reg);
                         }
                     }
                 } else if (type == C_DIV) {
@@ -1005,6 +1017,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_MVII, "", -1, reg);
                         output->emit_a(N_BEQ, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_NOTEQUAL) {
                     output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
@@ -1015,6 +1028,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_MVII, "", -1, reg);
                         output->emit_a(N_BNE, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_LESS) {
                     output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
@@ -1025,6 +1039,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_MVII, "", -1, reg);
                         output->emit_a(value ? N_BNC : N_BLT, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_LESSEQUAL) {
                     output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
@@ -1045,6 +1060,7 @@ void node::generate(int reg, int decision) {
                             output->emit_a(N_BLE, "", 3);   // two words of jump and one word of INCR
                         }
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_GREATER) {
                     output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
@@ -1065,6 +1081,7 @@ void node::generate(int reg, int decision) {
                             output->emit_a(N_BGT, "", 3);   // two words of jump and one word of INCR
                         }
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_GREATEREQUAL) {
                     output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
@@ -1075,6 +1092,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_MVII, "", -1, reg);
                         output->emit_a(value ? N_BC : N_BGE, "", 3);   // two words of jump and one word of INCR
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_MUL) {
                     if (jlp_used) {
@@ -1101,7 +1119,7 @@ void node::generate(int reg, int decision) {
                         output->emit_a(N_BNC, "", 3);  // Two words of jump and one of ADDR
                         output->emit_rr(N_ADDR, 5, 4);
                         output->emit_rr(N_MOVR, 4, reg);
-                        
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_DIV) {
                     if (jlp_used) {
@@ -1211,6 +1229,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_MVII, "", -1, reg);
                         output->emit_a(N_BEQ, "", 3);
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_NOTEQUAL) {
                     output->emit_rr(N_CMPR, reg + 1, reg);
@@ -1221,6 +1240,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_MVII, "", -1, reg);
                         output->emit_a(N_BNE, "", 3);
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_LESS) {
                     output->emit_rr(N_CMPR, reg + 1, reg);
@@ -1249,6 +1269,7 @@ void node::generate(int reg, int decision) {
                             output->emit_a(reversed ? N_BGT : N_BLT, "", 3);
                         }
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_LESSEQUAL) {
                     output->emit_rr(N_CMPR, reg + 1, reg);
@@ -1277,6 +1298,7 @@ void node::generate(int reg, int decision) {
                             output->emit_a(reversed ? N_BGE : N_BLE, "", 3);
                         }
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_GREATER) {
                     output->emit_rr(N_CMPR, reg + 1, reg);
@@ -1305,6 +1327,7 @@ void node::generate(int reg, int decision) {
                             output->emit_a(reversed ? N_BLT : N_BGT, "", 3);
                         }
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_GREATEREQUAL) {
                     output->emit_rr(N_CMPR, reg + 1, reg);
@@ -1333,6 +1356,7 @@ void node::generate(int reg, int decision) {
                             output->emit_a(reversed ? N_BLE : N_BGE, "", 3);
                         }
                         output->emit_r(N_INCR, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_MUL) {
                     if (jlp_used) {
@@ -1357,6 +1381,7 @@ void node::generate(int reg, int decision) {
                         output->emit_a(N_BNC, "", 3);  // Two words of jump and one of ADDR
                         output->emit_rr(N_ADDR, reg + 1, 4);
                         output->emit_rr(N_MOVR, 4, reg);
+                        output->trash_partial(reg);
                     }
                 } else if (type == C_DIV) {
                     if (jlp_used) {
