@@ -224,10 +224,11 @@ void code::emit_r(enum opcode type, int r1) {
         register_content[r1].prefix = "";
         register_content[r1].value = 0;
         register_content[r1].offset = 0;
-    } else {
+    } else if (type != N_TSTR) {    // The only instruction that doesn't change its operand
         register_content[r1].valid = 0;
     }
-    register_memory[r1].valid = 0;
+    if (type != N_TSTR)
+        register_memory[r1].valid = 0;
     if (r1 == 3)
         subexpression_valid = false;
     if (type == N_PULR) {

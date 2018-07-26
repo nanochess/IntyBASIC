@@ -3216,6 +3216,7 @@ private:
                     int gosub;
                     int fast;
                     int options[256];
+                    const int ON_REG = 1;   // 0 is less optimized
                     
                     get_lex();
                     if (lex == C_NAME && name == "FRAME") {  // Frame-driven games
@@ -3238,7 +3239,7 @@ private:
                         frame_drive = labels[name];
                         get_lex();
                     } else {
-                        eval_expr(0, 0);
+                        eval_expr(ON_REG, 0);
                         fast = 0;
                         if (lex == C_NAME && name == "FAST") {
                             get_lex();
@@ -3281,15 +3282,18 @@ private:
                         table = next_local++;
                         label = next_local++;
                         if (fast == 0) {
-                            output->emit_nr(N_CMPI, "", max_value, 0);
+                            output->emit_nr(N_CMPI, "", max_value, ON_REG);
                             output->emit_a(N_BC, TEMP_PREFIX, label);
                         }
                         if (gosub)
                             output->emit_nr(N_MVII, TEMP_PREFIX, label, 5);
-                        output->emit_nr(N_ADDI, TEMP_PREFIX, table, 0);
-                        output->emit_rr(N_MOVR, 0, 1);
-                        output->emit_rr(N_MVIA, 1, 7);
-                        
+                        output->emit_nr(N_ADDI, TEMP_PREFIX, table, ON_REG);
+                        if (ON_REG == 0) {
+                            output->emit_rr(N_MOVR, ON_REG, 1);
+                            output->emit_rr(N_MVIA, 1, 7);
+                        } else {
+                            output->emit_rr(N_MVIA, ON_REG, 7);
+                        }
                         output->emit_l(TEMP_PREFIX, table);
                         for (c = 0; c < max_value; c++) {
                             if (options[c])
