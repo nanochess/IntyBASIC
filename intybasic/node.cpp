@@ -863,11 +863,32 @@ void node::generate(int reg, int decision) {
                         output->emit_r(N_SWAP, reg);
                         output->emit_nr(N_ANDI, "", 0xf000, reg);
                     } else {
-                        if (jlp_used) {
-                            output->emit_nr(N_MVII, "", val, 4);
-                            output->emit_rl(N_MVO, reg, "", 0x9f86);
-                            output->emit_rl(N_MVO, 4, "", 0x9f87);
-                            output->emit_lr(N_MVI, "", 0x9f8e, reg);
+                        // Speed of multiplication by constant macro for each number
+                        const int speed[] = {
+                             6,  0,  6, 18,  8, 20, 24, 26,
+                            14, 26, 26, 34, 26, 32, 32, 28,
+                            16, 28, 32, 38, 28, 34, 38, 38,
+                            32, 38, 38, 44, 34, 40, 34, 34,
+                            22, 34, 34, 40, 34, 40, 44, 40,
+                            34, 40, 40, 46, 40, 46, 44, 40,
+                            34, 40, 44, 50, 40, 46, 50, 46,
+                            40, 46, 46, 52, 36, 42, 40, 36,
+                            24, 36, 40, 46, 36, 42, 46, 46,
+                            40, 46, 46, 52, 46, 52, 46, 42,
+                            36, 42, 99, 99, 99, 99, 99, 99,
+                            99, 99, 99, 99, 99, 99, 99, 99,
+                            99, 99, 99, 99, 99, 99, 99, 99,
+                            99, 99, 99, 99, 99, 99, 99, 99,
+                            99, 99, 99, 99, 99, 99, 99, 99,
+                            99, 99, 99, 99, 99, 99, 99, 99,
+                        };
+//                        if (val < 128 && speed[val] == 99)
+//                            cerr << "count " << val << "\n";
+                        if (jlp_used && (val >= 128 || speed[val] >= 40)) {
+                            output->emit_nr(N_MVII, "", val, 4);  // 8 cycles
+                            output->emit_rl(N_MVO, reg, "", 0x9f86);  // 11 cycles
+                            output->emit_rl(N_MVO, 4, "", 0x9f87);  // 11 cycles
+                            output->emit_lr(N_MVI, "", 0x9f8e, reg);  // 10 cycles
                         } else if (val <= 127) {  // DZ-Jay's macro
                             output->emit_m(N_MULT, reg, 4, val);
                         } else {

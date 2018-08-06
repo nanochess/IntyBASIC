@@ -1001,20 +1001,20 @@ private:
                 if (name == "CONT2") {
                     tree = new node(C_NUM, c = 0x01FE, NULL, NULL);
                     tree = new node(C_PEEK, 0, tree, NULL);
-                    tree = new node(C_NOT, 0, tree, NULL);
+                    tree = new node(C_XOR, 0, tree, new node(C_NUM, 0xff, NULL, NULL));
                 } else if (name == "CONT1") {
                     tree = new node(C_NUM, c = 0x01FF, NULL, NULL);
                     tree = new node(C_PEEK, 0, tree, NULL);
-                    tree = new node(C_NOT, 0, tree, NULL);
+                    tree = new node(C_XOR, 0, tree, new node(C_NUM, 0xff, NULL, NULL));
                 } else if (name == "CONT4") {
                     tree = new node(C_NUM, c = 0x00FE, NULL, NULL);
                     tree = new node(C_PEEK, 0, tree, NULL);
-                    tree = new node(C_NOT, 0, tree, NULL);
+                    tree = new node(C_XOR, 0, tree, new node(C_NUM, 0xff, NULL, NULL));
                     ecs_used = true;
                 } else if (name == "CONT3") {
                     tree = new node(C_NUM, c = 0x00FF, NULL, NULL);
                     tree = new node(C_PEEK, 0, tree, NULL);
-                    tree = new node(C_NOT, 0, tree, NULL);
+                    tree = new node(C_XOR, 0, tree, new node(C_NUM, 0xff, NULL, NULL));
                     ecs_used = true;
                 } else {
                     tree = new node(C_VAR, c = 13, NULL, NULL);
