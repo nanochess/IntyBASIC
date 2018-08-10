@@ -479,6 +479,7 @@ private:
             if (value > 65535) {
                 emit_warning("number exceeds 16 bits");
             }
+            name = "";
             if (line_pos < line_size && line[line_pos] == '.'
                 && line_pos + 1 < line_size && isdigit(line[line_pos + 1])) {
                 if (value > 255) {
@@ -495,6 +496,7 @@ private:
                 while (line_pos < line_size && isdigit(line[line_pos]))
                     line_pos++;
                 value += (int) (fraction * (256.0 / 1000.0) + 0.5) * 256;
+                name = ".";
             }
             lex = C_NUM;
             line_start = 0;
@@ -514,6 +516,7 @@ private:
                 line_pos++;
             }
             lex = C_NUM;
+            name = "";
             line_start = 0;
             return;
         }
@@ -526,6 +529,7 @@ private:
                 line_pos++;
             }
             lex = C_NUM;
+            name = "";
             line_start = 0;
             return;
         }
@@ -910,8 +914,16 @@ private:
         
         if (lex == C_MINUS) {
             get_lex();
-            left = eval_level7(type);
-            left = new node(C_NEG, 0, left, NULL);
+            if (lex == C_NUM && name == ".") {  // Ok, fractional value, special case
+                value = ((value & 0xff00) >> 8) | ((value & 0x00ff) << 8);
+                value = -value;
+                value = ((value & 0xff00) >> 8) | ((value & 0x00ff) << 8);
+                left = new node(C_NUM, value, NULL, NULL);
+                get_lex();
+            } else {
+                left = eval_level7(type);
+                left = new node(C_NEG, 0, left, NULL);
+            }
         } else if (lex == C_NAME && name == "NOT") {
             get_lex();
             left = eval_level7(type);
