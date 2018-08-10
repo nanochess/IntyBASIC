@@ -99,7 +99,7 @@ void microcode::dump(void) {
         case M_NR:  // Constant: MVII #5,R0
             asm_output << "\t" << opcode_list[this->type] << " #";
             if (this->prefix == "")
-                asm_output << this->value;
+                asm_output << (this->value & 0xffff);
             else
                 asm_output << this->prefix << this->value;
             if (this->offset > 0)
@@ -166,10 +166,10 @@ void microcode::dump(void) {
             asm_output << this->prefix << this->value << ":";
             break;
         case M_D:  // Single word of data
-            asm_output << "\t" << opcode_list[this->type] << " " << this->r1;
+            asm_output << "\t" << opcode_list[this->type] << " " << (this->r1 & 0xffff);
             break;
         case M_D2:  // Double word of data
-            asm_output << "\t" << opcode_list[this->type] << " " << this->r1 << "," << this->r2;
+            asm_output << "\t" << opcode_list[this->type] << " " << (this->r1 & 0xffff) << "," << (this->r2 & 0xffff);
             break;
         case M_DL:  // Label as data
             asm_output << "\t" << opcode_list[this->type] << " ";
