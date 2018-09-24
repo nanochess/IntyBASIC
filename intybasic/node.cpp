@@ -117,26 +117,62 @@ node::node(enum lexical_component type, int value, class node *left, class node 
             left->right = left->right->left;
     }
     // Optimizes constant expressions
-    if (type == C_PLUS && left->type == C_NUM && right->type == C_NUM) {
-        this->type = C_NUM;
-        this->value = left->value + right->value;
-        delete this->left;
-        this->left = NULL;
-        delete this->right;
-        this->right = NULL;
+    if (type == C_PLUS) {
+        if (left->type == C_NUM && right->type == C_NUM) {  // const + const --> const
+            this->type = C_NUM;
+            this->value = left->value + right->value;
+            delete this->left;
+            this->left = NULL;
+            delete this->right;
+            this->right = NULL;
+        } else if (left->type == C_NUM) {  // const + xyz --> xyz + const
+            this->left = right;
+            this->right = left;
+        }
     }
-    if (type == C_MINUS && left->type == C_NUM && right->type == C_NUM) {
-        this->type = C_NUM;
-        this->value = left->value - right->value;
-        delete this->left;
-        this->left = NULL;
-        delete this->right;
-        this->right = NULL;
+    if (type == C_MINUS) {
+        if (left->type == C_NUM && right->type == C_NUM) {  // const - const --> const
+            this->type = C_NUM;
+            this->value = left->value - right->value;
+            delete this->left;
+            this->left = NULL;
+            delete this->right;
+            this->right = NULL;
+        }
     }
     if (type == C_MUL) {
-        if (left->type == C_NUM && right->type == C_NUM) {
+        if (left->type == C_NUM && right->type == C_NUM) {  // const * const --> const
             this->type = C_NUM;
             this->value = left->value * right->value;
+            delete this->left;
+            this->left = NULL;
+            delete this->right;
+            this->right = NULL;
+        } else if (left->type == C_NUM) {  // const * xyz --> xyz * const
+            this->left = right;
+            this->right = left;
+        }
+    }
+    if (type == C_DIV && left->type == C_NUM && right->type == C_NUM && right->value != 0) {
+        this->type = C_NUM;
+        this->value = left->value / right->value;
+        delete this->left;
+        this->left = NULL;
+        delete this->right;
+        this->right = NULL;
+    }
+    if (type == C_MOD && left->type == C_NUM && right->type == C_NUM && right->value != 0) {
+        this->type = C_NUM;
+        this->value = left->value % right->value;
+        delete this->left;
+        this->left = NULL;
+        delete this->right;
+        this->right = NULL;
+    }
+    if (type == C_AND) {
+        if (left->type == C_NUM && right->type == C_NUM) {
+            this->type = C_NUM;
+            this->value = left->value & right->value;
             delete this->left;
             this->left = NULL;
             delete this->right;
@@ -146,45 +182,31 @@ node::node(enum lexical_component type, int value, class node *left, class node 
             this->right = left;
         }
     }
-    if (type == C_DIV && left->type == C_NUM && right->type == C_NUM && (right->value & 0xffff) != 0) {
-        this->type = C_NUM;
-        this->value = (left->value & 0xffff) / (right->value & 0xffff);
-        delete this->left;
-        this->left = NULL;
-        delete this->right;
-        this->right = NULL;
+    if (type == C_OR) {
+        if (left->type == C_NUM && right->type == C_NUM) {
+            this->type = C_NUM;
+            this->value = left->value | right->value;
+            delete this->left;
+            this->left = NULL;
+            delete this->right;
+            this->right = NULL;
+        } else if (left->type == C_NUM) {
+            this->left = right;
+            this->right = left;
+        }
     }
-    if (type == C_MOD && left->type == C_NUM && right->type == C_NUM && (right->value & 0xffff) != 0) {
-        this->type = C_NUM;
-        this->value = (left->value & 0xffff) % (right->value & 0xffff);
-        delete this->left;
-        this->left = NULL;
-        delete this->right;
-        this->right = NULL;
-    }
-    if (type == C_AND && left->type == C_NUM && right->type == C_NUM) {
-        this->type = C_NUM;
-        this->value = left->value & right->value;
-        delete this->left;
-        this->left = NULL;
-        delete this->right;
-        this->right = NULL;
-    }
-    if (type == C_OR && left->type == C_NUM && right->type == C_NUM) {
-        this->type = C_NUM;
-        this->value = left->value | right->value;
-        delete this->left;
-        this->left = NULL;
-        delete this->right;
-        this->right = NULL;
-    }
-    if (type == C_XOR && left->type == C_NUM && right->type == C_NUM) {
-        this->type = C_NUM;
-        this->value = left->value ^ right->value;
-        delete this->left;
-        this->left = NULL;
-        delete this->right;
-        this->right = NULL;
+    if (type == C_XOR) {
+        if (left->type == C_NUM && right->type == C_NUM) {
+            this->type = C_NUM;
+            this->value = left->value ^ right->value;
+            delete this->left;
+            this->left = NULL;
+            delete this->right;
+            this->right = NULL;
+        } else if (left->type == C_NUM) {
+            this->left = right;
+            this->right = left;
+        }
     }
     if (type == C_NOT && left->type == C_NUM) {
         this->type = C_NUM;
@@ -200,13 +222,13 @@ node::node(enum lexical_component type, int value, class node *left, class node 
     }
     if (type == C_ABS && left->type == C_NUM) {
         this->type = C_NUM;
-        this->value = ((left->value & 0xffff) >= 0x8000) ? 0x10000 - (left->value & 0xffff) : left->value;
+        this->value = left->value < 0 ? -left->value : left->value;
         delete this->left;
         this->left = NULL;
     }
     if (type == C_SGN && left->type == C_NUM) {
         this->type = C_NUM;
-        this->value = (left->value & 0xffff) ? (((left->value & 0xffff) >= 0x8000) ? 0xFFFF : 1) : 0;
+        this->value = left->value < 0 ? -1 : (left->value ? 1 : 0);
         delete this->left;
         this->left = NULL;
     }

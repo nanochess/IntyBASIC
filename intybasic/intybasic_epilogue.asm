@@ -649,7 +649,7 @@ _init_music:	PROC
     ENDI
 	CLRR R0
     ELSE
-	JR R5
+	JR R5		; Tracker disabled (no PLAY statement used)
     ENDI
 	ENDP
 
