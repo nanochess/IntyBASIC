@@ -3210,7 +3210,8 @@ private:
                         }
                         if (arg == 4) {
                             output->emit_d2(N_DECLE, (notes & 0xffff), (notes >> 16 & 0xffff));
-                            music_ecs_used = 1;
+                            music_ecs_used = true;
+                            ecs_used = true;
                         }
                         get_lex();
                     }

@@ -49,6 +49,7 @@
 	;                        starting from $4800). Uses slightly less space.
 	; Revision: Feb/05/2018. Added IV_HUSH.
 	; Revision: Mar/01/2018. Added support for music tracker over ECS.
+	; Revision: Sep/25/2018. Solved bug in mixer for ECS drums.
 	;
 
 	;
@@ -685,6 +686,12 @@ _generate_music:	PROC
 	ANDI #$C0,R0
 	XORI #$38,R0
 	MVO R0,_music_mix
+    IF DEFINED intybasic_music_ecs
+	MVI _music2_mix,R0
+	ANDI #$C0,R0
+	XORI #$38,R0
+	MVO R0,_music2_mix
+    ENDI
 	CLRR R1			; Turn off volume for the three sound channels
 	MVO R1,_music_vol1
 	MVO R1,_music_vol2
