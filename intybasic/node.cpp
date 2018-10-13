@@ -761,7 +761,7 @@ void node::generate(int reg, int decision) {
                         output->emit_nr(N_XORI, "", val, reg);
                     }
                 } else if (type == C_EQUAL) {
-                    if ((right->value) & 0xffff)
+                    if (val)
                         output->emit_nr(N_CMPI, "", val, reg);
                     else if (left->type != C_AND && left->type != C_OR && left->type != C_XOR
                              && left->type != C_PLUS && left->type != C_MINUS)
@@ -779,7 +779,7 @@ void node::generate(int reg, int decision) {
                         output->trash_partial(reg);
                     }
                 } else if (type == C_NOTEQUAL) {
-                    if ((right->value) & 0xffff)
+                    if (val)
                         output->emit_nr(N_CMPI, "", val, reg);
                     else if (left->type != C_AND && left->type != C_OR && left->type != C_XOR
                              && left->type != C_PLUS && left->type != C_MINUS)

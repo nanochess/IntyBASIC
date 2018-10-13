@@ -3664,6 +3664,12 @@ private:
         }
     }
     
+    // Remove line endings (in special \r to allow \ to work)
+    void chomp(string &str) {
+        string::size_type pos = str.find_last_not_of("\r\n");
+        str.erase(pos + 1);
+    }
+    
 public:
     //
     // Starts compilation
@@ -3739,6 +3745,7 @@ public:
         included.open(path);
         if (included.is_open()) {
             while (getline(included, line)) {
+                chomp(line);
                 if (line.find(";IntyBASIC MARK DON'T CHANGE") != string::npos) {  // Location to replace title
                     asm_output << "\tBYTE " << program_year << ",'" << program_title << "',0\n";
                 } else {
@@ -3787,6 +3794,7 @@ public:
                         line_number = saved_line_number;
                         asm_output << "\t;FILE " << input_file << "\n";
                     } else {
+                        chomp(line);
                         line_number++;
                     }
                 }
@@ -3795,6 +3803,7 @@ public:
                         eof = 1;
                         break;
                     }
+                    chomp(line);
                     line_number++;
                 }
                 line = line2 + line;
@@ -4013,6 +4022,7 @@ public:
                     if (frame_drive >= 0)
                         asm_output << "\tCALL " << LABEL_PREFIX << frame_drive << "\n";
                 } else {
+                    chomp(line);
                     asm_output << line << "\n";
                 }
             }
