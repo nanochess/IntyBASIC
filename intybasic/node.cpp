@@ -1070,30 +1070,43 @@ void node::generate(int reg, int decision) {
                 }
                 
                 // Optimize right side when it's variable
-            } else if (right->type == C_NAME && type != C_ASSIGN) {
+            } else if ((right->type == C_NAME || (right->type == C_PEEK && right->left->type == C_PLUS && right->left->right->type == C_NUM && right->left->left->type == C_NAME_RO)) && type != C_ASSIGN) {
+                string prefix;
+                int offset;
+                int variable;
+                
+                if (right->type == C_PEEK) {
+                    prefix = LABEL_PREFIX;
+                    variable = right->left->left->value;
+                    offset = right->left->right->value;
+                } else {
+                    prefix = VAR_PREFIX;
+                    variable = right->value;
+                    offset = 0;
+                }
                 left->generate(reg, 0);
                 if (type == C_PLUS) {
-                    output->emit_lr(N_ADD, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_ADD, prefix, variable, offset, reg);
                 } else if (type == C_MINUS) {
-                    output->emit_lr(N_SUB, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_SUB, prefix, variable, offset, reg);
                 } else if (type == C_PLUSF) {
-                    output->emit_lr(N_ADD, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_ADD, prefix, variable, offset, reg);
                     output->emit_r(N_ADCR, reg);
                 } else if (type == C_MINUSF) {
-                    output->emit_lr(N_SUB, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_SUB, prefix, variable, offset, reg);
                     output->emit_r(N_ADCR, reg);
                     output->emit_r(N_DECR, reg);
                 } else if (type == C_AND) {
-                    output->emit_lr(N_AND, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_AND, prefix, variable, offset, reg);
                 } else if (type == C_XOR) {
-                    output->emit_lr(N_XOR, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_XOR, prefix, variable, offset, reg);
                 } else if (type == C_OR) {
-                    output->emit_lr(N_MVI, VAR_PREFIX, right->value, 4);
+                    output->emit_lor(N_MVI, prefix, variable, offset, 4);
                     output->emit_r(N_COMR, 4);
                     output->emit_rr(N_ANDR, 4, reg);
-                    output->emit_lr(N_XOR, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_XOR, prefix, variable, offset, reg);
                 } else if (type == C_EQUAL) {
-                    output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_CMP, prefix, variable, offset, reg);
                     if (decision) {
                         output->emit_a(N_BNE, TEMP_PREFIX, decision);
                         optimized = true;
@@ -1107,7 +1120,7 @@ void node::generate(int reg, int decision) {
                         output->trash_partial(reg);
                     }
                 } else if (type == C_NOTEQUAL) {
-                    output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_CMP, prefix, variable, offset, reg);
                     if (decision) {
                         output->emit_a(N_BEQ, TEMP_PREFIX, decision);
                         optimized = true;
@@ -1121,7 +1134,7 @@ void node::generate(int reg, int decision) {
                         output->trash_partial(reg);
                     }
                 } else if (type == C_LESS) {
-                    output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_CMP, prefix, variable, offset, reg);
                     if (decision) {
                         output->emit_a(value ? N_BC : N_BGE, TEMP_PREFIX, decision);
                         optimized = true;
@@ -1135,7 +1148,7 @@ void node::generate(int reg, int decision) {
                         output->trash_partial(reg);
                     }
                 } else if (type == C_LESSEQUAL) {
-                    output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_CMP, prefix, variable, offset, reg);
                     if (decision) {
                         if (value) {    // Unsigned
                             output->emit_a(N_BEQ, "", 4);
@@ -1159,7 +1172,7 @@ void node::generate(int reg, int decision) {
                         output->trash_partial(reg);
                     }
                 } else if (type == C_GREATER) {
-                    output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_CMP, prefix, variable, offset, reg);
                     if (decision) {
                         if (value) {    // Unsigned
                             output->emit_a(N_BEQ, TEMP_PREFIX, decision);
@@ -1183,7 +1196,7 @@ void node::generate(int reg, int decision) {
                         output->trash_partial(reg);
                     }
                 } else if (type == C_GREATEREQUAL) {
-                    output->emit_lr(N_CMP, VAR_PREFIX, right->value, reg);
+                    output->emit_lor(N_CMP, prefix, variable, offset, reg);
                     if (decision) {
                         output->emit_a(value ? N_BNC : N_BLT, TEMP_PREFIX, decision);
                         optimized = true;
@@ -1198,7 +1211,7 @@ void node::generate(int reg, int decision) {
                     }
                 } else if (type == C_MUL) {
                     if (jlp_used) {
-                        output->emit_lr(N_MVI, VAR_PREFIX, right->value, 4);
+                        output->emit_lor(N_MVI, prefix, variable, offset, 4);
                         output->emit_rl(N_MVO, reg, "", 0x9f86);
                         output->emit_rl(N_MVO, 4, "", 0x9f87);
                         output->emit_lr(N_MVI, "", 0x9f8e, reg);
@@ -1208,7 +1221,7 @@ void node::generate(int reg, int decision) {
                         int label3 = next_local++;
                         int label4 = next_local++;
                         
-                        output->emit_lr(N_MVI, VAR_PREFIX, right->value, 5);
+                        output->emit_lor(N_MVI, prefix, variable, offset, 5);
                         output->emit_r(N_CLRR, 4);
                         output->emit(N_CLRC);
                         output->emit_s(N_RRC, reg, 1);
@@ -1229,7 +1242,7 @@ void node::generate(int reg, int decision) {
                     }
                 } else if (type == C_DIV) {
                     if (jlp_used) {
-                        output->emit_lr(N_MVI, VAR_PREFIX, right->value, 4);
+                        output->emit_lor(N_MVI, prefix, variable, offset, 4);
                         output->emit_rl(N_MVO, reg, "", 0x9f8a);
                         output->emit_rl(N_MVO, 4, "", 0x9f8b);
                         output->emit_lr(N_MVI, "", 0x9f8e, reg);
@@ -1237,7 +1250,7 @@ void node::generate(int reg, int decision) {
                         int label = next_local++;
                         int label2 = next_local++;
                         
-                        output->emit_lr(N_MVI, VAR_PREFIX, right->value, 4);
+                        output->emit_lor(N_MVI, prefix, variable, offset, 4);
                         output->emit_rr(N_MOVR, reg, 5);
                         output->emit_r(N_TSTR, 4);
                         output->emit_a(N_BEQ, TEMP_PREFIX, label);
@@ -1250,7 +1263,7 @@ void node::generate(int reg, int decision) {
                     }
                 } else if (type == C_MOD) {
                     if (jlp_used) {
-                        output->emit_lr(N_MVI, VAR_PREFIX, right->value, 4);
+                        output->emit_lor(N_MVI, prefix, variable, offset, 4);
                         output->emit_rl(N_MVO, reg, "", 0x9f8a);
                         output->emit_rl(N_MVO, 4, "", 0x9f8b);
                         output->emit_lr(N_MVI, "", 0x9f8f, reg);
@@ -1258,7 +1271,7 @@ void node::generate(int reg, int decision) {
                         int label = next_local++;
                         int label2 = next_local++;
                         
-                        output->emit_lr(N_MVI, VAR_PREFIX, right->value, 4);
+                        output->emit_lor(N_MVI, prefix, variable, offset, 4);
                         output->emit_r(N_TSTR, 4);
                         output->emit_a(N_BEQ, TEMP_PREFIX, label);
                         output->emit_l(TEMP_PREFIX, label2);
