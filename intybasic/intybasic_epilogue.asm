@@ -50,6 +50,7 @@
 	; Revision: Feb/05/2018. Added IV_HUSH.
 	; Revision: Mar/01/2018. Added support for music tracker over ECS.
 	; Revision: Sep/25/2018. Solved bug in mixer for ECS drums.
+	; Revision: Oct/30/2018. Small optimization in music player.
 	;
 
 	;
@@ -90,13 +91,13 @@ CPYBLK2:	PROC
 	;
 	; Copy screen helper for SCREEN statement
 	;
-CPYBLK: PROC
+CPYBLK:	PROC
 	BEGIN
 	MOVR R3,R4
 	MOVR R2,R5
 
-@@1:    MOVR R1,R3	      ; Init line copy
-@@2:    MVI@ R4,R2	      ; Copy line
+@@1:	MOVR R1,R3	      ; Init line copy
+@@2:	MVI@ R4,R2	      ; Copy line
 	MVO@ R2,R5
 	DECR R3
 	BNE @@2
@@ -181,28 +182,12 @@ _keypad_table:	  PROC
 	DECLE $48,$81,$41,$21,$82,$42,$22,$84,$44,$24,$88,$28
 	ENDP
 
-_pal1_vector:	PROC
-	MVII #_pal2_vector,R0	; Point to next interruption handler
-	MVII #3,R1
-_irq_setup:
+_set_isr:	PROC
+	MVI@ R5,R0
 	MVO R0,ISRVEC
 	SWAP R0
 	MVO R0,ISRVEC+1
-	MVO R1,_ntsc
 	JR R5
-	ENDP
-
-_pal2_vector:    PROC
-	CLRR R0
-	CLRR R4			; Reset MOB X/Y/Attribute registers
-@@1:    MVO@ R0,R4
-	CMPI #$18,R4
-	BNE @@1
-	MVO R0,$30		; Reset horizontal delay register
-	MVO R0,$31		; Reset vertical delay register
-	MVII #_int_vector,R0	; Point to "real" interruption handler
-	MVII #4,R1
-	B _irq_setup
 	ENDP
 
 	;
@@ -638,11 +623,11 @@ pal_note_table:    PROC
 _init_music:	PROC
     IF DEFINED intybasic_music
 	MVI _ntsc,R0
-	CMPI #1,R0
+	TSTR R0
 	MVII #ntsc_note_table,R0
-	BEQ @@0
+	BNE @@0
 	MVII #pal_note_table,R0
-@@0:    MVO R0,_music_table
+@@0:	MVO R0,_music_table
 	MVII #$38,R0	; $B8 blocks controllers o.O!
 	MVO R0,_music_mix
     IF DEFINED intybasic_music_ecs
@@ -660,10 +645,9 @@ _init_music:	PROC
 	; R0 = Pointer to music
 	;
 _play_music:	PROC
+	MVII #1,R1
+	MOVR R1,R3
 	MOVR R0,R2
-	MVII #1,R0
-	MOVR R0,R3
-	TSTR R2
 	BEQ @@1
 	MVI@ R2,R3
 	INCR R2
@@ -672,7 +656,7 @@ _play_music:	PROC
 	SWAP R2
 	MVO R2,_music_start+1
 	MVO R3,_music_t
-	MVO R0,_music_tc
+	MVO R1,_music_tc
 	JR R5
 
 	ENDP
@@ -695,7 +679,7 @@ _generate_music:	PROC
 	CLRR R1			; Turn off volume for the three sound channels
 	MVO R1,_music_vol1
 	MVO R1,_music_vol2
-	NOP
+	MVI _music_tc,R3
 	MVO R1,_music_vol3
     IF DEFINED intybasic_music_ecs
 	MVO R1,_music2_vol1
@@ -703,7 +687,6 @@ _generate_music:	PROC
 	MVO R1,_music2_vol2
 	MVO R1,_music2_vol3
     ENDI
-	MVI _music_tc,R3
 	DECR R3
 	MVO R3,_music_tc
 	BNE @@6
@@ -770,17 +753,16 @@ _generate_music:	PROC
 	ANDI #$C0,R2
 	MVO R2,_music_i1	; Instrument
 	
-@@1:	MOVR R0,R2
-	SWAP R2
-	ANDI #$FF,R2
-	CMPI #$3F,R2	; Sustain note?
+@@1:	SWAP R0
+	ANDI #$FF,R0
+	CMPI #$3F,R0	; Sustain note?
 	BEQ @@2
-	MOVR R2,R4
+	MOVR R0,R4
 	ANDI #$3F,R4
 	MVO R4,_music_n2	; Note
 	MVO R3,_music_s2	; Waveform
-	ANDI #$C0,R2
-	MVO R2,_music_i2	; Instrument
+	ANDI #$C0,R0
+	MVO R0,_music_i2	; Instrument
 	
 @@2:	MOVR R1,R2
 	ANDI #$FF,R2
@@ -793,9 +775,8 @@ _generate_music:	PROC
 	ANDI #$C0,R2
 	MVO R2,_music_i3	; Instrument
 	
-@@3:	MOVR R1,R2
-	SWAP R2
-	MVO R2,_music_n4
+@@3:	SWAP R1
+	MVO R1,_music_n4
 	MVO R3,_music_s4
 	
     IF DEFINED intybasic_music_ecs
@@ -815,17 +796,16 @@ _generate_music:	PROC
 	ANDI #$C0,R2
 	MVO R2,_music_i5	; Instrument
 	
-@@33:	MOVR R0,R2
-	SWAP R2
-	ANDI #$FF,R2
-	CMPI #$3F,R2	; Sustain note?
+@@33:	SWAP R0
+	ANDI #$FF,R0
+	CMPI #$3F,R0	; Sustain note?
 	BEQ @@34
-	MOVR R2,R4
+	MOVR R0,R4
 	ANDI #$3F,R4
 	MVO R4,_music_n6	; Note
 	MVO R3,_music_s6	; Waveform
-	ANDI #$C0,R2
-	MVO R2,_music_i6	; Instrument
+	ANDI #$C0,R0
+	MVO R0,_music_i6	; Instrument
 	
 @@34:	MOVR R1,R2
 	ANDI #$FF,R2
