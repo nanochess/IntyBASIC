@@ -247,7 +247,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.4.0 Dec/26/2018";      // Compiler version
+const string VERSION = "v1.4.0 Dec/27/2018";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -409,7 +409,7 @@ private:
     map <string, int> variables;    // Variables (reference name -> label number)
     map <string, int> constants;    // Constants (reference name -> value)
     map <string, int> functions;    // Functions (reference USR name -> intermediate label)
-    
+
     // Note how following two could be mixed with 'variables' and 'labels' using struct instead of int
     map <string, int> read_write;   // Variables (reference name -> read/write)
     map <string, int> label_used;   // Labels (reference name -> used/defined)
@@ -417,8 +417,14 @@ private:
     
     map <string, macro *> macros;
     map <string, int>::iterator access;
+    map <int, list <int>>::iterator access2;
     list <struct loop> loops;
     list <struct loop>::iterator loop_explorer;
+
+    int inside_proc;                // Current procedure label (main is zero)
+    map <int, int> label_proc;      // Procedure of each label
+    map <int, list <int> > proc_gotos;  // Procedures and list of GOTO's label inside each one (main is zero)
+    
     int line_number;
     int next_label;
     int next_var;
@@ -1727,6 +1733,7 @@ private:
                         label_used[name] |= 1;
                         label_used[name] |= CALLED_BY_GOTO;
                         output->emit_a(N_B, LABEL_PREFIX, labels[name]);
+                        proc_gotos[inside_proc].push_back(labels[name]);
                         get_lex();
                     }
                 } else if (name == "GOSUB") {
@@ -3350,8 +3357,10 @@ private:
                                 label_used[name] |= 1;
                                 if (gosub != 0)
                                     label_used[name] |= CALLED_BY_GOSUB;
-                                else
+                                else {
                                     label_used[name] |= CALLED_BY_GOTO;
+                                    proc_gotos[inside_proc].push_back(labels[name]);
+                                }
                                 options[max_value++] = labels[name];
                                 get_lex();
                             } else {
@@ -3748,7 +3757,6 @@ public:
     int start(const char *input_file, const char *output_file, const char *library_path, int flags) {
         int used_space;
         int available_vars;
-        int inside_proc;
         char *p;
         int eof;
         string procedure;
@@ -3903,16 +3911,19 @@ public:
                         string temp = "already defined '" + name + "' label";
                         
                         emit_error(temp);
+                    } else {
+                        label_proc[labels[name]] = inside_proc;
                     }
                 } else {
                     labels[name] = next_label;
+                    label_proc[next_label] = inside_proc;
                     name_mangling[next_label] = NAME_MANGLING_LABEL + name;
+                    next_label++;
                 }
                 label_used[name] |= 2;
                 asm_output << "\t; " << name << "\n";
                 mangle_label(LABEL_PREFIX, labels[name]);
                 asm_output << ":";
-                next_label++;
                 label_exists = 1;
                 procedure = name;
                 get_lex();
@@ -3932,7 +3943,7 @@ public:
                     // as1600 requires that label and PROC are on same line
                     get_lex();
                     asm_output << "\tPROC\n\tBEGIN\n";
-                    inside_proc = 1;
+                    inside_proc = labels[procedure];
                     last_is_return = 0;
                     output->trash_registers();
                 } else if (name == "END" && sneak_peek() != 'I') {  // END (and not END IF)
@@ -4017,7 +4028,7 @@ public:
                     }
                     lex = C_END;
                 } else {
-                    if (label_exists == 1)
+                    if (label_exists)
                         asm_output << "\t";
                     compile_statement(false);
                     output->dump();
@@ -4137,6 +4148,31 @@ public:
             if ((access->second & (CALLED_BY_GOSUB | IT_IS_PROCEDURE)) == CALLED_BY_GOSUB) {
                 std::cerr << "Error: Common label '" << access->first << "' jumped in by GOSUB (guaranteed crash)\n";
                 err_code = 1;
+            }
+        }
+        
+        // Warns of wrong code flow
+        for (access2 = proc_gotos.begin(); access2 != proc_gotos.end(); access2++) {
+            inside_proc = access2->first;
+            while (access2->second.size() > 0) {
+                int goto_label;
+                string proc1;
+                string proc2;
+                
+                goto_label = access2->second.front();
+                if (label_proc[goto_label] != inside_proc) {
+                    if (inside_proc == 0)
+                        proc1 = "main code";
+                    else
+                        proc1 = "procedure " + name_mangling[inside_proc].substr(6);
+                    if (label_proc[goto_label] == 0)
+                        proc2 = "main code";
+                    else
+                        proc2 = "procedure " + name_mangling[label_proc[goto_label]].substr(6);
+                    std::cerr << "Error: GOTO " << name_mangling[goto_label].substr(6) << " from " << proc1 << " flows inside " << proc2 << " (stack disruption)\n";
+                    err_code = 1;
+                }
+                access2->second.pop_front();
             }
         }
         
