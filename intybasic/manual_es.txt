@@ -52,6 +52,14 @@ v1.4.0 06-ago-2018  o Se agrega contrib/accel.bas como muestra de movimiento
                       de 8 bits.
                     o Solucionado error donde IF CONT.B0 THEN no funcionaba,
                       también ABS y SGN.
+                    o Agregada conversión de nombres para ensamblador, lo
+                      que permite interfazar más fácilmente con ensamblador.
+                    o Detecta fallas de flujo al usar GOTO entre
+                      procedimientos (daña el stack)
+                    o Admite etiquetas locales usando el caracter de punto
+                      antes del nombre (usa como prefijo el nombre de la
+                      última etiqueta global)
+                    o Compatibilidad con consolas Tutorvision.
 
 v1.2.9 07-nov-2017  o Se mueve la limpieza de pantalla muy al inicio del
                       programa para evitar vistazo de título en Intellivision

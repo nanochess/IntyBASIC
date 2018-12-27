@@ -5,222 +5,8 @@
 //  Created by Oscar Toledo on 13/01/14.
 //  Copyright (c) 2014 Oscar Toledo. All rights reserved.
 //
-//  Revision: Jan/14/2014. Small expression tree creator and code generator.
-//  Revision: Jan/15/2014. Added more lexical components to be used. FOR/NEXT ready.
-//  Revision: Jan/16/2014. Added AND/OR/XOR/NOT, negation and comparison operators.
-//  Revision: Jan/17/2014. Added IF/ELSE, POKE, PEEK, mult/div/mod operators.
-//  Revision: Jan/21/2014. Now puts PROC in same line as label. First working version :)
-//  Revision: Jan/22/2014. Added CLS, WAIT, CONT0/CONT1. Debugged code generator.
-//                         Added COL0-7, FRAME, RAND, RESTORE, READ and DATA.
-//  Revision: Jan/27/2014. Added SOUND, SPRITE, PRINT, ASM, BITMAP. Integrated constant
-//                         expression optimization. Further debugging of statements.
-//  Revision: Jan/28/2014. Modified to be compilable under Visual C++ 2008. Relational
-//                         expression optimization in IF. Support for 16-bits variables
-//                         using hashtag as start of name. Solved bug where name was
-//                         wrongly taken as label.
-//  Revision: Feb/02/2014. Supports _ and . as zero in BITMAP.
-//  Revision: Feb/03/2014. Removed warning when compiling in Linux.
-//  Revision: Feb/04/2014. Solved bug when using NEXT with variable name. Now every
-//                         comment and variable in English.
-//  Revision: Feb/06/2014. Implemented indexed access to DATA and DIM for putting
-//                         arrays in RAM memory. Solved bug where extra characters
-//                         in line were not detected. Added memory limit detection.
-//  Revision: Feb/11/2014. Solved bug in assignation to array with constant index.
-//  Revision: Feb/26/2014. Added SCROLL and BORDER statements. Support for library
-//                         path in arguments.
-//  Revision: Mar/02/2014. Solved bug where FOR STEP would go beyond admisible value.
-//                         Support for constants definition.
-//  Revision: Mar/21/2014. Support to obtain character codes of GROM in expressions.
-//  Revision: Apr/02/2014. Added MODE and SCREEN statements. Re-designed .b0-2 for
-//                         true detection of controller buttons. Added .KEY syntax.
-//                         Changed result of comparisons, now $ffff (-1) to ease use
-//                         of NOT.
-//  Revision: Jul/09/2014. Warns if unable to open prologue/epilogue files. Shows
-//                         total variable space used if exceeds available space.
-//  Revision: Aug/26/2014. Support for binary numbers. Added PLAY and MUSIC statements
-//                         and NTSC variable.
-//  Revision: Sep/12/2014. Corrected bug where SCREEN label was lost if variable used
-//                         as origin offset.
-//  Revision: Oct/09/2014. DEFINE now allows expressions in its first two parameters.
-//                         Optimization for multiplication and division by 256, also
-//                         for modulus with 32, 64, 128 and 256. It's implemented the
-//                         ON GOTO/GOSUB statement. Added STACK_CHECK statement.
-//  Revision: Oct/10/2014. Added fixed numbers and fractional add and substract
-//                         using operator +. and -. Added INCLUDE statement.
-//  Revision: Oct/16/2014. Warns if PROCEDURE is started without ending previous one.
-//                         Warns if END is used without PROCEDURE. Removes extra
-//                         RETURN instruction if the statement combination RETURN/END
-//                         is used. MUSIC alone doesn't activate tracker module.
-//  Revision: Nov/13/2014. Optimizes substraction to obviate need for register
-//                         interchange, optimizes cases a+(-b) and a-(-b). PRINT now
-//                         generates smaller code. Added ABS function. READ now can
-//                         be used with array variables. Optimizes IF code generation
-//                         Optimizes equal and non-equal comparison. Added support
-//                         for printing numbers with PRINT (using intvnut routines)
-//  Revision: Nov/17/2014. Added special comments in output proposed by intvnut to
-//                         ease source code debugging and SRCFILE directive.
-//                         Redesigned MODE to use a single variable.
-//  Revision: Nov/18/2014. Supports hardware acceleration of multiplication and
-//                         division operators.
-//  Revision: Nov/19/2014. Added support for extra memory if using --jlp flag.
-//  Revision: Nov/20/2014. Added USR function. Added DEFINE ALTERNATE.
-//  Revision: Nov/21/2014. Added support for Intellivoice with VOICE.
-//  Revision: Dec/11/2014. Updated number of variable availables (off by 1 both in
-//                         8 and 16 bits variables). Statements DEFINE, SCREEN,
-//                         PLAY and VOICE allow to use arrays as reference. DEFINE
-//                         allows use of VARPTR to select between various definitions.
-//                         Optimized PEEK (also arrays) and PRINT code generation.
-//  Revision: Dec/12/2014. Support for DZ-Jay's macro for constant multiplication.
-//                         Optimizes constant addition/substraction trees.
-//  Revision: Jan/25/2015. Added support for Cuttle Cart 3 (no hardware acceleration
-//                         but extra RAM). Added support for changing title in
-//                         compiled code. Added support for CONT.* (checks both
-//                         controllers at same time). Added support for ON FRAME GOSUB.
-//  Revision: Feb/17/2015. Added PLAY NONE statement. Returns error code if happens a
-//                         failure in compilation. It doesn't take some statements as a
-//                         label if followed by colon. Added support for SGN function.
-//                         Added WHILE/WEND.
-//  Revision: Mar/05/2015. Added support for ECS secondary PSG.
-//  Revision: Mar/11/2015. Solved bug in variable counting for 8-bits variables and in
-//                         free space calculation for 16-bits variables.
-//  Revision: Mar/12/2015. Solved another bug in free variable counting for 8-bits
-//                         variables (was 16 less than possible)
-//  Revision: Mar/23/2015. Slight acceleration in PRINT for spaces.
-//  Revision: Apr/21/2015. Using SOUND 5-9 activates ECS specific code. Added support
-//                         for modulus for all 2 powers. Added support for multiply by
-//                         32 and 64. Added support for division by 32, 64 and 128.
-//  Revision: Apr/22/2015. Now uses fast multiply routine (intvnut routine)
-//  Revision: Apr/23/2015. Solved bug where IF containing RETURN was misoptimized.
-//                         Added RAND() where right side can contain range. Added
-//                         support for multiplication by 128.
-//  Revision: May/14/2015. Start of rebuilt code output (not directly to std::cout but
-//                         via class code)
-//  Revision: Jun/04/2015. Solved bug where ECS code was always included because
-//                         variable not initialized.
-//  Revision: Jun/26/2015. Optimized code generation for reversed operand order.
-//                         Solved bug in multiply operation where zero operand would
-//                         cause 65536 cycles in common case. Enhanced code for
-//                         multiply.
-//  Revision: Jul/02/2015. Adjustment in class structure, now working again. Added
-//                         peephole optimization for several common cases. Generates
-//                         warnings for variables assigned but not read, or read but
-//                         not assigned.
-//  Revision: Jul/03/2015. Replaced SAR with SLR in constant division in order to
-//                         make standard the unsigned division, also when both
-//                         operands are constant. Peephole optimization NEGR/ADD to
-//                         SUB/NEGR, and also NEGR/NEGR COMR/COMR. MVO with direct
-//                         addressing is limited to two instructions. Peephole
-//                         optimization for TSTR. Peephole optimization for jump
-//                         conditional over jump absolute. Optimized multiplication
-//                         by 128. Used ADDR for some cases of multiplication by
-//                         power of two.
-//  Revision: Jul/04/2015. Added some guard code for extreme cases per intvnut
-//                         comments :). Simple subexpression optimization for
-//                         index into array (common case a(x)=a(x) op expr) also
-//                         for index plus offset. Avoids labels when generating
-//                         boolean results to preserve registers contents in
-//                         optimizer.
-//  Revision: Jul/06/2015. More comments. RANDOM implemented.
-//  Revision: Jul/08/2015. Replace succesive addition multiplication with faster
-//                         shift algorithm. Solved bug in ASM statement when
-//                         putting out labels (as1600 needs no space before).
-//  Revision: Jul/10/2015. Solved bug where internal division/modulus by zero
-//                         was possible (intvnut). Added support for my fast
-//                         division/remainder routine. Implemented DEF FN as macro
-//                         processor.
-//  Revision: Jul/11/2015. Doesn't require FN to call macro. Added support for
-//                         quotes in INCLUDE. Improvement in multiplication code
-//                         courtesy of intvnut. Tries to locate INCLUDE files in
-//                         library path.
-//  Revision: Jul/13/2015. Implemented CONT3 and CONT4 (ECS). FN now can be called
-//                         as statement. New #MOBSHADOW array allows to access
-//                         MOB shadow buffer. Redesigned FOR for taking advantage
-//                         of optimizer.
-//  Revision: Jul/25/2015. Changed some flags to bool type. Some warnings changed
-//                         to errors. Warnings now can be disable with option -w.
-//                         pstring changed to C++ string and then merged with
-//                         'name' variable. DEF FN now accepts strings. Macro
-//                         replacement now works with strings. New LEN function.
-//                         Reversed push order for macro replacement so it now
-//                         works properly with nested macros.
-//  Revision: Jul/31/2015. Added POS() function. Shows file when error or warning
-//                         inside INCLUDE. New function emit_warning(). Added
-//                         support for EXIT FOR and EXIT WHILE. Support for
-//                         multiline IF and ELSEIF. Solved bug in processing of
-//                         constants for GRAM characters. Added DO/LOOP with
-//                         support for WHILE/UNTIL in both sides, also EXIT DO.
-//                         Removed Tab from source code, Github disrupted it.
-//  Revision: Aug/11/2015. Avoids bug of getting stuck in DEF FN when macro had
-//                         unbalanced parenthesis.
-//  Revision: Aug/19/2015. Solves bug where exit label for block IF was always 0.
-//                         Optimized POKE code generation. Optimized plus + minus
-//                         constant. Added #BACKTAB array.
-//  Revision: Aug/21/2015. Now keeps stack in internal memory. Added support for
-//                         JLP Flash with FLASH statement.
-//  Revision: Aug/24/2015. Generates warnings for assigning values bigger than 8
-//                         bits to variables and also for TO values. Now warns of
-//                         unused, undefined and redefined labels.
-//  Revision: Aug/28/2015. Solved a couple of small bugs where error code was
-//                         set wrongly for warnings or not set for errors.
-//  Revision: Aug/30/2015. Doesn't warn for assignment of -128 to -1 to 8 bits.
-//                         Added support for signed 8-bit variables (SIGNED
-//                         statement)
-//  Revision: Aug/31/2015. Further optimization for use of 8-bit signed variables.
-//                         SPRITE now supports expression in MOB index. SCREEN
-//                         now generates more efficient code and allows fifth
-//                         parameter to choose width of origin screen, useful for
-//                         big maps. Added DIM AT for putting arrays at any
-//                         address in memory, useful for unforeseen hardware.
-//  Revision: Sep/01/2015. Corrected bug in access to #MOBSHADOW for SPRITE and
-//                         added optimization for saving of register across
-//                         expressions. Now labels for #MOBSHADOW and #BACKTAB are
-//                         defined outside in intybasic_epilogue.asm. Solved bug
-//                         where warnings could not be disabled.
-//  Revision: Sep/11/2015. Optimizes sequences of ANDI/XORI instructions.
-//  Revision: Sep/14/2015. Launches warning in case of variable assignment to name
-//                         previously used with CONST. Solved bug where ELSEIF
-//                         should be finished with ELSE.
-//  Revision: Sep/19/2015. A few warnings emitted wrongly an error code.
-//  Revision: Sep/22/2015. Warns about assignment to internal variable names.
-//  Revision: Jan/22/2016. Added NO DRUMS syntax to PLAY SIMPLE and PLAY FULL.
-//                         DO followed by colon now isn't taken as label.
-//                         Updated copyright.
-//  Revision: Jan/23/2016. Added MUSIC JUMP statement.
-//  Revision: Jan/25/2016. SOUND now allows constant expressions as first
-//                         parameter.
-//  Revision: Jan/27/2016. Added MUSIC.PLAYING status.
-//  Revision: Jan/28/2016. Added UNSIGNED statement and support for unsigned
-//                         comparisons of 16-bits variables.
-//  Revision: Feb/16/2016. Added support for strings in DATA. Added CALL (like
-//                         USR but doesn't return value)
-//  Revision: Mar/16/2016. Nobody ever tested CONT3 and CONT4, because these
-//                         weren't enabled.
-//  Revision: Apr/26/2016. Detects if source code ends without finishing
-//                         PROCEDURE.
-//  Revision: May/03/2016. Now is an error to start a PROCEDURE without closing
-//                         the previous one. MODE now sets a different value in
-//                         _mode_select. Generates warning when more than 16
-//                         GRAM defined per video frame.
-//  Revision: Aug/12/2016. Solved bug where DEFINE with VARPTR swallowed one
-//                         extra lexical component.
-//  Revision: Aug/25/2016. Solved bug when using qs_mpy16 like 1024-x*x. Optimizes
-//                         array(4+index) and now subexpression also optimizes
-//                         accesses using same index to any array/offset combo.
-//  Revision: Sep/27/2016. Had to change extra memory flags so LTO-Flash can
-//                         detect correctly the ROM type.
-//  Revision: Oct/06/2016. Added OPTION EXPLICIT.
-//  Revision: Oct/07/2016. Added DATA PACKED and OPTION WARNINGS.
-//  Revision: Feb/05/2018. VOICE INIT now calls IV_HUSH.
-//  Revision: Feb/08/2018. Size of Flash memory is now configurable.
-//  Revision: Feb/10/2018. Added data of what labels are procedures and if called
-//                         by GOTO and GOSUB to detect blatant errors that cause
-//                         crashes. (Miner 2049er)
-//  Revision: Feb/18/2018. Allows numbers in DATA PACKED (ARTRAG suggestion).
-//  Revision: Mar/01/2018. Music now allows 8 channels (ECS support). Added
-//                         MUSIC SPEED, MUSIC GOSUB, MUSIC RETURN and MUSIC
-//                         VOLUME.
-//  Revision: Apr/17/2018. Can optimize VARPTR array1(x) - VARPTR array2(y) like
-//                         in array optimization.
+//  Revision notes are now in Git.
+//
 //
 
 //  TODO:
@@ -421,6 +207,7 @@ private:
     list <struct loop> loops;
     list <struct loop>::iterator loop_explorer;
 
+    string global_label;            // Current global label
     int inside_proc;                // Current procedure label (main is zero)
     map <int, int> label_proc;      // Procedure of each label
     map <int, list <int> > proc_gotos;  // Procedures and list of GOTO's label inside each one (main is zero)
@@ -453,9 +240,16 @@ private:
     //
     // Avoid spaces
     //
-    void skip_spaces(void) {
-        while (line_pos < line_size && isspace(line[line_pos]))
+    int skip_spaces(void) {
+        int something = 0;
+        
+        if (line_pos == 0)
+            something = 1;
+        while (line_pos < line_size && isspace(line[line_pos])) {
             line_pos++;
+            something = 1;
+        }
+        return something;
     }
     
     //
@@ -481,6 +275,8 @@ private:
     //  value = value
     //
     void get_lex(void) {
+        int spaces;
+        
         if (accumulated.size() > 0) {
             lex = accumulated.front()->get_lex();
             value = accumulated.front()->get_value();
@@ -492,13 +288,19 @@ private:
 #endif
             return;
         }
-        skip_spaces();
+        spaces = skip_spaces();
         if (line_pos == line_size) {
             lex = C_END;
             return;
         }
-        if (isalpha(line[line_pos]) || line[line_pos] == '#') {  // Name or label
-            name = "";
+        if (isalpha(line[line_pos]) || line[line_pos] == '#' || (spaces && line[line_pos] == '.')) {  // Name, label or local label
+            if (line[line_pos] == '.') {
+                name = global_label;
+                value = 1;
+            } else {
+                name = "";
+                value = 0;
+            }
             name += toupper(line[line_pos]);
             line_pos++;
             while (line_pos < line_size
@@ -3761,6 +3563,7 @@ public:
         int eof;
         string procedure;
         
+        global_label = "";
         line_number = 0;
         next_label = 1;
         next_var = 1;
@@ -3906,6 +3709,8 @@ public:
             asm_output << "\tSRCFILE \"" << (active_include ? path : input_file) << "\"," << line_number << "\n";
             get_lex();
             if (lex == C_LABEL) {
+                if (value == 0)
+                    global_label = name;
                 if (labels.find(name) != labels.end()) {
                     if (label_used[name] & 2) {
                         string temp = "already defined '" + name + "' label";

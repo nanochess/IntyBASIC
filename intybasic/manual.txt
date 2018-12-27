@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4.0 Aug/06/2018  o Added contrib/accel.bas it shows how to move sprites
+v1.4.0 Dec/27/2018  o Added contrib/accel.bas it shows how to move sprites
                       by fractions of pixel (contributed by intvnut)
                     o VOICE INIT now "shuts up" the Intellivision (contributed
                       by intvnut) and the initializatin is done in automatic
@@ -43,6 +43,13 @@ v1.4.0 Aug/06/2018  o Added contrib/accel.bas it shows how to move sprites
                       results.
                     o Solved bug where IF CONT.B0 THEN wouldn't work, also
                       ABS and SGN.
+                    o Name mangling for assembler now uses original names,
+                      easing assembler interface.
+                    o Now detects failure of flow control when using GOTO
+                      to jump wrongly between procedures.
+                    o Support for local labels (using period character
+                      before a label, uses last global label as prefix)
+                    o Compatibility with Tutorvision consoles.
 
 v1.2.9 Nov/07/2017  o Moved screen clearing at the very start of program
                       to avoid brief title screen in Sears Intellivision.
