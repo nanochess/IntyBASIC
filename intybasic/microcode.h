@@ -35,7 +35,7 @@ class microcode {
     string prefix;
     int value;
     int offset;
-    
+        
 public:
     microcode(enum microcode_style style, int type, int r1, int r2, string prefix, int value, int offset);
     int get_type(void);

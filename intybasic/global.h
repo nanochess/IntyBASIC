@@ -11,6 +11,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <string>
+#include <map>
 
 using namespace std;
 
@@ -18,6 +20,12 @@ extern const string LABEL_PREFIX;   // Prefix for BASIC labels
 extern const string TEMP_PREFIX;    // Prefix for temporal labels
 extern const string VAR_PREFIX;     // Prefix for BASIC variables
 extern const string FUNC_PREFIX;    // Prefix for USR functions
+
+extern map <int, string> name_mangling;    // Map from label number to name
+extern map <int, string> name_mangling_var;    // Map from label number to name
+
+extern void mangle(string);
+extern void mangle_label(string, int);
 
 extern class code *output;
 

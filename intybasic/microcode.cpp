@@ -101,7 +101,7 @@ void microcode::dump(void) {
             if (this->prefix == "")
                 asm_output << (this->value & 0xffff);
             else
-                asm_output << this->prefix << this->value;
+                mangle_label(this->prefix, this->value);
             if (this->offset > 0)
                 asm_output << "+" << this->offset;
             else if (this->offset < 0)
@@ -110,9 +110,9 @@ void microcode::dump(void) {
             break;
         case M_NNR: // Constant: ADDI #label-label,R0
             asm_output << "\t" << opcode_list[this->type] << " #(";
-            asm_output << this->prefix << this->value;
+            mangle_label(this->prefix, this->value);
             asm_output << "-";
-            asm_output << this->prefix << this->r2;
+            mangle_label(this->prefix, this->r2);
             if (this->offset > 0)
                 asm_output << "+" << this->offset;
             else if (this->offset < 0)
@@ -128,7 +128,7 @@ void microcode::dump(void) {
             } else if (this->value == -1) {
                 asm_output << this->prefix;
             } else {
-                asm_output << this->prefix << this->value;
+                mangle_label(this->prefix, this->value);
             }
             if (this->offset)
                 asm_output << "+" << this->offset;
@@ -141,7 +141,7 @@ void microcode::dump(void) {
             else if (this->value == -1)
                 asm_output << this->prefix;
             else
-                asm_output << this->prefix << this->value;
+                mangle_label(this->prefix, this->value);
             if (this->offset > 0)
                 asm_output << "+" << this->offset;
             else if (this->offset < 0)
@@ -154,7 +154,7 @@ void microcode::dump(void) {
             else if (this->value == -1)
                 asm_output << this->prefix;
             else
-                asm_output << this->prefix << this->value;
+                mangle_label(this->prefix, this->value);
             break;
         case M_S:  // Shifts: SLL R0,1
             asm_output << "\t" << opcode_list[this->type] << " R" << this->r1 << "," << this->value;
@@ -163,7 +163,8 @@ void microcode::dump(void) {
             asm_output << "\t" << opcode_list[this->type] << " R" << this->r1 << ",R" << this->r2 << "," << this->value;
             break;
         case M_L:  // Label
-            asm_output << this->prefix << this->value << ":";
+            mangle_label(this->prefix, this->value);
+            asm_output << ":";
             break;
         case M_D:  // Single word of data
             asm_output << "\t" << opcode_list[this->type] << " " << (this->r1 & 0xffff);
@@ -176,7 +177,7 @@ void microcode::dump(void) {
             if (this->value == -1)
                 asm_output << this->prefix;
             else
-                asm_output << this->prefix << this->value;
+                mangle_label(this->prefix, this->value);
             if (this->offset)
                 asm_output << "+" << this->offset;
             break;

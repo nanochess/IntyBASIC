@@ -247,12 +247,17 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.4.0 Feb/05/2018";      // Compiler version
+const string VERSION = "v1.4.0 Dec/26/2018";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
 const string VAR_PREFIX = "V";      // Prefix for BASIC variables
 const string FUNC_PREFIX = "F";     // Prefix for USR functions
+
+const string NAME_MANGLING_ASSEMBLER = "";
+const string NAME_MANGLING_VAR = "var_";
+const string NAME_MANGLING_ARRAY = "array_";
+const string NAME_MANGLING_LABEL = "label_";
 
 const int CALLED_BY_GOTO = 0x04;
 const int CALLED_BY_GOSUB = 0x08;
@@ -310,6 +315,43 @@ struct loop {
     int label_loop;     // Main label, in C this would be destination for 'continue'
     int label_exit;     // Exit label, in C this would be destination for 'break'
 };
+
+//
+// Dictionary of arrays and variables
+//
+map <int, string> name_mangling;    // Map from label number to name
+map <int, string> name_mangling_var;    // Map from label number to name
+
+//
+// Mangle string for compatibility with as1600
+//
+void mangle(string name)
+{
+    int c;
+    
+    for (c = 0; c < name.length(); c++) {
+        if (name[c] == '#')
+            asm_output << '&';
+        else
+            asm_output << name[c];
+    }
+}
+
+//
+// Retranslate label number into original name
+//
+void mangle_label(string prefix, int value)
+{
+    if (prefix == VAR_PREFIX && name_mangling_var[value] != "") {
+        mangle(name_mangling_var[value]);
+        return;
+    }
+    if ((prefix == LABEL_PREFIX || prefix == FUNC_PREFIX) && name_mangling[value] != "") {
+        mangle(name_mangling[value]);
+        return;
+    }
+    asm_output << prefix << value;
+}
 
 //
 // Representation for a macro
@@ -1165,6 +1207,7 @@ private:
                     } else {
                         labels[name] = temp = next_label++;
                         label_used[name] |= 1;
+                        name_mangling[temp] = NAME_MANGLING_LABEL + name;
                     }
                     get_lex();
                     if (lex != C_LPAREN)
@@ -1186,7 +1229,9 @@ private:
                 }
                 if (variables[name] == 0) {
                     check_for_explicit(name);
-                    variables[name] = next_var++;
+                    variables[name] = next_var;
+                    name_mangling_var[next_var] = NAME_MANGLING_VAR + name;
+                    next_var++;
                 }
                 temp = variables[name];
                 get_lex();
@@ -1295,6 +1340,7 @@ private:
                 } else {
                     labels[name] = temp = next_label++;
                     label_used[name] |= 1;
+                    name_mangling[temp] = NAME_MANGLING_LABEL + name;
                 }
                 get_lex();
                 if (lex != C_LPAREN)
@@ -1321,7 +1367,9 @@ private:
             read_write[name] = (read_write[name] | 1);
             if (variables[name] == 0) {
                 check_for_explicit(name);
-                variables[name] = next_var++;
+                variables[name] = next_var;
+                name_mangling_var[next_var] = NAME_MANGLING_VAR + name;
+                next_var++;
             }
             temp = variables[name];
             get_lex();
@@ -1363,6 +1411,7 @@ private:
             temp = functions[name];
         } else {
             functions[name] = temp = next_label++;
+            name_mangling[temp] = NAME_MANGLING_ASSEMBLER + name;
         }
         get_lex();
         tree = NULL;
@@ -1526,7 +1575,8 @@ private:
             
             if (arrays[name] == 0) {
                 emit_error("using array without previous DIM, autoassigning DIM(10)");
-                arrays[name] = 10 | (next_label++ << 16);
+                arrays[name] = temp = 10 | (next_label++ << 16);
+                name_mangling[temp >> 16] = NAME_MANGLING_ARRAY + name;
             }
             temp = arrays[name] >> 16;
             get_lex();
@@ -1582,7 +1632,9 @@ private:
         }
         if (variables[name] == 0) {
             check_for_explicit(name);
-            variables[name] = next_var++;
+            variables[name] = next_var;
+            name_mangling_var[next_var] = NAME_MANGLING_VAR + name;
+            next_var++;
             if ((constants[name] & 0x10000) != 0) {
                 string message;
                 
@@ -1669,6 +1721,7 @@ private:
                     } else {
                         if (labels[name] == 0) {
                             labels[name] = next_label;
+                            name_mangling[next_label] = NAME_MANGLING_LABEL + name;
                             next_label++;
                         }
                         label_used[name] |= 1;
@@ -1683,6 +1736,7 @@ private:
                     } else {
                         if (labels[name] == 0) {
                             labels[name] = next_label;
+                            name_mangling[next_label] = NAME_MANGLING_LABEL + name;
                             next_label++;
                         }
                         label_used[name] |= 1;
@@ -2136,6 +2190,7 @@ private:
                     } else {
                         if (labels[name] == 0) {
                             labels[name] = next_label;
+                            name_mangling[next_label] = NAME_MANGLING_LABEL + name;
                             next_label++;
                         }
                         label_used[name] |= 1;
@@ -2235,6 +2290,7 @@ private:
                                         } else {
                                             labels[name] = temp = next_label++;
                                             label_used[name] |= 1;
+                                            name_mangling[temp] = NAME_MANGLING_LABEL + name;
                                         }
                                         get_lex();
                                         if (lex != C_LPAREN)
@@ -2262,8 +2318,10 @@ private:
                                         } else {
                                             if (variables[name] == 0) {
                                                 check_for_explicit(name);
-                                                variables[name] = next_var++;
-                                            }
+                                                variables[name] = next_var;
+                                                name_mangling_var[next_var] = NAME_MANGLING_VAR + name;
+                                                next_var++;
+                                           }
                                             temp = variables[name];
                                             get_lex();
                                             output->emit_dl(N_DECLE, VAR_PREFIX, temp);
@@ -2341,6 +2399,7 @@ private:
                                     label = arrays[name] >> 16;
                                 } else if (labels[name] == 0) {
                                     label = labels[name] = next_label;
+                                    name_mangling[label] = NAME_MANGLING_LABEL + name;
                                     next_label++;
                                     label_used[name] |= 1;
                                 } else {
@@ -2384,6 +2443,7 @@ private:
                                     label = arrays[name] >> 16;
                                 } else if (labels[name] == 0) {
                                     label = labels[name] = next_label;
+                                    name_mangling[label] = NAME_MANGLING_LABEL + name;
                                     next_label++;
                                     label_used[name] |= 1;
                                 } else {
@@ -2834,9 +2894,11 @@ private:
                             if (arrays[array] != 0) {
                                 emit_error("already used name for DIM");
                             } else {
+                                name_mangling[next_label] = NAME_MANGLING_ARRAY + array;
                                 arrays[array] = c | (next_label++ << 16);
                                 if (where >= 0) {
-                                    asm_output << LABEL_PREFIX << (arrays[array] >> 16) << ":\tEQU " << where << "\t; " << array << "\n";
+                                    mangle_label(LABEL_PREFIX, arrays[array] >> 16);
+                                    asm_output << ":\tEQU " << where << "\t; " << array << "\n";
                                     arrays[array] = (arrays[array] - c) + 65535;  // Make length 65535
                                 }
                             }
@@ -2847,7 +2909,9 @@ private:
                                 message = "variable '" + array + "' already defined";
                                 emit_error(message);
                             }
-                            variables[array] = next_var++;
+                            variables[array] = next_var;
+                            name_mangling_var[next_var] = NAME_MANGLING_VAR + array;
+                            next_var++;
                         }
                         if (lex != C_COMMA)
                             break;
@@ -2922,6 +2986,7 @@ private:
                         label = arrays[name] >> 16;
                     } else if (labels[name] == 0) {
                         label = labels[name] = next_label;
+                        name_mangling[label] = NAME_MANGLING_LABEL + name;
                         next_label++;
                         label_used[name] |= 1;
                     } else {
@@ -3039,6 +3104,7 @@ private:
                             label = arrays[name] >> 16;
                         } else if (labels[name] == 0) {
                             label = labels[name] = next_label;
+                            name_mangling[label] = NAME_MANGLING_LABEL + name;
                             next_label++;
                             label_used[name] |= 1;
                         } else {
@@ -3138,6 +3204,7 @@ private:
                                 label = arrays[name] >> 16;
                             } else if (labels[name] == 0) {
                                 label = labels[name] = next_label;
+                                name_mangling[label] = NAME_MANGLING_LABEL + name;
                                 next_label++;
                                 label_used[name] |= 1;
                             } else {
@@ -3246,6 +3313,7 @@ private:
                         }
                         if (labels[name] == 0) {
                             labels[name] = next_label;
+                            name_mangling[next_label] = NAME_MANGLING_LABEL + name;
                             next_label++;
                         }
                         label_used[name] |= 1;
@@ -3276,6 +3344,7 @@ private:
                             if (lex == C_NAME) {
                                 if (labels[name] == 0) {
                                     labels[name] = next_label;
+                                    name_mangling[next_label] = NAME_MANGLING_LABEL + name;
                                     next_label++;
                                 }
                                 label_used[name] |= 1;
@@ -3333,6 +3402,7 @@ private:
                                 label = arrays[name] >> 16;
                             } else if (labels[name] == 0) {
                                 label = labels[name] = next_label;
+                                name_mangling[label] = NAME_MANGLING_LABEL + name;
                                 next_label++;
                                 label_used[name] |= 1;
                             } else {
@@ -3351,6 +3421,7 @@ private:
                                 label = arrays[name] >> 16;
                             } else if (labels[name] == 0) {
                                 label = labels[name] = next_label;
+                                name_mangling[label] = NAME_MANGLING_LABEL + name;
                                 next_label++;
                                 label_used[name] |= 1;
                             } else {
@@ -3776,8 +3847,10 @@ public:
         bitmap_byte = 0;
         inside_proc = 0;
         // Must be defined in this order
-        arrays["#MOBSHADOW"] = 24 | (next_label++ << 16);  // #MOBSHADOW array (label Q1)
-        arrays["#BACKTAB"] = 240 | (next_label++ << 16);  // #BACKTAB array (label Q2)
+        arrays["#MOBSHADOW"] = 24 | (next_label << 16);  // #MOBSHADOW array (label Q1)
+        next_label++;
+        arrays["#BACKTAB"] = 240 | (next_label << 16);  // #BACKTAB array (label Q2)
+        next_label++;
         eof = 0;
         while (1) {
             int label_exists;
@@ -3833,10 +3906,12 @@ public:
                     }
                 } else {
                     labels[name] = next_label;
+                    name_mangling[next_label] = NAME_MANGLING_LABEL + name;
                 }
                 label_used[name] |= 2;
                 asm_output << "\t; " << name << "\n";
-                asm_output << LABEL_PREFIX << labels[name] << ":";
+                mangle_label(LABEL_PREFIX, labels[name]);
+                asm_output << ":";
                 next_label++;
                 label_exists = 1;
                 procedure = name;
@@ -4019,8 +4094,11 @@ public:
         if (included2.is_open()) {
             while (getline(included2, line)) {
                 if (line.find(";IntyBASIC MARK DON'T CHANGE") != string::npos) {  // Location to replace title
-                    if (frame_drive >= 0)
-                        asm_output << "\tCALL " << LABEL_PREFIX << frame_drive << "\n";
+                    if (frame_drive >= 0) {
+                        asm_output << "\tCALL ";
+                        mangle_label(LABEL_PREFIX, frame_drive);
+                        asm_output << "\n";
+                    }
                 } else {
                     chomp(line);
                     asm_output << line << "\n";
@@ -4069,7 +4147,8 @@ public:
                 int size;
                 
                 size = 1;
-                asm_output << VAR_PREFIX << access->second << ":\tRMB "
+                mangle_label(VAR_PREFIX, access->second);
+                asm_output << ":\tRMB "
                     << size << "\t; " << access->first << "\n";
                 used_space += size;
             }
@@ -4082,7 +4161,8 @@ public:
                 size = access->second & 0xffff;
                 if (size != 65535) {
                     label = access->second >> 16;
-                    asm_output << LABEL_PREFIX << label << ":\tRMB " << size << "\t; " << access->first << "\n";
+                    mangle_label(LABEL_PREFIX, label);
+                    asm_output << ":\tRMB " << size << "\t; " << access->first << "\n";
                     used_space += size;
                 }
             }
@@ -4144,7 +4224,8 @@ public:
                 int size;
                 
                 size = 1;
-                asm_output << VAR_PREFIX << access->second << ":\tRMB "
+                mangle_label(VAR_PREFIX, access->second);
+                asm_output << ":\tRMB "
                     << size << "\t; " << access->first << "\n";
                 used_space += size;
             }
@@ -4168,7 +4249,8 @@ public:
                 } else {
                     size = access->second & 0xffff;
                     if (size != 65535) {
-                        asm_output << LABEL_PREFIX << label << ":\tRMB " << size << "\t; " << access->first << "\n";
+                        mangle_label(LABEL_PREFIX, label);
+                        asm_output << ":\tRMB " << size << "\t; " << access->first << "\n";
                         used_space += size;
                     }
                 }
@@ -4197,12 +4279,13 @@ public:
             asm_output << "_SYSTEM:\tEQU $\n";
         }
         
-        // Dumps functions reference
+#if 0
+        // Dumps functions reference (not needed anymore)
         for (access = functions.begin(); access != functions.end(); access++) {
             if (access->second != 0)
                 asm_output << FUNC_PREFIX << access->second << ":\tEQU " << access->first << "\n";
         }
-
+#endif
     
         asm_output.close();
         input.close();
