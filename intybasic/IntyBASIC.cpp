@@ -203,7 +203,7 @@ private:
     
     map <string, macro *> macros;
     map <string, int>::iterator access;
-    map <int, list <int>>::iterator access2;
+    map <int, list <int> >::iterator access2;
     list <struct loop> loops;
     list <struct loop>::iterator loop_explorer;
 
@@ -4149,7 +4149,7 @@ int main(int argc, const char * argv[])
     const char *p2;
     
     std::cerr << "\nIntyBASIC compiler " << VERSION << "\n";
-    std::cerr << "(c) 2014-2016 Oscar Toledo G. http://nanochess.org/\n\n";
+    std::cerr << "(c) 2014-2018 Oscar Toledo G. http://nanochess.org/\n\n";
     
     // Get year and default title for program
     // And yep, use old-style C functions :)

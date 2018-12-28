@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 06-ago-2018
+Última revisión: 27-dic-2018
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,7 +30,7 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.4.0 06-ago-2018  o Se agrega contrib/accel.bas como muestra de movimiento
+v1.4.0 27-dic-2018  o Se agrega contrib/accel.bas como muestra de movimiento
                       de sprites por fracciones de pixel (contribución de
                       intvnut)
                     o VOICE INIT ahora "calla" el Intellivoice (contribución
@@ -567,6 +567,9 @@ Las siguientes sentencias están disponibles:
   GOTO etiqueta
   
      Salta a la etiqueta.
+
+     Es erróneo saltar de dentro de un PROCEDURE hacia afuera o a otro
+     PROCEDURE. IntyBASIC generará un mensaje de error al detectar esto.
   
   GOSUB label       
   
