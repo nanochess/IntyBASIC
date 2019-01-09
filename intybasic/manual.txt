@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Dec/27/2018.
+Last revision: Jan/09/2018.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -50,6 +50,9 @@ v1.4.0 Dec/27/2018  o Added contrib/accel.bas it shows how to move sprites
                     o Support for local labels (using period character
                       before a label, uses last global label as prefix)
                     o Compatibility with Tutorvision consoles.
+                    o Solved bug in PLAY SIMPLE (always was processed as NO DRUMS)
+                    o Added new IntyColor flags for processing bitmaps as 8x16 and
+                      selecting size of block of GRAM definition.
 
 v1.2.9 Nov/07/2017  o Moved screen clearing at the very start of program
                       to avoid brief title screen in Sears Intellivision.
@@ -346,19 +349,20 @@ v0.1  Jan/28/2014   First release
 
 >>>>>>>>>>>>>>  Description
 
-This is an integer BASIC compiler for Intellivision, it works as a cross compiler over a
-PC, Mac or Linux and generates assembler code that can be processed by as1600 (included
-with the jzintv emulator)
+IntyBASIC is an integer BASIC compiler for Intellivision. It works as a
+cross compiler over a PC, Mac or Linux and generates assembler code that
+can be processed by as1600 (included with the jzintv emulator)
 
-Platforms available:
+Platforms requirements:
   o PC with Windows XP or better.
   o Mac OS X 10.6 or better. (universal 32/64-bits binary)
   o Linux.
 
-Current limitations are:
-  o Division and remainder (modulus) operators treat numbers as unsigned.
-  o The constants 32768-65535 don't imply unsigned numbers, if these are used in a
-    comparison with variable, the variable can be marked as UNSIGNED.
+The current limitations are:
+  o Division and remainder (modulo) operators treat numbers as unsigned.
+  o The constants 32768-65535 don't imply unsigned numbers, if these are
+    used in a comparison with a variable, the variable should be marked
+    as UNSIGNED.
   o ASM cannot be used inside DEF FN.
   o Using PRINT for numbers always show numbers as unsigned from 0 to 65535.
 
@@ -369,15 +373,16 @@ Usage:
   intybasic --cc3 in.bas output.asm [library_path]
   intybasic --title "My cute game" in.bas output.asm [library_path]
 
-Following modules are automatically included as prologue and epilogue of your generated
-code and they set important variables and helper code:
+The following modules are automatically included as prologue and epilogue
+of your generated code and they set important variables and helper code:
 
     intybasic_prologue.asm
     intybasic_epilogue.asm
     
-By default these are bring from the current directory unless you choose a library path.
+By default these are taken from the current directory unless you choose a
+library path.
 
-Afterwards you should assemble your program (using as1600)
+Afterwards you should assemble your program using as1600:
 
   as1600 -o output.bin -l output.lst output.asm
 
@@ -387,45 +392,45 @@ And finally you can test it using jzintv or Nostalgia emulators:
   jzintv --jlp output.bin  Run with JLP support
   jzintv -v1 output.bin    Run with Intellivoice support
   
-Alternately you can load the program into a CuttleCart, Intellicart or LTO-Flash for
-testing over a real Intellivision.
+Alternatively you can load the program into a CuttleCart, Intellicart or
+LTO-Flash for testing on a real Intellivision.
 
-Also see below for information of source-level debugging.
+See below for information about source-level debugging.
 
-Following sample programs are included:
+The following sample programs are included:
 
   samples/bats.bas            Animated bats using new statements for loops
   samples/constants.bas       Constants library (used by all samples)
-  samples/controller.bas      Test of Intellivision controllers
-  samples/envelope.bas        How to use envelope volume generator of sound chip
+  samples/controller.bas      Test program for controllers
+  samples/envelope.bas        How to use envelope volume generator of the sound chip
   samples/flash.bas           Sample of how to use Flash memory in JLP cartridges.
   samples/frame.bas           Sample of ON FRAME GOSUB
-  samples/game1.bas           A simple shooting-letter game.
+  samples/game1.bas           A simple letter shooting game.
   samples/game2.bas           A simple labyrinth game with enemies.
   samples/lander.bas          Lunar Lander-style game
   samples/music.bas           Simple example of music playing
   samples/pak.bas             Labyrinth game eating points with ghosts
   samples/screen.bas          MODE statement test
-  samples/scroll.bas          Example of how to use scroll.
+  samples/scroll.bas          Example of how to use scrolling.
   samples/sprites.bas         Moving sprites sample.
-  samples/test.bas            Test of compiler, anyway there could be hidden bugs.
+  samples/test.bas            Compiler tester.
   samples/title.bas           Animated tile for title screen
   samples/voice.bas           Simple example of Intellivoice
 
   contrib/42k.bas             Example of how to use the 42K words maximum memory map
-  contrib/accel.bas           Moving sprites with subpixel fractions (intvnut)
-  contrib/AppleCatcher.bas    Game Apple Catcher by Kiwi
-  contrib/clowns.bas          Game Clowns & Ballons by catsfolly
+  contrib/accel.bas           Moving sprites with subpixel fractions by intvnut.
+  contrib/AppleCatcher.bas    Apple Catcher game by Kiwi.
+  contrib/clowns.bas          Clowns & Ballons game by catsfolly.
   contrib/ColouredSquares.bas Uses Coloured Squares mode to draw Bresenham lines
   contrib/constants.bas       Constants library (same as samples)
-  contrib/Gram2GromFont.bas   Converts GROM font to different fonts. (GroovyBee)
+  contrib/Gram2GromFont.bas   Converts GROM font to different fonts by GroovyBee.
   contrib/hello.bas           Hello World by DZ-Jay
-  contrib/intro.bas           Intro to IntyBASIC by Tarzilla
-  contrib/keypad.bas          Keypad test by GroovyBee
-  contrib/tcg.bas             Trollish Comment Generator by catsfolly
-  contrib/TinyFont.bas        Small font generator at 40 columns (GroovyBee)
+  contrib/intro.bas           Intro to IntyBASIC by Tarzilla.
+  contrib/keypad.bas          Keypad test by GroovyBee.
+  contrib/tcg.bas             Trollish Comment Generator by catsfolly.
+  contrib/TinyFont.bas        Small font generator at 40 columns by GroovyBee.
 
-Following utilities are included:
+The following utilities are included:
 
   IntyColor            Converts a bitmap image to IntyBASIC source code/graphics
   IntySmap             Converts a smap file to reference IntyBASIC source code.
@@ -442,42 +447,47 @@ If you find a bug, please report to same email and I'll try to look into
 it. Because lack of time I cannot guarantee it will be corrected.
 
 
->>>>>>>>>>>>>>  IntyBASIC language specification:
+>>>>>>>>>>>>>>  IntyBASIC language specification
   
-Execution starts at init of BASIC program.
+Execution starts at init point of BASIC program.
 
 Syntax per line:
   [label:] statement[:statement] [' comment][\]
 
   MAIN:    PRINT "HELLO"  ' Prints hello
   
-Multiple statements are allowed separated by colon.
+Multiple statements are allowed, but these must be separated by colons.
+
 Variables are created simply by being used.
+
 Labels are created simply by being used.
 
 You can use a period before a label name to mark a local label. The local label
 real name is based in the most recent global label (any label that doesn't
 start with a period) concatenated with the local label.
 
-A variable name starts with a letter or # and follows with letter, number or
-underscore.
+A variable name starts with a letter or # and is followed by letters, numbers,
+or the underscore character.
 
-Variables and arrays (see DIM and bottom section for "exact" variables allowed) can
-be 8-bits (minimum 179 available) or 16-bits size (minimum 28 available), by
-default variables are 8-bit, to use 16-bits size use # as start character in name.
+Variables and arrays (see DIM and bottom section for "exact" variables allowed)
+can be 8 bit (maximum 179 available) or 16 bit in size (maximum 28 available).
+Variables are 8 bit by default. To define a 16 bit variable use # as the starting
+character of the variable's name.
 
     x
     y
     #score
     
-Note that if you use the # prefix you should use it in all your program, variables
-without # prefix are treated as different 8-bit variables.
+Note that if you use the # prefix you should use it everywhere in your program.
+Variables with the same name but without the # prefix are treated as different
+8 bit variables.
     
-All variables start containing zero value. Also IntyBASIC will warn you if you
-exceed the number of available variables.
+All variables are initialized with the value 0 (zero) when they are created.
+Also, IntyBASIC will warn you if you exceed the number of available variables.
 
-Concatenation of lines is provided by the \ character, it concatenates the
-current line with the following line as a single long line. So this is valid:
+Concatenation of lines is available via the \ character. It concatenates the
+current line with the following line as a single long line. The following
+example is completely valid:
 
      PR\
      INT\
@@ -486,48 +496,49 @@ current line with the following line as a single long line. So this is valid:
     
 And will be processed as PRINT "HELLO"
 
-Following statements are available:
+The following statements are available:
 
   REM comment      
   ' comment
   
-     Everything since REM to end of line is a comment
+     Everything between REM and the end of the line is treated by the compiler
+     as a comment.
+
     
   SIGNED name[,name]
   
-     Indicates the names are signed variables/arrays.
-     
-     This only affects to the 8-bits variables that are unsigned by
-     default.
-     
-     Note this adds two instructions to extend sign to each 8-bit signed
-     variable read, although IntyBASIC will try to optimize them out.
-     
-     Usually you can develop your programs without using this keyword,
-     but it's available if you require it.
+     Indicates that names are signed variables/arrays.
+
+     This only applies to the 8-bit variables that are unsigned by default.
+
+     Notice that this adds two machine instructions to extend the sign of each
+     8-bit signed variable read, although IntyBASIC will try to optimize them.
+
+     Usually you can develop your programs without using this keyword, but it's
+     available if you really need it.
 
   UNSIGNED name[,name]
   
-     Indicates the names are unsigned variables/arrays.
-     
-     This only affects to the 16-bits variables when doing comparisons
-     of less or greater than, including FOR statements.
+     Indicates that the names are unsigned variables/arrays.
 
-     Note this can add one extra instruction to each comparison, this
-     depends on comparison direction.
+     This only applies to the 16-bit variables when doing comparisons of less or
+     greater than, including FOR statements.
 
-     Very useful for score routines up to 65535 or to create subroutines
-     for values of 32 bits.
+     Notice that this can add one extra machine instruction to each comparison,
+     this depends on the comparison direction.
+
+     This is very useful for score routines up to 65535 or to create subroutines
+     with 32-bit values.
 
   CONST [name]=[constant expression]
   
-     Assigns a name to a constant expression. The compiler will replace this
-     name in expressions with the number. These names have priority over
-     variables.
-    
-     This is a kind of directive, it doesn't generate code and it can appear
-     anywhere in the program but it will be taken as constant from the point
-     of appearance onwards.
+     Assigns a name to a constant expression. The compiler will replace all
+     instances of this name, in all expressions, with the number. These names
+     have priority over variable names.
+
+     This is like a compiler directive, it doesn't generate code and it can
+     appear anywhere in the program but it will be treated as a constant from
+     the point of appearance onwards.
   
   GOTO label        
   
@@ -538,82 +549,90 @@ Following statements are available:
 '
   GOSUB label       
   
-     Go to subroutine at label (must be PROCEDURE)
+     Go to subroutine at label (must be a PROCEDURE).
   
   label: PROCEDURE
   [code for subroutine]
   END
   
-     Create a PROCEDURE callable by GOSUB
-     It's important that PROCEDURE is in same line as label
+     Create a PROCEDURE callable by GOSUB.
+
+     It's important that PROCEDURE is on the same line as the label.
+
+     END implies an automatic RETURN.
 
   RETURN            
   
-     Return from subroutine
+     Return from subroutine (PROCEDURE). Also can be used to return early from a
+     PROCEDURE.
 
   FOR A=start TO end [STEP increment]
   NEXT     ' Also supported NEXT A
   
   FOR A=1 TO 5 ' Loop
-  [Variable A will contain 1,2,3,4,5]
+    [Variable A will contain 1,2,3,4,5]
   NEXT A
   
   FOR A=1 TO 5 STEP 2
-  [Variable A will contain 1, 3, 5]
+    [Variable A will contain 1, 3, 5]
   NEXT A
   
   FOR A=5 TO 1 STEP -2
-  [Variable A will contain 5, 3, 1]
+    [Variable A will contain 5, 3, 1]
   NEXT A
   
      Looping statement.
      
-     Note you can only use normal variables for loop, not array variables.
-     
-     There is a small quirk if you're using 8-bits variables and the TO expression
-     is pretty complex and reachs 0 or 255, the loop can be infinite.
+     The start, end and step expressions can be complex expressions, instead of
+     only constants or variables.
+
+     Notice that you can only use regular variables for the loop variable, not
+     array variables. There is a small quirk if you're using an 8-bit variable
+     and the TO expression is pretty complex and reaches 0 or 255, the loop can
+     be infinite.
      
   WHILE expr:[statement]:WEND
   WHILE expr
   [statement]
   WEND
   
-     Looping statement while expression evaluates to non-zero.
+     Looping statement that keeps looping as long as the expression evaluates
+     to non-zero.
      
   DO WHILE expr:[statement]:LOOP
   DO WHILE expr
-  [statement]
+    [statement]
   LOOP
 
   DO UNTIL expr:[statement]:LOOP
   DO UNTIL expr
-  [statement]
+    [statement]
   LOOP
   
   DO:[statement]:LOOP WHILE expr
   DO
-  [statement]
+    [statement]
   LOOP WHILE expr
   
   DO:[statement]:LOOP UNTIL expr
   DO
-  [statement]
+    [statement]
   LOOP UNTIL expr
   
-     Looping statement WHILE expression evaluates to non-zero, or UNTIL
-     expression evaluates to non-zero.
-     
+     Looping statements that keep looping WHILE expression evaluates to
+     non-zero, or UNTIL expression evaluates to non-zero.
+
   EXIT FOR
     
-     Exits current FOR loop, jumps exactly after NEXT.
+     Exits current FOR loop, jumps directly to the line that follows NEXT.
 
   EXIT WHILE
   
-     Exits current WHILE loop, jumps exactly after WEND.
+     Exits current WHILE loop, jumps directly to the line that follows WEND.
      
   EXIT DO
      
-     Exits current DO loop, jumps exactly after LOOP.
+     Exits current DO loop, jumps directly to the line that follows LOOP.
 
   IF expr GOTO [label]
   IF expr THEN [statement]
@@ -657,52 +676,58 @@ Following statements are available:
 
      Decision statement
 
-     The expression is evaluated and if the result is zero, the first label is taken,
-     and successively.
+     The expression is evaluated and if the result is zero, the first label
+     is taken, if the result is one, the second label is taken, and
+     successively up to any number of labels.
 
-     If GOSUB is used then you must be sure that each label goes to PROCEDURE.
+     If GOSUB is used then you must make sure that each label is linked to
+     a PROCEDURE.
 
-     If option has no label or the expression exceeds the number of labels, execution
-     flow continues with following statement after ON.
+     If an option has no label or if the expression exceeds the number of
+     labels, the execution flow continues with the following statement
+     after ON.
 
-     This statement can be made faster in execution using the FAST modifier, it will
-     avoid checking boundaries, if your list of labels doesn't cover the full
-     expression range then your PROGRAM WILL CRASH.'
+     This statement can be made faster in execution using the FAST modifier,
+     it will avoid checking boundaries, if your list of labels doesn't cover
+     the full expression range then your PROGRAM WILL CRASH.
 
   ON FRAME GOSUB label
   
-     On each video frame interrupt, the IntyBASIC support code will call
-     the indicated label.
-     
-     Note this doesn't generate any code and only should appear one time in your
-     program.
-     
-     Also it could be called even before your initialization routines are ready.
+     On each video frame interrupt, the IntyBASIC core will call the indicated
+     PROCEDURE.
 
-     The only valid assumption is that every single variable is zero after booting.
+     This doesn't generate any code and should only appear once in your program.
+     Also, it’s important to keep in mind this procedure could be called even
+     before your initialization routines are executed.
 
-     Also it's your responsability that the code doesn't take too long, otherwise
-     video frame interrupts will accumulate and your memory stack will overflow.
+     The only valid assumption is that every single variable is zero after
+     booting.
+
+     Also it's your responsability that the code doesn't take too long to
+     execute, otherwise video frame interrupts will accumulate and your memory
+     stack will overflow.
 
   POKE address,data
   
-     Poke memory with data
+     Poke memory with data.
 
   WAIT
   
-     Waits for next frame interruption (1/60 sec. for NTSC or 1/50 for PAL)
+     Waits for the next frame interruption (1/60 of a second for NTSC or 1/50
+     of a second for PAL)
 
   OPTION WARNINGS ON
   OPTION WARNINGS OFF
 
      Enable/disable the compilation warnings. Note that if you disable warnings
-     at the end of your program, you will not have the list of non-used variables.
+     at the end of your program, you won't have the list of non-used variables.
 
   OPTION EXPLICIT
   OPTION EXPLICIT ON
   OPTION EXPLICIT OFF
 
-     Makes obligatory to declare each variable with DIM before being used.
+     Makes it mandatory to declare each variable with DIM before said variable
+     can be used.
 
   DIM variable
   DIM variable[,variable]
@@ -715,8 +740,8 @@ Following statements are available:
 
   DIM var(size)
   
-     Creates an array of data called 'var' of size 'size' elements,
-     counting starts on zero, so DIM A(10) creates an array of 0 to 9.
+     Creates an array of data called 'var' of size 'size' elements.
+     Counting starts on zero, so DIM A(10) creates an array of 0 to 9.
      
      Also you can create arrays of 16-bits numbers, using DIM #BIG(10)
 
@@ -725,8 +750,9 @@ Following statements are available:
          A(1)=A(1)+5
          A(X)=A(Y)-2
          
-     This is a kind of directive, it doesn't generate code and it can appear
-     anywhere in the program.
+     The DIM statement is like a directive, meaning it doesn't generate code
+     and it can appear anywhere in the program. The definition will start
+     from the line of the DIM statement.
 
   RESTORE label
   READ var
@@ -739,8 +765,13 @@ label:
   DATA VARPTR a
   DATA VARPTR b(constant_expr)
 
-    Useful to keep tables/graphics, numbers can be in the 16-bit range.
-    READ will automatically limit to variable size.
+    The RESTORE statement will reset an internal pointer to the indicated
+    label that should be annex to a DATA statement, this is useful for
+    defining tables and/or graphics.
+
+    Numbers can be in the 16-bit range. READ will automatically limit to
+    variable size, for example if 16-bit data is read into a 8-bit variable,
+    it will translate only the lower 8-bit.
     
       READ A       ' Reads data into A, limiting to 8 bits
       READ #A      ' Reads data into #A, no limitations.
@@ -748,8 +779,11 @@ label:
       READ A(B)    ' Reads data into A(B)
       READ #A(B)   ' Reads data into #A(B)
                    
-    All data contained in DATA can also be accessed using array-syntax,
-    like this:
+    After reading a value, the internal pointer will point to the following
+    value.
+
+    All data contained in DATA can also be accessed using the familiar
+    array-indexing syntax, like this:
     
       FOR A=0 TO 4
       PRINT AT TABLE(A),"Z"
@@ -761,53 +795,57 @@ label:
     String data will be converted to Intellivision character codes (just
     like in PRINT but not multiplied by 8 for screen)
 
-    The string data with DATA PACKED will fit two Intellivision character
-    codes per word (higher byte of word contains first letter, lower
-    byte of word contains following letter)
-
-    The constant data with DATA PACKED will be same. If DATA PACKED
-    doesn't fill the last word in one row, it will add a zero byte to
-    complete.
+    The string data with DATA PACKED will store two Intellivision character
+    codes per word (higher byte of word contains first letter, lower byte of
+    word contains following letter).
+  
+    The constant data with DATA PACKED will be handled the same way. If
+    DATA PACKED is given an odd number of bytes to process, it will add a
+    zero byte to complete the last word.
 
   DEFINE card_num,total,label
   DEFINE card_num,total,VARPTR label(expr)
   DEFINE ALTERNATE card_num,total,label
   DEFINE ALTERNATE card_num,total,VARPTR label(expr)
 
-    Loads graphics in GRAM "card_num" (0-63) for a total of "total" cards.
-    label points to graphics. (DATA or BITMAP)
-    
-    Label can be also an 16-bits array for dynamically defined GRAM.
+    Loads graphics into GRAM "card_num" (0-63) for a total of "total" cards.
+    label points to the graphics (DATA or BITMAP).
+
+    Label can also reference a 16-bit array for dynamically defined GRAM
+    (different from the static ones preserved in Read-Only Memory or ROM)    
     
         DIM #graphic(4)
         
         DEFINE 0,1,#graphic
     
-    And the VARPTR syntax allows to select a bitmap from multiple definitions.
+    And the VARPTR syntax allows us to select a bitmap from multiple
+    definitions.
 
-    Graphics will be loaded in next frame (WAIT)
-    
-    Note there is an approximate limit of loading 18 GRAM cards per frame
-    (measured with emulator in NTSC mode)
-    
-    This limit is reduced to 16 GRAM cards per frame when using the music player
-    (PLAY statement)
-    
-    Note there are two DEFINE: DEFINE and DEFINE ALTERNATE, this allows you to
-    change two cards sets in one frame. Because if you use DEFINE multiple times
-    per frame only the latest one is taken in account.
+    The graphics will be loaded in the next video frame (you can use a WAIT
+    to synchronize with the loading).
+
+    Notice that there is an approximate limit of 18 GRAM cards that can be
+    loaded per frame (this was measured with an emulator in NTSC mode).
+
+    This limit is reduced to 16 GRAM cards per frame when using the music
+    player (when using the PLAY statement).
+
+    Notice that there are two variants, namely DEFINE and DEFINE ALTERNATE.
+    This allows you to change two cards sets in one frame. This can be useful
+    because if you use DEFINE multiple times per frame only the latest one is
+    taken in account.
 
   SOUND 0,[VALUE 12 bits],[VOL 0-15]       Channel A
   SOUND 1,[VALUE 12 bits],[VOL 0-15]       Channel B
   SOUND 2,[VALUE 12 bits],[VOL 0-15]       Channel C
-  SOUND 3,[VALUE 16 bits],[TYPE 0-15]      Volume envolvent (frequency/shape)
+  SOUND 3,[VALUE 16 bits],[TYPE 0-15]      Volume envelope (frequency/shape)
   SOUND 4,[NOISE 5 bits],[MIX]      Noise and mix register ($38 value by default)
 
   Only for the secondary PSG in ECS add-on module
   SOUND 5,[VALUE 12 bits],[VOL 0-15]       Channel A
   SOUND 6,[VALUE 12 bits],[VOL 0-15]       Channel B
   SOUND 7,[VALUE 12 bits],[VOL 0-15]       Channel C
-  SOUND 8,[VALUE 16 bits],[TYPE 0-15]      Volume envolvent (frequency/shape)
+  SOUND 8,[VALUE 16 bits],[TYPE 0-15]      Volume envelope (frequency/shape)
   SOUND 9,[NOISE 5 bits],[MIX]      Noise and mix register ($38 value by default)
 
 
@@ -815,20 +853,20 @@ label:
     
        value = (3579545 / 32 / frec)
        
-    Please note this changes for PAL.
+    Please take note this change for PAL consoles:
        
        value = (4000000 / 32 / frec)
        
-    Only a constant (0-9) can be used in first parameter for SOUND.
+    Only a constant (0-9) can be used as the first parameter of SOUND.
     
     For channels A, B and C, if you use volume 48 the PSG will use the
-    volume envolvent (see SOUND 3)
+    volume envelope (see SOUND 3)
     
-    Use volume 0 to deactivate sound channels instead of mixer bits, also don't use
-    zero value for frequency parameter in channel A, B or C, it's better to use 1 in order
-    to get a fast response when changing frequency.
+    Use volume 0 to deactivate sound channels instead of mixer bits. Also
+    don't use a zero value for frequency parameter in channel A, B or C, it's
+    better to use 1 in order to get a fast response when changing frequency.
     
-    More info about PSG at:
+    More info about the PSG at:
     
       http://spatula-city.org/~im14u2c/intv/jzintv-1.0-beta3/doc/programming/psg.txt
       http://spatula-city.org/~im14u2c/intv/gi_micro_programmable_tv_games/page_7_100.png
@@ -838,59 +876,69 @@ label:
       http://spatula-city.org/~im14u2c/intv/gi_micro_programmable_tv_games/page_7_104.png
       http://spatula-city.org/~im14u2c/intv/gi_micro_programmable_tv_games/page_7_105.png
 
-    If you use the music player the SOUND capabilities are affected, check below
-    the statement PLAY.
+    If you use the music player, the SOUND capabilities are affected. Refer
+    to the PLAY statement later for further information.
 
   SPRITE index,x,y,f
   
-    The first parameter indicates number of MOB (0-7). Note that if you use a constant
-    the generated code will be faster. Sprite (MOB) will be updated in next frame.
+    The first parameter indicates the number of the MOB (0 to 7). Notice that
+    if you use a constant the generated code will be faster. Sprites (MOBs)
+    will be updated during the next frame.
     
     X contains coordinate X (0-168)
-    bit 8 = Interaction (suggested always 1)
-    bit 9 = Visibility (suggested always 1)
-    bit 10 = Double size X
+      bit 8 = Interaction (suggested always 1)
+      bit 9 = Visibility (suggested always 1)
+      bit 10 = Double size X
     
     Y contains coordinate Y (0-95)
-    bit 7 = Draw 16-line sprite. (it should be aligned in even GRAM boundary 0/2/4/8 etc)
-    bits 9-8 = Scale 00= 0.5x, 01= 1x, 10= 2x, 11= 4x
-    bit 10 = X flip
-    bit 11 = Y flip
+      bit 7 = Draw 16-line sprite. (it should be aligned in even GRAM boundary
+              0/2/4/8 etc)
+      bits 9-8 = Scale 00= 0.5x, 01= 1x, 10= 2x, 11= 4x
+      bit 10 = X flip
+      bit 11 = Y flip
     
-    F contains color and card number
-    bits 2-0 = Lower bits of color
-    bits 11-3 = Card number (0-255 for GROM, 256-319 for GRAM)
-    bit 12 = Upper bit of color
-    bit 13 = Change color stack.
+    F contains color and card number.
+      bits 2-0 = Lower bits of color
+      bits 11-3 = Card number (0-255 for GROM, 256-319 for GRAM)
+      bit 12 = Upper bit of color
+      bit 13 = Change color stack.
     
-    The X,Y,F values are written as-is to STIC, please check specifications at:
+    The X,Y,F values are written as-is to STIC, please check the specifications at:
 
       http://spatula-city.org/~im14u2c/intv/jzintv-1.0-beta3/doc/programming/stic.txt
     
   CLS
   
-    Clear screen to 0.
-    Also resets cursor position to top-left screen.
+    Clears the screen. All cards are set to 0.
+
+    Also resets the internal cursor position to the top-left corner of the screen.
 
   PRINT [AT [expr]][COLOR [expr]][,]"string"[,"string"]
   
-    Prints string in current cursor coordinate (or selected via AT value 0-239)
-    String is automatically converted from ASCII to Intellivision characters
-    and XORed with current color ($0000-$0007, $1000-$1007 or $2000 for color stack)
+    Prints the given string at the current cursor coordinate (or selected via
+    the AT value 0 to 239).
+
+    The string is automatically converted from ASCII to Intellivision
+    characters and XORed with the current color ($0000-$0007, $1000-$1007 or
+    $2000 for color stack)
+
+    For Foreground/Background mode, use $0000-$0007, and $0200 is bit 0 of
+    the background color, $0400 is bit 1 of the background color, $1000 is
+    bit 2 of the background color and $2000 is bit 3 of the background color.
+    See the MODE statement below for more information.
+
+    Notice that the cursor position is not limited so you can write outside
+    of the screen and this will make your program crash!
+
+    If you want to use a character in GROM beyond character 95 or GRAM
+    characters 256 to 319 you can use the inverted slash as an escape character
+    (by example “\96\256\319”).
+
+    If you want to use double quotes inside a string you can escape it this
+    way: \"
+
+    Examples of positioning:
     
-    For Foreground/Background mode, use $0000-$0007, and $0200 is bit 0 of background
-    color, $0400 is bit 1 of background color, $1000 is bit 2 of background color
-    and $2000 is bit 3 of background color. (check MODE statement below)
-    
-    Note cursor position is not limited so you can write out of screen and crash
-    your program.
-    
-    If you want to use GROM >= 96 or GRAM (256-319) you can use the inverted
-    slash as escape (by example \96\256\319)
-    
-    If you want to use double quotes inside a string you can escape it this way \"
-    
-    Samples of positioning:
         PRINT AT 0,"A" ' for upper-left corner
         PRINT AT 19,"B" ' for upper-right corner
         PRINT AT 220,"C" ' for bottom-left corner
@@ -905,9 +953,8 @@ label:
   PRINT <const>expr     ' Right-aligned with zeroes to 'const' size.
   PRINT <.const>expr    ' Right-aligned with spaces to 'const' size.
   
-    Prints decimal number in current position using current color.
-    
-    You can add AT and COLOR options.
+    Prints decimal number in current position using the current color. You can
+    add the AT and COLOR options.
     
     Example:
 
@@ -915,15 +962,15 @@ label:
   
   PRINT [AT [expr],]expr[,expr]
   
-    Pokes 12-bits value directly into screen, useful for variable things and GRAM
-    cards.
-    
-    For format please check STIC specification cited upwards or the F description
-    of SPRITE
-    
-    Also increases cursor position.
-    
-    Example. Printing a digit in yellow:
+    Pokes a 12-bits value directly into the screen, which is useful for
+    variable things and GRAM cards.
+
+    For format information please check the STIC specification cited upwards
+    or the F parameter of the SPRITE statement.
+
+    This also increases the cursor position.
+
+    Example: Printing a digit in yellow:
     
         PRINT (DIGIT+16)*8+6
         
@@ -932,56 +979,61 @@ label:
     Allows you to scroll the screen pixel by pixel. Offset X and Y can be any
     number between 0 and 7.
     
-    Once you pass the frontier of 8 pixels, you can issue a move_screen command
-    like this:
+    Once you pass the frontier of 8 pixels, you can specify how to move all
+    cards on the screen with the move_screen parameter:
     
         1 = Scroll leftwards
         2 = Scroll rightwards
         3 = Scroll upwards
         4 = Scroll downwards
     
-    The command will be processed in next frame or interrupt.
+    The command will be processed during the next frame or interrupt.
     
-    Note once you use SCROLL statement, automatically you'll have slightly
-    less 16-bits variables because there is need for a buffer and IntyBASIC
-    will include extra code for scrolling.
-    
-    Also note that Intellivision video chip (STIC) requires you to correct
-    sprite position when using scrolling. Check the sample SCROLL.BAS
+    Notice that if you use the SCROLL statement anywhere in your program, the
+    number of available 16-bit variables will be decreased automatically,
+    because IntyBASIC uses some 16-bit variables for buffering purposes, and
+    it will generate extra code for scrolling.
+
+    Also notice that the Intellivision video chip (STIC) requires you to
+    correct the position of every sprite when using scrolling. See the sample
+    program SCROLL.BAS for an example.
     
   BORDER [color],[mask]
   
-    Allows you to choose the border color also to mask the edges for scrolling.
+    Allows you to choose the border color and also to mask the edges for
+    scrolling.
     
     Color can be any number between 0 and 15.
     
     Mask can be 0, 1 (mask left column), 2 (mask top row) or 3 (mask both)
     
-    Border and mask will be updated in next frame.
+    Border and mask will be updated in the next frame.
     
   MODE 0,color1,color2,color3,color4
   MODE 1
   
-    Allows to select the video mode (Color Stack mode or Foreground/Background mode)
-    this happens in the next video frame (WAIT)
-    
-    Note you cannot use PRINT COLOR until WAIT has been used, because the color
-    variable is used to save data, after this COLOR will be reset to 7.
-    
-    In Color Stack mode you can choose the four background colors available in range
-    0-15.
-    
-    In Foreground/Background mode you have access to 16 background colors but you
-    only can use cards 0-63 (basic character set and uppercase letters) and the
-    defined cards 256-319.
+    Sets the video mode (Color Stack mode or Foreground/Background mode). This
+    happens in the next video frame (you can synchronize with the WAIT
+    statement)
+
+    Notice that you cannot use PRINT COLOR until the next WAIT statement has
+    been executed, because the color variable is used to save data. After this
+    COLOR will be reset to 7.
+
+    In Color Stack mode you can choose the four background colors available in
+    the range 0 to 15.
+
+    In Foreground/Background mode you have access to 16 background colors but
+    you can only use cards 0 to 63 (basic character set and uppercase letters)
+    and the defined cards 256 to 319.
 
     By default IntyBASIC starts in Color Stack mode.
 
   SCREEN label[,origin_offset,target_offset,cols,rows]
   SCREEN label[,origin_offset,target_offset,cols,rows,origin_width]
 
-    Allows to copy screen data to video the fastest way. Using only "SCREEN label"
-    copies a full screen 20x12 cards to video.
+    This statement is the fastest way to copy screen data to video. Using only
+    "SCREEN label” copies a full screen of 20x12 cards to video.
 
     'label' points to a label inside your program containing the data for the
     screen, similar to this:
@@ -991,17 +1043,17 @@ label:
         
     origin_offset is the offset (0-199 or bigger) inside the origin screen
     target_offset is the offset (0-199) inside the target video screen.
-    cols is the size in columns of your copy.
-    rows is the size in rows of your copy.
-    origin_width is the origin screen width, useful to copy a window of a
+    cols is the horizontal size (number of columns) of your copy.
+    rows is the vertical size (number of rows) of your copy.
+    origin_width is the origin screen width, useful to copy a sub-portion of a
                  big graphic screen, like a map or when scrolling horizontally.
-                 (if not used, by default it's 20 as in Intellivision screen
-                 width)
+                 If this parameter is not used, the default value is 20, which
+                 corresponds to the Intellivision screen width.
     
-    This can serve to displace large elements in video, or to display beautiful 
+    This can serve to move large elements in video, or to display beautiful 
     graphics screens.
     
-    Label can be also an 16-bits array for dynamically drawn elements.
+    Label can be also a 16-bits array for dynamically-drawn elements.
     
         DIM #cards(4)
         
@@ -1017,37 +1069,40 @@ label:
     Allows you to draw using binary, you should put BITMAP statements in pairs as
     they are declared in assembler using DECLE
     
-    Most useful attaching a label and using along DEFINE.
+    This is most useful when attaching a label and using with DEFINE.
     
     Characters taken as zero include: "0" "_" " " "."
-    Every other character will be taken as one.
+
+    Every other character will be interpreted as one.
     
   PLAY SIMPLE
   PLAY SIMPLE NO DRUMS
   PLAY FULL
   PLAY FULL NO DRUMS
   
-    Activates music player and selects type of music played, SIMPLE will use only
-    two channels, allowing user to use SOUND 2 for sound effects.
+    Activates music player and selects the type of music played, SIMPLE only
+    uses two channels, allowing the programmer to use SOUND 2 for sound effects.
     
-    FULL will use all three channels. SOUND cannot be used in this case.
+    FULL will use all three channels, so SOUND cannot be used in this context.
     
-    The music player will play drums using the noise channel and mix register,
-    you can deactivate this using the NO DRUMS syntax, for example if you want
-    to create explosion sounds on noise channel, allowing you to use SOUND 4.
+    The music player plays drums using the noise channel and the mix register.
+    You can deactivate this feature using the NO DRUMS syntax, for example if
+    you want to generate explosion sounds with the noise channel, allowing you
+    to use SOUND 4.
 
-    Note every frame the music player will update the sound channels.
-    
-    Note that if you use the NO DRUMS syntax it's needed for you to insert
-    this statement just after the PLAY statement in order to put the right
-    value to mix register: (the player will not modify it)
+    Notice that the music player will update the sound channels on every video
+    frame.
+
+    Also notice that if you use the NO DRUMS syntax, you must insert the
+    following statement just after the PLAY statement in order to set the
+    mix register correctly (the player will not modify it):
     
       SOUND 4,,$38
 
   PLAY NONE
   
-    Deactivate music player. Following this the user should turn off the sound
-    channels, using this code:
+    Deactivate music player. Following this the programmer should turn off all
+    the sound channels, using this code:
     
       SOUND 0,1,0
       SOUND 1,1,0
@@ -1056,24 +1111,25 @@ label:
 
   PLAY VOLUME expr
 
-     Set volume for music playing (0 is silence, 1 is minimum volume, 15 is
-     maximum volume)
+     Set volume for music playing: 0 is silence, 1 is minimum volume, 15 is
+     maximum volume.
      
      If you use this statement, don't forget to put PLAY VOLUME 15 at start of
      your program, because volume will be 0 at start (silence).
 
-     Note this will include extra code inside your program (around 300 words)
-     and will use slightly more cycles in each video frame.
+     Note this will cause the inclusion of extra code inside your program
+     (around 300 words) and will use a few more cycles during each video frame.
 
   PLAY label
   
-    Play music pointed by 'label'.
+    Plays the music pointed by 'label'.
     
-    label can also be a 16-bits array for loading dinamically generated music.
+    label can also be a 16-bits array for loading dinamically-generated music.
     
-    IntyBASIC will include automatically extra code for a music player.
+    IntyBASIC will include automatically extra code for the music player.
     
-    Music must be in this format: (each MUSIC statement can contain upto 8 arguments)
+    Music must be in this format: (each MUSIC statement can contain up to 8
+    arguments)
     
         label:  DATA 8       ' Ticks per note (there are 50 ticks per second)
                 MUSIC F4,A4#,C5
@@ -1082,7 +1138,7 @@ label:
 
                 MUSIC REPEAT
                 MUSIC STOP
-                MUSIC JUMP label    ' Jump to label (useful for separate intro in looping music)
+                MUSIC JUMP label    ' Jump to label (useful for separating intro in looping music)
 
                 MUSIC GOSUB label   ' Go to subroutine at label (only one level)
                 MUSIC RETURN        ' Return from subroutine
@@ -1095,24 +1151,27 @@ label:
                 MUSIC S,-,-
                 MUSIC S,-,-
                 
-    Identifiers for notes: Note C, D, E, F, G, A, B followed by octave (2-6), also
-                           available C7
+    Identifiers for notes: Note C, D, E, F, G, A, B followed by octave (2-6), C7
+                           is also available.
+
                            Optionally add # symbol for sharp.
 
-                           Optionally add W for instrument 0 (piano),
-                           X for 1 (clarinet), Y for 2 (flute), Z for 3 (bass)
+                           Optionally add W, X, Y or Z to specify the instrument.
+                           (W for piano, X for clarinet, Y for flute and Z for bass)
                            
-                           Setting instrument carries along in each channel for
-                           following MUSIC statements if these doesn't specify
-                           instrument.
+                           Setting the instrument carries over in each channel for
+                           MUSIC statements played afterwards if the instrument
+                           is not specified thereafter.
                            
-                           Note instruments waveform can be altered modifying the
-                           intybasic_epilogue.asm file per program.
+                           Notice that the instruments waveforms can be altered
+                           by modifying the intybasic_epilogue.asm file for your
+                           program.
 
-                           Also user can put S to sustain previous note.
-                           Also user can put - for silence.
+                           Also the programmer can put S to sustain previous note,
+                           or can put - for silence.
         
                            The fourth/eight argument for MUSIC allows simple drums:
+
                              Valid values are:
                                 -  none
                                 M1 strong
@@ -1120,7 +1179,7 @@ label:
                                 M3 roll
 
     IntyBASIC will detect automatically PAL/NTSC Intellivision and will adjust 
-    music timing accordingly.
+    music timing and frequencies accordingly.
 
     Note that if you use more than 4 channels, then the tracker automatically will
     turn on ECS support to allow you to play 8 channels. (4 in base PSG and 4 in ECS
@@ -1132,7 +1191,7 @@ label:
 
   PLAY OFF
   
-    Stops music
+    Stops music, if music is currently playing.
     
   VOICE INIT
   
@@ -1148,30 +1207,31 @@ label:
 
   VOICE PLAY label
   
-    Starts speaking the voice indicated by label.
+    Lets the Intellivoice perform the voice speech indicated by label.
 
-    If there is another phrase being spoken or queued then it will be
-    queued in the last position.
+    If there is another phrase being spoken or queued then it will be placed at
+    the end of the queue.
 
     If the queue is full then the phrase will be lost.
-    
-    label can be an 16-bits array in order to built phrases dynamically.
+
+    label can be a 16-bit array in order to build phrases dynamically.
     
   VOICE PLAY WAIT label
   
-    Starts speaking same as VOICE PLAY but will stop the execution
-    until all phrases in queue have been spoken.
-    
-    label can be an 16-bits array in order to built phrases dynamically.
+    Starts a voice speech in the same way as VOICE PLAY but it will continue
+    the execution until all phrases in the queue have been spoken.
+
+    label can be an 16-bit array in order to build phrases dynamically.
     
   VOICE WAIT
   
-    Waits for voice queue to be empty.
+    Waits for the voice queue to be empty.
     
   VOICE NUMBER expr
   
-    Says expression as a number, same as VOICE PLAY, it will accumulate
-    in queue if already being spoken.
+    Causes the Intellivoice to say the given expression as a number. It works
+    the same as with VOICE PLAY, meaning it will be placed at the end of the
+    queue if the queue is not empty.
 
   VOICE phrases[,phrases]
   
@@ -1206,9 +1266,9 @@ label:
     This should be the first thing called if you're using the FLASH
     functions.
     
-    It only needs to be put one time at start of program.
+    It only needs to appear once at the start of the program code.
 
-    The default size will be 16, equivalente to 128 rows of Flash memory.
+    The default size is 16, equivalent to 128 rows of Flash memory.
 
   FLASH INIT SIZE constant_expression
 
@@ -1222,39 +1282,38 @@ label:
 
   FLASH ERASE row
   
-    Erases the row number given by the expression. The row number can
-    run from FLASH.FIRST to FLASH.LAST
-        
-    It erases a full >sector< a multiple of 8 rows. So erasing any row inside
+    Erases the row number specified by the expression. The row number can be
+    any value between FLASH.FIRST to FLASH.LAST.
+
+    It erases a >full sector< which is a multiple of 8 rows. So erasing any row
     in a multiple of 8 will erase the 8 consecutive rows.
 
-    You need to invoke IntyBASIC with --jlp command line option
+    Note: You need to invoke IntyBASIC with --jlp command line option
 
   FLASH READ row,VARPTR #array(0)
   
-    Reads the row number given by the expression and puts content inside array
-    (must be 16 bits and 96 elements). The row number can be from FLASH.FIRST
-    to FLASH.LAST
+    Reads the row number given by the expression and copies the content inside
+    the given 16 bit array. This array must contain at least 96 values. The row
+    number can range from FLASH.FIRST to FLASH.LAST.
 
-    You need to invoke IntyBASIC with --jlp command line option
+    Note: You need to invoke IntyBASIC with --jlp command line option
 
   FLASH WRITE row,VARPTR #array(0)
   
-    Writes the row number given by the expression with content from array
-    (must be 16 bits and 96 elements at least). The row number can be from
-    FLASH.FIRST to FLASH.LAST.
+    Writes the contents of an array of 16-bit values (the array must contain
+    at least 96 elements) in the flash memory at the given row number. The row
+    number can range from FLASH.FIRST to FLASH.LAST.
 
-    Note that it can write only a >erased< row, this means that once written
-    a row it cannot be written again until its sector is erased.
+    Notice that it can write only to an >erased row<, this means that once a row
+    is written it cannot be written to again until its sector is erased.
 
-    You need to invoke IntyBASIC with --jlp command line option
-    
+    Note: You need to invoke IntyBASIC with the --jlp command line option.
+
     Don't forget to use the option --jlp in jzintv and --jlp-savegame=file
 
     WARNING: YOUR INTYBASIC PROGRAM WILL TURN THE SCREEN BLACK AND STOP FOR A
-    FEW MILLISECONDS WHILE THE JLP FLASH OPERATIONS COMPLETE, THIS INCLUDES
-    MUSIC IN BACKGROUND.
-
+    FEW MILLISECONDS WHILE THE JLP FLASH OPERATION IS PERFORMED, THIS INCLUDES
+    ANY BACKGROUND MUSIC.
 
   DEF FN func = RAND % 10
   DEF FN screen_off(row, col) = (row * 20 + col)
@@ -1262,54 +1321,68 @@ label:
 
     Allows to define functions with any number of arguments.
     
-    Note these are taken as macros, the arguments are replaced as-is and the text of
-    the function is inserted as-is after argument replacement. (because of that the
-    parenthesis in screen_off expression)
+    Notice that these are processed like macros: The arguments are replaced
+    as-is and the text of the function is inserted as-is after argument
+    replacement. (because of that are included the extra parenthesis in the
+    screen_off expression)
 
-    For example, the two upper functions could be called as:
+    For example, the two functions screen_off and resetsprite could be called as:
     
           A = func
           PRINT AT screen_off(4,8),"HELLO!"
           resetsprite(0)
 
-    Please note that although it's possible to reuse internal function names, when
-    called the internal functions have priority over DEF FN (that is DEF FN is
+    Please note that although it's possible to reuse internal function names,
+    when called the internal functions have priority over DEF FN (DEF FN is
     ignored)
 
   STACK_CHECK
   
-    This statement anywhere in your program will activate a code that will check for
-    stack overflow in the video interrupt routine.
+    This statement, if it appears anywhere in your program, will activate a
+    sub-routine that will continuously check for stack overflow in the video
+    interrupt routine.
     
-    If the stack exceeds the allowed limit, it will stop the program and show a
-    prominent warning message in screen saying "Stack overflow"
+    If the stack exceeds the allowed limit, the sub-routine will stop the
+    program and show a prominent error message on the screen saying "Stack
+    overflow”.
     
-    This happens commonly when doing GOSUB to PROCEDURE and getting out of it with
-    GOTO instead of RETURN.
+    This happens commonly when jumping to a PROCEDURE with GOSUB and getting
+    out of the PROCEDURE with GOTO instead of RETURN.
     
   INCLUDE "filename.bas"
   
-    Allows to include another file inside the current IntyBASIC program, note you
-    cannot use INCLUDE recursively.
-    
-    Also the INCLUDE allows you to include anywhere in your program, even you could
-    have half a procedure in the main file and the rest of it in the included file.
-    
-    Very useful to separate graphics and screen files.
+    Includes the contents of another source file inside the current IntyBASIC
+    program. Notice that you cannot use INCLUDE recursively.
 
-    It will try to include first from the current directory and then will try adding
+    Also, INCLUDE allows you to include external code anywhere in your program.
+    You could even have half of a procedure in the main file and the rest of it
+    in the included file.
+
+    This is very useful for separating graphics and screen files.
+
+    When looking for the file to include, the compiler will first look in the
+    current directory and if the source file is not found there, it will look in
     the library path provided in the command line.
 
-  CALL NAME        Calls assembly function NAME without arguments
-  CALL NAME(expr)  Calls assembly function NAME with one argument in R0
-  CALL NAME(expr,expr)  Calls assembly function NAME with two arguments in R0 and R1
-                    (up to 4 allowed)
+  CALL NAME       
+   
+    Calls assembly function NAME without arguments. Note IntyBASIC will put the
+    NAME all in uppercase.
+
+  CALL NAME(expr)  
+
+    Calls assembly function NAME with one argument in R0.
+
+  CALL NAME(expr,expr)
+ 
+    Calls assembly function NAME with two arguments in R0 and R1
+    (up to 4 are allowed).
 
   ASM code
   
-    Allows you to insert directly assembly code. It's copied directly to output.
-    
-    It's also very useful to include assembly code modules, like this:
+    Allows you to insert assembly code code directly into your source code.
+    The line content is copied directly to output. It's also very useful to
+    include assembly code modules, like this:
     
         ASM INCLUDE "yourfile.asm"
         
@@ -1318,8 +1391,9 @@ label:
 
 The expression syntax is like a calculator.
 
-Usual precedence rules applies to expression operators (addition and substraction have
-lesser priority than multiplication and division)
+The usual precedence rules apply to expression operators. Addition and
+substraction have lower precedence than multiplication and division. This means
+1 + 2 * 3 = 7 not 9.
   
   A=5               Decimal number
   A=$1000           Hexadecimal number
@@ -1341,19 +1415,19 @@ lesser priority than multiplication and division)
                     efficient for most cases. (42 minimum or 702 cycles in worst case)
                     Multiplication of variable by variable uses intvnut's fast multiply routine (fixed 272 cycles)
                     When using --jlp switch the multiplication is accelerated by hardware
-  A=A/B				Simple unsigned division (done by repeated substraction, it can be slow)
+  A=A/B	             Simple unsigned division (done by repeated substraction, it can be slow)
                     Division by 2/4/8/16/32/64/128/256 is internally optimized.
                     Division of variable by variable uses my fast division routine (214 to
                     517 cycles)
                     When using --jlp switch the division is accelerated by hardware
-  A=A%B				Simple unsigned remainder
-                    Note it does remainder by repeated substraction (can be slow)
+  A=A%B		     Simple unsigned remainder
+                    Notice that it calculates the remainder by repeated substraction (which can be slow)
                     Remainder by powers of 2 internally uses AND.
-                    Remainder of variable by variable uses my fast remainder routine (214 to
-                    517 cycles)
+                    Remainder of variable by variable uses my fast remainder
+                    routine (214 to 517 cycles)
   A=(A+B)-C
   A=A AND B
-  A=A OR B			Note this operation is not native, so it's not efficient
+  A=A OR B          Notice this operation is not native, so it's not efficient
   A=A XOR B
   A=NOT A
   A=-A
@@ -1363,22 +1437,31 @@ lesser priority than multiplication and division)
   A=A>B
   A=A<=B
   A=A>=B
-  A=PEEK(expr)		Reads a memory location
-                    PEEK always reads 16-bits data than can be processed in expression.
+  A=PEEK(expr)      Reads a memory location
+                    PEEK always reads 16-bits data than can be processed in
+                    an expression.
   A=ABS(expr)       Gets absolute value of expression (non-negative)
   A=SGN(expr)       Gets sign of expression (-1, 0 or 1)
-  A=array(expr)     Access array. Array can be defined with DIM or label for DATA
-  array(expr)=A     Writes array. Array can be defined with DIM. DATA not writable
+  A=array(expr)     Accesses an array. The array can be defined with DIM or
+                    label for DATA
+  array(expr)=A     Writes data to an array. The array can be defined with DIM.
+                    DATA is not writable
 
-  A=USR NAME        Calls assembly function NAME without arguments
+  A=USR NAME        Calls assembly function NAME (all in uppercase) without
+                    arguments.
   A=USR NAME(expr)  Calls assembly function NAME with one argument in R0
-  A=USR NAME(expr,expr)  Calls assembly function NAME with two arguments in R0 and R1
-                    (up to 4 allowed)
-                    Assembly functions can put results in R0
-  #A=VARPTR B       Gets pointer to variable. Useful when linking assembler routines
-  #A=VARPTR C(0)    Gets pointer to array. Can be defined with DIM or label for DATA.
+  A=USR NAME(expr,expr)  Calls assembly function NAME with two arguments in
+                    R0 and R1 (up to 4 allowed)
+                    Assembly functions can put results in register R0.
 
-  CONT              Contains AND'ed $01fe and $01ff complemented content (both controllers)
+  #A=VARPTR B       Gets pointer to variable. Useful when linking assembler
+                    routines.
+
+  #A=VARPTR C(0)    Gets pointer to an array. Can be defined with DIM or label
+                    for DATA.
+
+  CONT              Contains AND'ed $01fe and $01ff complemented content
+                    (from both controllers)
   CONT.UP           Non-zero if any controller pointing up
   CONT.DOWN         Non-zero if any controller pointing down
   CONT.LEFT         Non-zero if any controller pointing left
@@ -1458,60 +1541,76 @@ lesser priority than multiplication and division)
   COL5
   COL6
   COL7
-    Obtains collision between sprites for frame, better used after WAIT
+    Returns the collision status between sprites for the current frame. It is
+    best to use these after WAIT.
     Don't forget to set the interaction bit in sprites (bit 8 of X-coordinate)
     bit 0-7 means collision against sprite number.
     bit 8 means collision against background pixel (pixel set)
     bit 9 means collision against borders
 
   RAND
-    Obtains a pseudo-random value between 0 and 255. Updated on each video frame
+    Produces a pseudo-random value between 0 and 255.
+    The value produced is different on each video frame.
     
   RAND(range)
-    Obtains a pseudo-random value between 0 and range-1. Updated on each video
-    frame. Note it's slower to generate, the faster generated ones are based on
-    powers of 2. Also range limited to a maximum of 256.
+    Produces a pseudo-random value between 0 and range-1.
+    The value produced is different on each video frame.
+    Note that it's slower to generate, and the value will be
+    generated faster if based on powers of 2. The maximum
+    range value is 256.
     
   RANDOM(range)
-    Obtains a pseudo-random value between 0 and range-1. Forces update of random
-    number (it doesn't need a WAIT to change). Note it's slower to generate, the
-    faster ones are based on powers of 2. Also range limited to a maximum of 256.
+    Produces a pseudo-random value between 0 and range-1.
+    This forces the update of the random number (it doesn't
+    need a WAIT to change). Notice that it's slower to
+    generate, and the value will be generated faster if
+    based on powers of 2. The maximum range value is 256.
 
   LEN(string)
-    Gives you length of a string. Very useful in combination with DEF FN
-    For example for creating strings centered on screen.
+    Returns the length of a string. Very useful in combination
+    with DEF FN, for example, for creating strings centered on
+    the screen.
     
   POS(expr)
-    Gives you the current screen position (useful for PRINT AT)
+    Returns the current screen position (useful for PRINT AT)
     The expression is analyzed but no code generated.
 
   FRAME
-    Obtains current frame number (0-65535, it cycles over itself)
+    Returns the current frame number (0-65535, it cycles back to
+    0 after reaching 65535)
     
   NTSC
-    It will contain 1 if the Intellivision is NTSC.
+    Returns 1 if the Intellivision is an NTSC console, otherwise
+    returns zero.
     
   #MOBSHADOW(x)
-    Access elements of MOB buffer (the place where is saved the SPRITE data)
-    The indexes 0-23 replicate exactly the locations 0-23 of STIC.
+    Use this to access elements in the MOB buffer (the place where
+    SPRITE data is saved).
+ 
+    The indexes 0 to 23 correspond exactly to the contents to be
+    written to locations 0 to 23 of the STIC.
 
   #BACKTAB(x)
-    Access elements from the screen buffer (located at $0200-$02EF)
+    Use this to access elements in the screen buffer (located at
+    $0200-$02EF)
     
   FLASH.FIRST
-    First readable/writable row of JLP Flash memory
+    Returns the first readable/writable row of JLP Flash memory
 
   FLASH.LAST
-    Last readable/writable row of JLP Flash memory
+    Returns the last readable/writable row of JLP Flash memory
 
   MUSIC.PLAYING
-    Indicates if it's playing music, zero if isn't, non-zero if playing it.
+    Returns zero if music is not currently playing, returns a non-zero
+    value otherwise.
 
   VOICE.AVAILABLE
-    Indicates if Intellivoice is available, zero if isn't, non-zero if available.
+    Returns a non-zero value if the Intellivoice module is detected,
+    otherwise returns zero.
 
   VOICE.PLAYING
-    Indicates if Intellivoice is playing samples, zero if isn't, non-zero if playing.
+    Returns a non-zero value if the Intellivoice is currently playing
+    samples, otherwise returns zero.
 
 The fixed numbers are useful to move game elements in fractional steps, the trick is
 to preserve the current coordinate in a 16 bits variable, and when using it for the
@@ -1525,8 +1624,9 @@ More about the fixed numbers used in IntyBASIC:
 
 >>>>>>>>>>>>>>  Assembly language interfacing
 
-The USR expression and the CALL statement allow you to call assembly languages
-modules from inside IntyBASIC programs.
+The USR expression and the CALL statement allow you to call assembly language
+modules from inside IntyBASIC programs. Note the label name for assembly
+language modules is translated to uppercase.
 
 IntyBASIC expect the following conventions to be preserved:
 
@@ -1548,8 +1648,9 @@ IntyBASIC expect the following conventions to be preserved:
     R4 = Not important
     R5 = Not important
 
-If your module changes the address of Stack Pointer (R6) or messes with
-previous values stored is obvious the IntyBASIC program will crash.
+If your module changes the address of the Stack Pointer (R6) or messes with
+previous values stored then there is a high probability that the IntyBASIC
+program will crash.
 
 If your function is relatively simple:
 
@@ -1569,9 +1670,9 @@ If your function needs more registers or calls nested functions:
 
 >>>>>>>>>>>>>>  Some further notes
 
-As execution is sequential unless interrupted by GOTO or GOSUB. In any of your
-programs you should put GOTO at end of main block, otherwise execution could run 
-freely, by example.
+A program’s execution is sequential unless interrupted by GOTO or GOSUB. In any
+of your programs you should put GOTO at the end of the main block, otherwise
+execution could run in undesirable ways. For example:
 
 Example 1:
 
@@ -1582,14 +1683,15 @@ Example 1:
 Example 2:
 
     A = 5
-  stop:   GOTO stop	' Prevents execution going inside procedure
+  stop:   GOTO stop	' Prevents execution running inside procedure
 
   test:	PROCEDURE
 		END
         
-If you insert DATA, MUSIC or VOICE data in the middle of the execution sequence,
-the Intellivision processor will do strange things. So you must put your data at
-the end of the program or where the execution doesn't reach it.
+If you insert PROCEDURE, DATA, MUSIC or VOICE data in the middle of the
+execution sequence, the Intellivision processor will do strange things. So you
+must put your data at the end of the program or where the execution doesn't
+reach it.
 
 Example 3:
 
@@ -1611,13 +1713,14 @@ In order to select foreground/background mode, you should use this:
 
     MODE 1
 
-IntyBASIC by default starts program in $5000 area, you have space available up to
-$6fff, that is a binary of 16K.
+By default, IntyBASIC starts the program at $5000 area. The available space
+goes up to $6FFF, for a cartridge binary of 16K.
 
-You can measure your program checking the generated LST file created by the
-assembler or the CFG file.
+You can measure your program by checking the generated LST file created by
+the assembler or the CFG file.
 
-Anyway, you can insert ASM statements to create bigger programs, like this:
+In any case, you can insert ASM statements to create bigger programs, like
+this:
 
     ASM ORG $D000
     
@@ -1699,8 +1802,26 @@ You need to compile your program in this way:
 
 After this you can use normally the jzintv debug commands.
 
-Note for Windows that your main window must be 160 columns or wider, use the
-jzintv command >160 to expand window if necessary.
+Notice that under Windows, your main window must be 160 columns or wider.
+Inside the debugger use the jzintv command >160 to expand the window if
+necessary.
+
+Also you can add useful metadata in your IntyBASIC code, like title of game,
+author name, license, date, etc. It will pass through the as1600 assembler,
+and it will get embedded into the final ROM file..
+
+This information is used by the newest versions of the LTO-Flash software, and it can be read by the rom_metadata utility in the jzintv package.
+
+Some examples of these tags:
+
+ASM CFGVAR "name" = “A woman looks for her cat"
+ASM CFGVAR "short_name" = “Cat search!”
+ASM CFGVAR "author" = “Mindy Cat Lover”
+ASM CFGVAR "release_date" = "2018-07-20"
+ASM CFGVAR "license" = “public domain"
+ASM CFGVAR "music_by" = “Bea U. Ty” 
+
+The latest reference to these metadata tags is available at http://spatula-city.org/~im14u2c/intv/jzintv/doc/rom_fmt/id_tag.txt
 
 
 >>>>>>>>>>>>>>  Permissions in Mac OS X and Linux
