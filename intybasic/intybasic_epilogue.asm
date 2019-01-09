@@ -51,6 +51,8 @@
 	; Revision: Mar/01/2018. Added support for music tracker over ECS.
 	; Revision: Sep/25/2018. Solved bug in mixer for ECS drums.
 	; Revision: Oct/30/2018. Small optimization in music player.
+	; Revision: Jan/09/2019. Solved bug where it would play always like
+	;                        PLAY SIMPLE NO DRUMS.
 	;
 
 	;
@@ -1246,7 +1248,7 @@ _emit_sound:	PROC
 	MVI@ R4,R0	
 	MVO@ R0,R5	; $01F9 - Noise Period (5 bits)
 	INCR R5		; Avoid $01FA - Envelope Type (4 bits)
-@@3:    MVI@ R4,R0
+@@3:	MVI@ R4,R0
 	MVO@ R0,R5	; $01FB - Channel A Volume
 	MVI@ R4,R0
 	MVO@ R0,R5	; $01FC - Channel B Volume
@@ -1255,28 +1257,30 @@ _emit_sound:	PROC
 	JR R1
 
 @@1:	INCR R4		
-	ADDI #2,R5	; Avoid $01F2 and $01F3
+	INCR R5		; Avoid $01F2 and $01F3
+	INCR R5		; Cannot use ADDI
 	MVI@ R4,R0
-	MVO@ R0,R5	; $01F4
+	MVO@ R0,R5	; $01F4 - Channel A Period (High 4 bits of 12)
 	MVI@ R4,R0
-	MVO@ R0,R5	; $01F5
+	MVO@ R0,R5	; $01F5 - Channel B Period (High 4 bits of 12)
 	INCR R4
-	ADDI #2,R5	; Avoid $01F6 and $01F7
+	INCR R5		; Avoid $01F6 and $01F7
+	INCR R5		; Cannot use ADDI
 	BC @@4		; Jump if playing with drums
 	ADDI #2,R4
 	ADDI #3,R5
 	B @@5
 
 @@4:	MVI@ R4,R0
-	MVO@ R0,R5	; $01F8
+	MVO@ R0,R5	; $01F8 - Enable Noise/Tone (bits 3-5 Noise : 0-2 Tone)
 	MVI@ R4,R0
-	MVO@ R0,R5	; $01F9
-	INCR R5		; Avoid $01FA
-@@5:    MVI@ R4,R0
-	MVO@ R0,R5	; $01FB
+	MVO@ R0,R5	; $01F9 - Noise Period (5 bits)
+	INCR R5		; Avoid $01FA - Envelope Type (4 bits)
+@@5:	MVI@ R4,R0
+	MVO@ R0,R5	; $01FB - Channel A Volume
 	MVI@ R4,R0
-	MVO@ R0,R5	; $01FD
-@@6:    JR R1
+	MVO@ R0,R5	; $01FC - Channel B Volume
+@@6:	JR R1
 	ENDP
 
 	;
