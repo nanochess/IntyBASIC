@@ -24,6 +24,7 @@
 	;                        So VOICE INIT ceases to be dangerous.
 	; Revision: Oct/30/2018. Redesigned PAL/NTSC detection using intvnut code,
 	;                        also now compatible with Tutorvision. Reformatted.
+	; Revision: Jan/10/2018. Added ECS detection.
 	;
 
 	ROMW 16
@@ -160,6 +161,19 @@ _pal3:	SUBI #8,R6		; Drop interrupt stack.
 	RLC R2
 	RLC R2
 	ANDI #1,R2		; 1 = NTSC, 0 = PAL
+
+	MVII #$55,R1
+	MVO R1,$4040
+	MVII #$AA,R1
+	MVO R1,$4041
+	MVI $4040,R1
+	CMPI #$55,R1
+	BNE _ecs1
+	MVI $4041,R1
+	CMPI #$AA,R1
+	BNE _ecs1
+	ADDI #2,R2		; ECS detected flag
+_ecs1:
 	MVO R2,_ntsc
 
 	CALL _set_isr

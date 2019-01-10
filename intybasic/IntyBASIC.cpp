@@ -1122,7 +1122,19 @@ private:
                     get_lex();
                     return new node(C_VAR, 20, NULL, NULL);
                 }
-                emit_error("syntax error in MUSIC");
+                emit_error("syntax error in VOICE");
+                return new node(C_NUM, 0, NULL, NULL);
+            } else if (name == "ECS") {  // ECS
+                get_lex();
+                if (lex != C_PERIOD)
+                    emit_error("missing period in ECS");
+                else
+                    get_lex();
+                if (lex == C_NAME && name == "AVAILABLE") {
+                    get_lex();
+                    return new node(C_VAR, 21, NULL, NULL);
+                }
+                emit_error("syntax error in ECS");
                 return new node(C_NUM, 0, NULL, NULL);
             } else if (macros[name] != NULL) {  // Function (macro)
                 if (replace_macro())

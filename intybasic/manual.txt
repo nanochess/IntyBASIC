@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jan/09/2019.
+Last revision: Jan/10/2019.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4.0 Jan/09/2019  o Added contrib/accel.bas it shows how to move sprites
+v1.4.0 Jan/10/2019  o Added contrib/accel.bas it shows how to move sprites
                       by fractions of pixel (contributed by intvnut)
                     o VOICE INIT now "shuts up" the Intellivision (contributed
                       by intvnut) and the initializatin is done in automatic
@@ -53,6 +53,7 @@ v1.4.0 Jan/09/2019  o Added contrib/accel.bas it shows how to move sprites
                     o Solved bug in PLAY SIMPLE (always was processed as NO DRUMS)
                     o Added new IntyColor flags for processing bitmaps as 8x16 and
                       selecting size of block of GRAM definition.
+                    o Added ECS.AVAILABLE flag.
 
 v1.2.9 Nov/07/2017  o Moved screen clearing at the very start of program
                       to avoid brief title screen in Sears Intellivision.
@@ -1614,6 +1615,10 @@ substraction have lower precedence than multiplication and division. This means
     Returns a non-zero value if the Intellivoice is currently playing
     samples, otherwise returns zero.
 
+  ECS.AVAILABLE
+    Returns a non-zero value if the Entertainment Computer System is
+    connected, otherwise returns zero.
+ß
 The fixed numbers are useful to move game elements in fractional steps, the trick is
 to preserve the current coordinate in a 16 bits variable, and when using it for the
 final display you should copy the value to a 8 bits variable (cutting the fixed part)

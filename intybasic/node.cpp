@@ -542,8 +542,10 @@ void node::generate(int reg, int decision) {
                 output->emit_lr(N_MVI, "_cnt1_key", -1, reg);
             if (value == 11)
                 output->emit_lr(N_MVI, "_cnt2_key", -1, reg);
-            if (value == 12)
+            if (value == 12) {
                 output->emit_lr(N_MVI, "_ntsc", -1, reg);
+                output->emit_nr(N_ANDI, "", 1, reg);
+            }
             if (value == 13) {  // Read both controllers
                 output->emit_lr(N_MVI, "", 0x01fe, reg);
                 output->emit_lr(N_XOR, "", 0x01ff, reg);
@@ -600,6 +602,11 @@ void node::generate(int reg, int decision) {
                 output->emit_nr(N_ANDI, "", 0x8000, reg);    // 2
                 output->emit_l(TEMP_PREFIX, label);
                 output->trash_partial(reg);
+            }
+            if (value == 21) {  // ECS.AVAILABLE
+                output->emit_lr(N_MVI, "_ntsc", -1, reg);
+                output->emit_s(N_SLR, reg, 1);
+                output->emit_nr(N_ANDI, "", 1, reg);
             }
             break;
         case C_PEEK:    // PEEK()
