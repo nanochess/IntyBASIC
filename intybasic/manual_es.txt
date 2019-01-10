@@ -33,6 +33,10 @@ en inglés.
 v1.4.0 10-ene-2019  o Se agrega contrib/accel.bas como muestra de movimiento
                       de sprites por fracciones de pixel (contribución de
                       intvnut)
+                    o Se agrega samples/rain.bas para mostrar lluvia animada
+                      y árboles moviéndose.
+                    o Se agrega samples/pumpkin_master.bas como otro ejemplo
+                      de un juego completo y funcional.
                     o VOICE INIT ahora "calla" el Intellivoice (contribución
                       de intvnut) y la inicialización se realiza de forma
                       automática al inicio del programa.
@@ -61,6 +65,9 @@ v1.4.0 10-ene-2019  o Se agrega contrib/accel.bas como muestra de movimiento
                       última etiqueta global)
                     o Compatibilidad con consolas Tutorvision.
                     o Se integra bandera ECS.AVAILABLE
+                    o Permite que la opción --cc3 cambie la dirección de la
+                      memoria RAM. (para compatibilidad con el Keyboard
+                      Component)
 
 v1.2.9 07-nov-2017  o Se mueve la limpieza de pantalla muy al inicio del
                       programa para evitar vistazo de título en Intellivision

@@ -25,6 +25,10 @@ All trademarks are property of their respective owners.
 
 v1.4.0 Jan/10/2019  o Added contrib/accel.bas it shows how to move sprites
                       by fractions of pixel (contributed by intvnut)
+                    o Added samples/rain.bas to show animate rain and moving
+                      trees.
+                    o Added samples/pumpkin_master.bas as another example of a
+                      fully working game.
                     o VOICE INIT now "shuts up" the Intellivision (contributed
                       by intvnut) and the initializatin is done in automatic
                       form at start of program.
@@ -54,6 +58,8 @@ v1.4.0 Jan/10/2019  o Added contrib/accel.bas it shows how to move sprites
                     o Added new IntyColor flags for processing bitmaps as 8x16 and
                       selecting size of block of GRAM definition.
                     o Added ECS.AVAILABLE flag.
+                    o Allows the --cc3 option to change the address of RAM
+                      memory. (allows Keyboard Component compatibility)
 
 v1.2.9 Nov/07/2017  o Moved screen clearing at the very start of program
                       to avoid brief title screen in Sears Intellivision.
