@@ -322,6 +322,7 @@ private:
         }
         if (isdigit(line[line_pos])) {  // Decimal number
             int fraction;
+            int something;
             
             value = 0;
             while (line_pos < line_size && isdigit(line[line_pos]))
@@ -337,14 +338,26 @@ private:
                 }
                 line_pos++;
                 fraction = 0;
-                if (line_pos < line_size && isdigit(line[line_pos]))
+                something = 0;
+                if (line_pos < line_size && isdigit(line[line_pos])) {
+                    something += line[line_pos] - '0';
                     fraction += (line[line_pos++] - '0') * 100;
-                if (line_pos < line_size && isdigit(line[line_pos]))
+                }
+                if (line_pos < line_size && isdigit(line[line_pos])) {
+                    something += line[line_pos] - '0';
                     fraction += (line[line_pos++] - '0') * 10;
-                if (line_pos < line_size && isdigit(line[line_pos]))
+                }
+                if (line_pos < line_size && isdigit(line[line_pos])) {
+                    something += line[line_pos] - '0';
                     fraction += (line[line_pos++] - '0');
-                while (line_pos < line_size && isdigit(line[line_pos]))
+                }
+                while (line_pos < line_size && isdigit(line[line_pos])) {
+                    something += line[line_pos] - '0';
                     line_pos++;
+                }
+                if (something != 0 && fraction == 0) {
+                    emit_warning("fraction of fixed number is zero (hasn't enough precision)ß");
+                }
                 value += (int) (fraction * (256.0 / 1000.0) + 0.5) * 256;
                 name = ".";
             }

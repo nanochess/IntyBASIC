@@ -1618,7 +1618,7 @@ substraction have lower precedence than multiplication and division. This means
   ECS.AVAILABLE
     Returns a non-zero value if the Entertainment Computer System is
     connected, otherwise returns zero.
-ß
+
 The fixed numbers are useful to move game elements in fractional steps, the trick is
 to preserve the current coordinate in a 16 bits variable, and when using it for the
 final display you should copy the value to a 8 bits variable (cutting the fixed part)
