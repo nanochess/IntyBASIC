@@ -1,12 +1,12 @@
 >>>>>>>>>>>>>  Manual del usuario de IntyBASIC  <<<<<<<<<<<<<<<
 
                  por Oscar Toledo G.
-       (c) Copyright Oscar Toledo G. 2014-2018
+       (c) Copyright Oscar Toledo G. 2014-2019
                 http://nanochess.org/
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 27-dic-2018
+Última revisión: 09-ene-2019
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,7 +30,7 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.4.0 27-dic-2018  o Se agrega contrib/accel.bas como muestra de movimiento
+v1.4.0 09-ene-2019  o Se agrega contrib/accel.bas como muestra de movimiento
                       de sprites por fracciones de pixel (contribución de
                       intvnut)
                     o VOICE INIT ahora "calla" el Intellivoice (contribución
@@ -440,6 +440,8 @@ Los siguientes programas de ejemplo están incluídos:
   samples/lander.bas          Juego del aterrizaje lunar
   samples/music.bas           Ejemplo sencillo de reproducción de música.
   samples/pak.bas             Juego de come puntos que incluye fantasmas ;)
+  samples/pumpkin_master.bas  El juego del amo de las calabazas. :V
+  samples/rain.bas            Animación de lluvia
   samples/screen.bas          Prueba de la sentencia MODE
   samples/scroll.bas          Ejemplo de como usar el scroll
   samples/sprites.bas         Ejemplo de sprites movibles

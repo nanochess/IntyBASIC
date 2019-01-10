@@ -1,12 +1,12 @@
 >>>>>>>>>>>>>  IntyBASIC user's manual  <<<<<<<<<<<<<<<
 
                  by Oscar Toledo G.
-       (c) Copyright 2014-2018 Oscar Toledo G.
+       (c) Copyright 2014-2019 Oscar Toledo G.
                 http://nanochess.org/
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jan/09/2018.
+Last revision: Jan/09/2019.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4.0 Dec/27/2018  o Added contrib/accel.bas it shows how to move sprites
+v1.4.0 Jan/09/2019  o Added contrib/accel.bas it shows how to move sprites
                       by fractions of pixel (contributed by intvnut)
                     o VOICE INIT now "shuts up" the Intellivision (contributed
                       by intvnut) and the initializatin is done in automatic
@@ -410,6 +410,8 @@ The following sample programs are included:
   samples/lander.bas          Lunar Lander-style game
   samples/music.bas           Simple example of music playing
   samples/pak.bas             Labyrinth game eating points with ghosts
+  samples/pumpkin_master.bas  Pumpkin Master game.
+  samples/rain.bas            Rain animation.
   samples/screen.bas          MODE statement test
   samples/scroll.bas          Example of how to use scrolling.
   samples/sprites.bas         Moving sprites sample.
