@@ -33,7 +33,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.4.0 Dec/27/2018";      // Compiler version
+const string VERSION = "v1.4.0 Jan/09/2018";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -3556,7 +3556,7 @@ public:
     //
     // Starts compilation
     //
-    int start(const char *input_file, const char *output_file, const char *library_path, int flags) {
+    int start(const char *input_file, const char *output_file, const char *library_path, int flags, int cc3_start) {
         int used_space;
         int available_vars;
         char *p;
@@ -4042,8 +4042,14 @@ public:
             asm_output << "\nSYSTEM2:\tORG $8040, $8040, \"-RWBN\"\n";
             used_space = 0;
         } else if (cc3_used) {
+            static const char *hex = "0123456789abcdef";
+            char address[3];
+            
+            address[0] = hex[(cc3_start >> 12) & 0x0f];
+            address[1] = hex[(cc3_start >> 8) & 0x0f];
+            address[2] = '\0';
             asm_output << "_SYSTEM:\tEQU $\n";
-            asm_output << "\nSYSTEM2:\tORG $8040, $8040, \"=RW\"\n";
+            asm_output << "\nSYSTEM2:\tORG $" << address << "40, $" << address << "40, \"=RW\"\n";
             used_space = 0;
         }
         
@@ -4147,9 +4153,10 @@ int main(int argc, const char * argv[])
     struct tm *date;
     char *p1;
     const char *p2;
+    int start;
     
     std::cerr << "\nIntyBASIC compiler " << VERSION << "\n";
-    std::cerr << "(c) 2014-2018 Oscar Toledo G. http://nanochess.org/\n\n";
+    std::cerr << "(c) 2014-2019 Oscar Toledo G. http://nanochess.org/\n\n";
     
     // Get year and default title for program
     // And yep, use old-style C functions :)
@@ -4161,6 +4168,7 @@ int main(int argc, const char * argv[])
     // Process command line arguments
     base = 1;
     flags = 0;
+    start = 0x8000;
     while (1) {
         if (argc > base && strcmp(argv[base], "--jlp") == 0) {
             flags |= 1;
@@ -4168,6 +4176,14 @@ int main(int argc, const char * argv[])
         } else if (argc > base && strcmp(argv[base], "--cc3") == 0) {
             flags |= 2;
             base++;
+            if (argc > base && argv[base][0] == '0' && tolower(argv[base][1]) == 'x') {
+                long int c;
+                
+                c = strtol(&argv[base][2], 0, 16);
+                if (c)
+                    start = (int) c;
+                base++;
+            }
         } else if (argc > base && strcmp(argv[base], "-w") == 0) {
             flags |= 4;
             base++;
@@ -4196,16 +4212,18 @@ int main(int argc, const char * argv[])
         std::cerr << "Usage:\n";
         std::cerr << "\n";
         std::cerr << "    intybasic [--jlp] [--cc3] [--title \"title\"] infile.bas outfile.asm [library_path]\n\n";
-        std::cerr << "    --jlp       Enables use of 8K-words extra memory feature of JLP\n";
-        std::cerr << "                and also usage of hardware acceleration for\n";
-        std::cerr << "                multiplication and division.\n";
-        std::cerr << "    --cc3       Enables use of 8K-words extra memory feature of\n";
-        std::cerr << "                Cuttle Cart 3.\n";
-        std::cerr << "    --title \"a\" Selects title of the compiled program.\n";
-        std::cerr << "                By default this is \"IntyBASIC program\".\n";
-        std::cerr << "                Only appears in emulators/multicarts.\n";
-        std::cerr << "    -w          Disable warnings globally (has priority over\n";
-        std::cerr << "                OPTION WARNINGS)\n\n";
+        std::cerr << "    --jlp        Enables use of 8K-words extra memory feature of JLP\n";
+        std::cerr << "                 and also usage of hardware acceleration for\n";
+        std::cerr << "                 multiplication and division.\n";
+        std::cerr << "    --cc3        Enables use of 8K-words extra memory feature of\n";
+        std::cerr << "                 Cuttle Cart 3.\n";
+        std::cerr << "    --cc3 0xc000 Enables Cuttle Cart 3 in indicated page, useful\n";
+        std::cerr << "                 with Keyboard Component.\n";
+        std::cerr << "    --title \"a\"  Selects title of the compiled program.\n";
+        std::cerr << "                 By default this is \"IntyBASIC program\".\n";
+        std::cerr << "                 Only appears in emulators/multicarts.\n";
+        std::cerr << "    -w           Disable warnings globally (has priority over\n";
+        std::cerr << "                 OPTION WARNINGS)\n\n";
         std::cerr << "    The library path is where the intybasic_prologue.asm and\n";
         std::cerr << "    intybasic_epilogue.asm files are searched for inclusion.\n";
         std::cerr << "\n";
@@ -4218,5 +4236,5 @@ int main(int argc, const char * argv[])
         std::cerr << "\n";
         return 0;
     }
-    return basic.start(argv[base], argv[base + 1], (argc > base + 2) ? argv[base + 2] : "", flags);
+    return basic.start(argv[base], argv[base + 1], (argc > base + 2) ? argv[base + 2] : "", flags, start & 0xff00);
 }
