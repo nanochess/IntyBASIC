@@ -34,7 +34,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.4.0 Jan/09/2018";      // Compiler version
+const string VERSION = "v1.4.1 Jan/12/2018";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -294,7 +294,11 @@ private:
             lex = C_END;
             return;
         }
-        if (isalpha(line[line_pos]) || line[line_pos] == '#' || (spaces && line[line_pos] == '.')) {  // Name, label or local label
+        if (isalpha(line[line_pos]) ||
+            line[line_pos] == '#' ||
+            (spaces && line[line_pos] == '.') ||
+            (line_pos > 0 && line[line_pos - 1] == ',' && line[line_pos] == '.') ||
+            (line_pos > 0 && line[line_pos - 1] == ':' && line[line_pos] == '.')) {  // Name, label or local label
             if (line[line_pos] == '.') {
                 name = global_label;
                 value = 1;
