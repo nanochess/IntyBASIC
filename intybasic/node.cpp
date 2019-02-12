@@ -711,7 +711,7 @@ void node::generate(int reg, int decision) {
                 output->emit_nor(N_MVII, LABEL_PREFIX, left->value, right->value, reg);
             } else if (type == C_MINUS && left->type == C_PLUS && left->left->type == C_NAME_RO && right->type == C_PLUS && right->left->type == C_NAME_RO) {
                 // Optimize VARPTR array1(x) - VARPTR array2(y)
-                output->emit_nnr(N_MVII, right->left->value, left->left->value, left->right->value - right->right->value);
+                output->emit_nnr(N_MVII, reg, right->left->value, left->left->value, left->right->value - right->right->value);
             } else if (type == C_ASSIGN && right->valid_array()) {
                 // Optimization for assignation to array with simple index
                 left->generate(0, 0);

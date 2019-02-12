@@ -76,7 +76,7 @@ public:
     void emit_dl(enum opcode type, string prefix, int value);
     void emit_dlo(enum opcode type, string prefix, int value, int offset);
     void emit_literal(string text);
-    void emit_nnr(enum opcode type, int array1, int array2, int diff);
+    void emit_nnr(enum opcode type, int r, int array1, int array2, int diff);
     void dump(void);
 };
 

@@ -801,8 +801,8 @@ void code::emit_literal(string text) {
 }
 
 // Emit labels difference
-void code::emit_nnr(enum opcode type, int array1, int array2, int diff) {
-    everything.push_back(new microcode(M_NNR, type, 3, array1, LABEL_PREFIX, array2, diff));
+void code::emit_nnr(enum opcode type, int r, int array1, int array2, int diff) {
+    everything.push_back(new microcode(M_NNR, type, r, array1, LABEL_PREFIX, array2, diff));
     cycles = 0;
 }
 
