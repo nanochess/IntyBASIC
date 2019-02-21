@@ -712,6 +712,10 @@ void node::generate(int reg, int decision) {
             } else if (type == C_MINUS && left->type == C_PLUS && left->left->type == C_NAME_RO && right->type == C_PLUS && right->left->type == C_NAME_RO) {
                 // Optimize VARPTR array1(x) - VARPTR array2(y)
                 output->emit_nnr(N_MVII, reg, right->left->value, left->left->value, left->right->value - right->right->value);
+            } else if (type == C_ASSIGN && right->type == C_NUM) {
+                // Optimization for assignation directly to memory address
+                left->generate(0, 0);
+                output->emit_rl(N_MVO, 0, "", right->node_value() & 0xffff);
             } else if (type == C_ASSIGN && right->valid_array()) {
                 // Optimization for assignation to array with simple index
                 left->generate(0, 0);
