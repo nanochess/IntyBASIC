@@ -573,10 +573,12 @@ void node::generate(int reg, int decision) {
                 output->emit_r(N_TSTR, reg);            // 1, if pointer is zero...
                 output->emit_a(N_BEQ, TEMP_PREFIX, label);  // 2, ...not playing, jump with reg=zero
                 output->emit_rr(N_MOVR, reg, 4);        // 1, prepare to read
-                output->emit_rr(N_MVIA, 4, reg);        // 1, read first word...
-                output->emit_nr(N_SUBI, "", 254, reg);  // 2, ...if it isn't 254...
+                output->emit_rr(N_MVIA, 4, reg);        // 1, read
+                output->emit_rr(N_MOVR, reg, 5);        // 1, save first word
+                output->emit_rr(N_MVIA, 4, reg);        // 1, read
+                output->emit_nr(N_SUBI, "", 0xfe00, reg);  // 2, ...if it isn't 254...
                 output->emit_a(N_BNE, TEMP_PREFIX, label);  // 2, ...jump with reg=non-zero (playing)
-                output->emit_rr(N_MVIA, 4, reg);        // 1, MUSIC JUMP label, will be 0 if MUSIC STOP
+                output->emit_rr(N_MOVR, 5, reg);        // 1, MUSIC JUMP label, will be 0 if MUSIC STOP
                 output->emit_l(TEMP_PREFIX, label);
                 output->trash_partial(reg);
                 music_used = true;
