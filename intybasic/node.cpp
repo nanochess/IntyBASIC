@@ -961,7 +961,7 @@ void node::generate(int reg, int decision) {
                             output->emit_rl(N_MVO, reg, "", 0x9f86);  // 11 cycles
                             output->emit_rl(N_MVO, 4, "", 0x9f87);  // 11 cycles
                             output->emit_lr(N_MVI, "", 0x9f8e, reg);  // 10 cycles
-                        } else if (val <= 127) {  // DZ-Jay's macro
+                        } else if (val <= 127) {  // Joe Z.'s macro, screwed up by DZ-Jay
                             output->emit_m(N_MULT, reg, 4, val);
                         } else {
                             int label = next_local++;

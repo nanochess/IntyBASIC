@@ -34,7 +34,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.4.1 Jan/12/2018";      // Compiler version
+const string VERSION = "v1.4.1 Jan/12/2019";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
