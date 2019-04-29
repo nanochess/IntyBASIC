@@ -158,8 +158,8 @@ _pal2_cnt:
 	; The final count in R2 will either be negative or positive.
 	; If R2 is still -ve, NTSC; else PAL.
 _pal3:	SUBI #8,R6		; Drop interrupt stack.
-	RLC R2
-	RLC R2
+	RLC R2,1
+	RLC R2,1
 	ANDI #1,R2		; 1 = NTSC, 0 = PAL
 
 	MVII #$55,R1

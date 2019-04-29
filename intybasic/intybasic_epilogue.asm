@@ -316,8 +316,8 @@ _int_vector:     PROC
 
     IF DEFINED intybasic_music
      	MVI _ntsc,R0
-	TSTR R0	 ; PAL?
-	BEQ @@vo97      ; Yes, always emit sound
+	RRC R0,1	 ; PAL?
+	BNC @@vo97      ; Yes, always emit sound
 	MVI _music_frame,R0
 	INCR R0
 	CMPI #6,R0
@@ -524,8 +524,8 @@ _int_vector:     PROC
     IF DEFINED intybasic_music
 	; Generate sound for next frame
        	MVI _ntsc,R0
-	TSTR R0	 ; PAL?
-	BEQ @@vo98      ; Yes, always generate sound
+	RRC R0,1	 ; PAL?
+	BNC @@vo98      ; Yes, always generate sound
 	MVI _music_frame,R0
 	TSTR R0
 	BEQ @@vo16
@@ -625,9 +625,9 @@ pal_note_table:    PROC
 _init_music:	PROC
     IF DEFINED intybasic_music
 	MVI _ntsc,R0
-	TSTR R0
+	RRC R0,1
 	MVII #ntsc_note_table,R0
-	BNE @@0
+	BC @@0
 	MVII #pal_note_table,R0
 @@0:	MVO R0,_music_table
 	MVII #$38,R0	; $B8 blocks controllers o.O!
@@ -3292,7 +3292,7 @@ SCRATCH:    ORG $100,$100,"-RWBN"
 	;
 ISRVEC:     RMB 2       ; Pointer to ISR vector (required by Intellivision ROM)
 _int:       RMB 1       ; Signals interrupt received
-_ntsc:      RMB 1       ; Signals NTSC Intellivision
+_ntsc:      RMB 1       ; bit 0 = 1=NTSC, 0=PAL. Bit 1 = 1=ECS detected.
 _rand:      RMB 1       ; Pseudo-random value
 _gram_target:   RMB 1   ; Contains GRAM card number
 _gram_total:    RMB 1   ; Contains total GRAM cards for definition
