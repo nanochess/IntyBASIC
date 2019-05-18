@@ -53,6 +53,7 @@
 	; Revision: Oct/30/2018. Small optimization in music player.
 	; Revision: Jan/09/2019. Solved bug where it would play always like
 	;                        PLAY SIMPLE NO DRUMS.
+	; Revision: May/18/2019. Solved bug where drums failed in ECS side.
 	;
 
 	;
@@ -991,7 +992,7 @@ _generate_music:	PROC
 @@32:	MVII #5,R0
 	MVO R0,_music2_noise
 	CALL _activate_drum_ecs
-	B @@12
+	B @@31
 
 @@29:	DECR R0		;2 - Short
 	BNE @@30
@@ -1000,7 +1001,7 @@ _generate_music:	PROC
 	MVII #8,R0
 	MVO R0,_music2_noise
 	CALL _activate_drum_ecs
-	B @@12
+	B @@31
 
 @@30:	;DECR R0	; 3 - Rolling
 	;BNE @@31
