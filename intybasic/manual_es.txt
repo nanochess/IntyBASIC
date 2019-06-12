@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 10-ene-2019
+Última revisión: 12-jun-2019
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -29,6 +29,10 @@ en inglés.
 
 
 >>>>>>>>>>>>>>  Cambios en esta versión
+
+v1.4.1 12-jun-2019  o Se agrega BITMAP NORMAL, BITMAP REVERSE y BITMAP MIRROR_X
+                      para ajustar la interpretación de las siguientes
+                      sentencias BITMAP sin reescribir todo.
 
 v1.4.0 10-ene-2019  o Se agrega contrib/accel.bas como muestra de movimiento
                       de sprites por fracciones de pixel (contribución de
@@ -1080,7 +1084,20 @@ label:
 
     Los caracteres tomados como cero binario incluyen: "0" "_" " " "."
     Todos los demás caracteres serán tomados como uno binario.
-    
+
+  BITMAP NORMAL
+
+    Restaura la interpretación de la sentencia BITMAP
+
+  BITMAP MIRROR_X
+
+    Todos las sentencias BITMAP a continuación se tomarán en espejo horizontal.
+
+  BITMAP REVERSE
+
+    Todas las sentencias BITMAP a continuación invertirán sus bits 0-1. Útil en
+    modo Color Stack.
+
   PLAY SIMPLE
   PLAY SIMPLE NO DRUMS
   PLAY FULL

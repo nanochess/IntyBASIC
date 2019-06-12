@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jan/10/2019.
+Last revision: Jun/12/2019.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,6 +23,10 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
+v1.4.1 Jun/12/2019  o Added BITMAP NORMAL, BITMAP REVERSE and BITMAP MIRROR_X
+                      for adjusting interpretation of following BITMAP
+                      statements without re-entering everything.
+
 v1.4.0 Jan/10/2019  o Added contrib/accel.bas it shows how to move sprites
                       by fractions of pixel (contributed by intvnut)
                     o Added samples/rain.bas to show animate rain and moving
@@ -30,7 +34,7 @@ v1.4.0 Jan/10/2019  o Added contrib/accel.bas it shows how to move sprites
                     o Added samples/pumpkin_master.bas as another example of a
                       fully working game.
                     o VOICE INIT now "shuts up" the Intellivision (contributed
-                      by intvnut) and the initializatin is done in automatic
+                      by intvnut) and the initialization is done in automatic
                       form at start of program.
                     o FLASH INIT SIZE to choose Flash memory size.
                     o Allows constants in DATA PACKED.
@@ -1083,7 +1087,20 @@ label:
     Characters taken as zero include: "0" "_" " " "."
 
     Every other character will be interpreted as one.
-    
+
+  BITMAP NORMAL
+
+    Every BITMAP statement following will be normal.
+
+  BITMAP MIRROR_X
+
+    Every BITMAP statement following will be reordered from right to left.
+
+  BITMAP REVERSE
+
+    Every BITMAP statement following will reverse bits 0 to 1 and 1 to 0. Useful
+    in Color Stack mode.
+
   PLAY SIMPLE
   PLAY SIMPLE NO DRUMS
   PLAY FULL

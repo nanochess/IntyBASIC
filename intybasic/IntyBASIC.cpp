@@ -227,6 +227,7 @@ private:
     
     int bitmap_value;
     int bitmap_byte;
+    int bitmap_state;
     int frame_drive;    // Label for frame-driven game (ON FRAME GOSUB)
     int last_is_return; // Indicates if last statement processed was a RETURN
     bool scroll_used;   // Indicates if scroll used
@@ -2569,17 +2570,39 @@ private:
                     }
                 } else if (name == "BITMAP") {
                     get_lex();
-                    if (lex != C_STRING || name.length() != 8) {
+                    if (lex == C_NAME) {
+                        if (name == "NORMAL") {
+                            bitmap_state = 0;
+                            get_lex();
+                        } else if (name == "INVERSE") {
+                            bitmap_state |= 1;
+                            get_lex();
+                        } else if (name == "MIRROR_X") {
+                            bitmap_state |= 2;
+                            get_lex();
+                        }
+                    } else if (lex != C_STRING || name.length() != 8) {
                         emit_error("syntax error in BITMAP");
                     } else {
                         int c;
                         
-                        value = 0;
-                        for (c = 0; c < 8; c++) {
-                            if (name[c] != 0x10 && name[c] != 0x3f   // 0 and _
-                             && name[c] != 0x00 && name[c] != 0x0e)  // space and .
-                                value |= 0x80 >> c;
+                        if (bitmap_state & 2) {     // Mirror in X
+                            value = 0;
+                            for (c = 0; c < 8; c++) {
+                                if (name[c] != 0x10 && name[c] != 0x3f   // 0 and _
+                                    && name[c] != 0x00 && name[c] != 0x0e)  // space and .
+                                    value |= 0x01 << c;
+                            }
+                        } else {    // Normal
+                            value = 0;
+                            for (c = 0; c < 8; c++) {
+                                if (name[c] != 0x10 && name[c] != 0x3f   // 0 and _
+                                    && name[c] != 0x00 && name[c] != 0x0e)  // space and .
+                                    value |= 0x80 >> c;
+                            }
                         }
+                        if (bitmap_state & 1)   // Inverse
+                            value ^= 0xff;
                         get_lex();
                         if (bitmap_byte == 0) {
                             bitmap_value = value;
@@ -3686,6 +3709,7 @@ public:
 
         asm_output << "\t;FILE " << input_file << "\n";
         bitmap_byte = 0;
+        bitmap_state = 0;
         inside_proc = 0;
         // Must be defined in this order
         arrays["#MOBSHADOW"] = 24 | (next_label << 16);  // #MOBSHADOW array (label Q1)
