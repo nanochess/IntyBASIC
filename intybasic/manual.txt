@@ -23,9 +23,16 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4.1 Jun/12/2019  o Added BITMAP NORMAL, BITMAP REVERSE and BITMAP MIRROR_X
+v1.4.1 Jun/12/2019  o Added BITMAP NORMAL, BITMAP INVERSE and BITMAP MIRROR_X
                       for adjusting interpretation of following BITMAP
                       statements without re-entering everything.
+                    o Optimizes POKE to direct address with a single MVO.
+                    o Solved bug in local labels preceded with comma, it
+                      required a space before.
+                    o Solved bug compiling nn = (varptr sfx2_v(0)-varptr
+                      sfx2_n(0))-sfxstep
+                    o Solved bug in MUSIC.PLAYING (relative to new music format)
+                    o Solved bug in music player because new _ntsc interpretation.
 
 v1.4.0 Jan/10/2019  o Added contrib/accel.bas it shows how to move sprites
                       by fractions of pixel (contributed by intvnut)
@@ -1096,7 +1103,7 @@ label:
 
     Every BITMAP statement following will be reordered from right to left.
 
-  BITMAP REVERSE
+  BITMAP INVERSE
 
     Every BITMAP statement following will reverse bits 0 to 1 and 1 to 0. Useful
     in Color Stack mode.

@@ -11,7 +11,7 @@ Primera revisión: 14-ene-2014
 
 >>>>>>>>>>>>>>  Aviso legal
 
-Este software se provee 'tal cual', sin garantía expresa o implicada. En
+Este software se provee "tal cual", sin garantía expresa o implicada. En
 ningún caso el autor será responsable por algún daño o perdida derivados
 del uso de este software.
 
@@ -30,7 +30,7 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.4.1 12-jun-2019  o Se agrega BITMAP NORMAL, BITMAP REVERSE y BITMAP MIRROR_X
+v1.4.1 12-jun-2019  o Se agrega BITMAP NORMAL, BITMAP INVERSE y BITMAP MIRROR_X
                       para ajustar la interpretación de las siguientes
                       sentencias BITMAP sin reescribir todo.
 
@@ -1093,7 +1093,7 @@ label:
 
     Todos las sentencias BITMAP a continuación se tomarán en espejo horizontal.
 
-  BITMAP REVERSE
+  BITMAP INVERSE
 
     Todas las sentencias BITMAP a continuación invertirán sus bits 0-1. Útil en
     modo Color Stack.
