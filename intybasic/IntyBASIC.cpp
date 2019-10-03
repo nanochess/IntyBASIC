@@ -407,6 +407,7 @@ private:
             name = "";
             while (line_pos < line_size && line[line_pos] != '"') {
                 int c;
+                int digits;
                 
                 if (line[line_pos] == '\\') {
                     line_pos++;
@@ -418,9 +419,12 @@ private:
                             c = 95;
                     } else {
                         c = 0;
+                        digits = 0;
                         while (line_pos < line_size && isdigit(line[line_pos])) {
                             c = c * 10 + (line[line_pos] - '0');
                             line_pos++;
+                            if (++digits == 3)
+                                break;
                         }
                         if (c > 382)
                             c = 382;
