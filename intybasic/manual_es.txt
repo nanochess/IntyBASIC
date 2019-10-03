@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 12-jun-2019
+Última revisión: 03-oct-2019
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -29,6 +29,10 @@ en inglés.
 
 
 >>>>>>>>>>>>>>  Cambios en esta versión
+
+v1.4.2 03-oct-2019  o Se agrega la secuencia de escape \\ para poner barra
+                      invertida en cadenas.
+                    o Limita a 3 digitos las secuencias de escape numéricas.
 
 v1.4.1 12-jun-2019  o Se agrega BITMAP NORMAL, BITMAP INVERSE y BITMAP MIRROR_X
                       para ajustar la interpretación de las siguientes

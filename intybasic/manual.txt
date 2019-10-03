@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jun/12/2019.
+Last revision: Oct/03/2019.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -22,6 +22,9 @@ All trademarks are property of their respective owners.
 
 
 >>>>>>>>>>>>>>  Changes in this version
+
+v1.4.2 Oct/03/2019  o Added escape sequence \\ for inverse bar inside strings.
+                    o Limited numeric escape sequences to 3 digits.
 
 v1.4.1 Jun/12/2019  o Added BITMAP NORMAL, BITMAP INVERSE and BITMAP MIRROR_X
                       for adjusting interpretation of following BITMAP
