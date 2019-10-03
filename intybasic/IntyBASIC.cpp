@@ -410,7 +410,7 @@ private:
                 
                 if (line[line_pos] == '\\') {
                     line_pos++;
-                    if (line_pos < line_size && line[line_pos] == '"') {
+                    if (line_pos < line_size && (line[line_pos] == '"' || line[line_pos] == '\\')) {
                         c = line[line_pos++] - 32;
                         if (c < 0)
                             c = 0;
