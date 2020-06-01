@@ -34,7 +34,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.4.1 Jun/12/2019";      // Compiler version
+const string VERSION = "v1.4.2 Jun/01/2020";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -2847,72 +2847,85 @@ private:
                         emit_error("bad syntax for SCREEN");
                         break;
                     }
-                    assigned = name;
-                    if (arrays[name] != 0) {
-                        label = arrays[name] >> 16;
-                    } else if (labels[name] == 0) {
-                        label = labels[name] = next_label;
-                        name_mangling[label] = NAME_MANGLING_LABEL + name;
-                        next_label++;
-                        label_used[name] |= 1;
+                    if (name == "ENABLE") {
+                        get_lex();
+                        output->emit_lr(N_MVI, "_mode_select", -1, 0);
+                        output->emit_nr(N_ANDI, "", 3, 0);
+                        output->emit_rl(N_MVO, 0, "_mode_select", -1);
+                    } else if (name == "DISABLE") {
+                        get_lex();
+                        output->emit_lr(N_MVI, "_mode_select", -1, 0);
+                        output->emit_nr(N_ANDI, "", 3, 0);
+                        output->emit_nr(N_ADDI, "", 4, 0);
+                        output->emit_rl(N_MVO, 0, "_mode_select", -1);
                     } else {
-                        label = labels[name];
-                        label_used[name] |= 1;
-                    }
-                    get_lex();
-                    if (lex == C_COMMA) {  // There is a second argument?
-                        class node *final;
-                        int type;
-                        
-                        get_lex();
-                        final = eval_level0(&type);  // Evaluate second argument (origin position)
-                        final = new node(C_PLUS, 0, final, new node(C_NAME_RO, label, NULL, NULL));
-                        final->label();
-                        final->generate(0, 0);
-                        delete final;
-                        output->emit_r(N_PSHR, 0);
-                        if (lex != C_COMMA) {
-                            emit_error("missing comma after second parameter in SCREEN");
-                            break;
-                        }
-                        get_lex();
-                        final = eval_level0(&type);  // Evaluate third argument (target position)
-                        final = new node(C_PLUS, 0, final, new node(C_NUM, 0x200, NULL, NULL));
-                        final->label();
-                        final->generate(0, 0);
-                        delete final;
-                        final = NULL;
-                        output->emit_r(N_PSHR, 0);
-                        if (lex != C_COMMA) {
-                            emit_error("missing comma after third parameter in SCREEN");
-                            break;
-                        }
-                        get_lex();
-                        eval_expr(0, 0);    // Evaluate fourth argument (block width)
-                        output->emit_r(N_PSHR, 0);
-                        if (lex != C_COMMA) {
-                            emit_error("missing comma after fourth parameter in SCREEN");
-                            break;
-                        }
-                        get_lex();
-                        eval_expr(0, 0);    // Evaluate fifth argument (block height)
-                        if (lex == C_COMMA) {   // Sixth argument for SCREEN
-                            output->emit_r(N_PSHR, 0);
-                            get_lex();
-                            eval_expr(0, 0);    // Evaluate sixth argument (origin width)
-                            output->emit_a(N_CALL, "CPYBLK2", -1);
+                        assigned = name;
+                        if (arrays[name] != 0) {
+                            label = arrays[name] >> 16;
+                        } else if (labels[name] == 0) {
+                            label = labels[name] = next_label;
+                            name_mangling[label] = NAME_MANGLING_LABEL + name;
+                            next_label++;
+                            label_used[name] |= 1;
                         } else {
-                            output->emit_r(N_PULR, 1);
-                            output->emit_r(N_PULR, 2);
-                            output->emit_r(N_PULR, 3);
+                            label = labels[name];
+                            label_used[name] |= 1;
+                        }
+                        get_lex();
+                        if (lex == C_COMMA) {  // There is a second argument?
+                            class node *final;
+                            int type;
+                            
+                            get_lex();
+                            final = eval_level0(&type);  // Evaluate second argument (origin position)
+                            final = new node(C_PLUS, 0, final, new node(C_NAME_RO, label, NULL, NULL));
+                            final->label();
+                            final->generate(0, 0);
+                            delete final;
+                            output->emit_r(N_PSHR, 0);
+                            if (lex != C_COMMA) {
+                                emit_error("missing comma after second parameter in SCREEN");
+                                break;
+                            }
+                            get_lex();
+                            final = eval_level0(&type);  // Evaluate third argument (target position)
+                            final = new node(C_PLUS, 0, final, new node(C_NUM, 0x200, NULL, NULL));
+                            final->label();
+                            final->generate(0, 0);
+                            delete final;
+                            final = NULL;
+                            output->emit_r(N_PSHR, 0);
+                            if (lex != C_COMMA) {
+                                emit_error("missing comma after third parameter in SCREEN");
+                                break;
+                            }
+                            get_lex();
+                            eval_expr(0, 0);    // Evaluate fourth argument (block width)
+                            output->emit_r(N_PSHR, 0);
+                            if (lex != C_COMMA) {
+                                emit_error("missing comma after fourth parameter in SCREEN");
+                                break;
+                            }
+                            get_lex();
+                            eval_expr(0, 0);    // Evaluate fifth argument (block height)
+                            if (lex == C_COMMA) {   // Sixth argument for SCREEN
+                                output->emit_r(N_PSHR, 0);
+                                get_lex();
+                                eval_expr(0, 0);    // Evaluate sixth argument (origin width)
+                                output->emit_a(N_CALL, "CPYBLK2", -1);
+                            } else {
+                                output->emit_r(N_PULR, 1);
+                                output->emit_r(N_PULR, 2);
+                                output->emit_r(N_PULR, 3);
+                                output->emit_a(N_CALL, "CPYBLK", -1);
+                            }
+                        } else {
+                            output->emit_nr(N_MVII, LABEL_PREFIX, label, 3);
+                            output->emit_nr(N_MVII, "", 0x200, 2);
+                            output->emit_nr(N_MVII, "", 20, 1);
+                            output->emit_nr(N_MVII, "", 12, 0);
                             output->emit_a(N_CALL, "CPYBLK", -1);
                         }
-                    } else {
-                        output->emit_nr(N_MVII, LABEL_PREFIX, label, 3);
-                        output->emit_nr(N_MVII, "", 0x200, 2);
-                        output->emit_nr(N_MVII, "", 20, 1);
-                        output->emit_nr(N_MVII, "", 12, 0);
-                        output->emit_a(N_CALL, "CPYBLK", -1);
                     }
                 } else if (name == "PLAY") {
                     int label;
@@ -4214,7 +4227,7 @@ int main(int argc, const char * argv[])
     int start;
     
     std::cerr << "\nIntyBASIC compiler " << VERSION << "\n";
-    std::cerr << "(c) 2014-2019 Oscar Toledo G. http://nanochess.org/\n\n";
+    std::cerr << "(c) 2014-2020 Oscar Toledo G. http://nanochess.org/\n\n";
     
     // Get year and default title for program
     // And yep, use old-style C functions :)

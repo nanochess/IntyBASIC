@@ -173,7 +173,7 @@ _wait:  PROC
 
 	CLRR    R0
 	MVO     R0,_int	 ; Clears waiting flag
-@@1:    CMP     _int,  R0       ; Waits for change
+@@1:	CMP     _int,  R0       ; Waits for change
 	BEQ     @@1
 	JR      R5	      ; Returns
 	ENDP
@@ -198,13 +198,10 @@ _set_isr:	PROC
 	;
 _int_vector:     PROC
 
-	MVO     R0,     $20     ; Activates display
-
-	BEGIN
-
     IF DEFINED intybasic_stack
 	CMPI #$308,R6
 	BNC @@vs
+	MVO R0,$20	; Enables display
 	MVI $21,R0	; Activates Color Stack mode
 	CLRR R0
 	MVO R0,$28
@@ -227,19 +224,22 @@ _int_vector:     PROC
 
 @@vs:
     ENDI
-	MVII    #1,     R0
-	MVO     R0,     _int    ; Indicates interrupt happened
+
+	MVII #1,R1
+	MVO R1,_int	; Indicates interrupt happened.
 
 	MVI _mode_select,R0
 	SARC R0,2
+	BNE @@ds
+	MVO R0,$20	; Enables display
+@@ds:	BNC @@vi14
+	MVO R0,$21	; Foreground/background mode
 	BNOV @@vi0
-	CLRR R1
-	BNC @@vi14
-	MVO R0,$21  ; Activates Foreground/Background mode
-	INCR R1
 	B @@vi15
 
-@@vi14: MVI $21,R0  ; Activates Color Stack mode
+@@vi14:	MVI $21,R0	; Color stack mode
+	BNOV @@vi0
+	CLRR R1
 	MVI _color,R0
 	MVO R0,$28
 	SWAP R0
@@ -249,10 +249,14 @@ _int_vector:     PROC
 	MVO R0,$2A
 	SWAP R0
 	MVO R0,$2B
-@@vi15: MVO R1,_mode_select
+@@vi15:
+	MVO R1,_mode_select
 	MVII #7,R0
 	MVO R0,_color	   ; Default color for PRINT "string"
 @@vi0:
+
+	BEGIN
+
 	MVI _border_color,R0
 	MVO     R0,     $2C     ; Border color
 	MVI _border_mask,R0
@@ -278,16 +282,6 @@ _int_vector:     PROC
 	MVO@ R0,R5  ; _col6
 	MVI@ R4,R0
 	MVO@ R0,R5  ; _col7
-	MVII #$18,R5
-	CLRR R0
-	MVO@ R0,R5
-	MVO@ R0,R5
-	MVO@ R0,R5
-	MVO@ R0,R5
-	MVO@ R0,R5
-	MVO@ R0,R5
-	MVO@ R0,R5
-	MVO@ R0,R5
 	
     IF DEFINED intybasic_scroll
 
@@ -303,17 +297,25 @@ _int_vector:     PROC
 	;
 	; Updates sprites (MOBs)
 	;
-	MVII #_mobs,R4
-	MVII #$0,R5     ; X-coordinates
-	MVII #8,R1
-@@vi2:  MVI@ R4,R0
-	MVO@ R0,R5
+	MOVR R5,R4	; MVII #_mobs,R4
+	CLRR R5		; X-coordinates
+    REPEAT 8
 	MVI@ R4,R0
 	MVO@ R0,R5
 	MVI@ R4,R0
 	MVO@ R0,R5
-	DECR R1
-	BNE @@vi2
+	MVI@ R4,R0
+	MVO@ R0,R5
+    ENDR
+	CLRR R0		; Erase collision bits (R5 = $18)
+	MVO@ R0,R5
+	MVO@ R0,R5
+	MVO@ R0,R5
+	MVO@ R0,R5
+	MVO@ R0,R5
+	MVO@ R0,R5
+	MVO@ R0,R5
+	MVO@ R0,R5
 
     IF DEFINED intybasic_music
      	MVI _ntsc,R0
@@ -3275,9 +3277,6 @@ _gram2_bitmap:  RMB 1   ; Secondary bitmap for definition
 _screen:    RMB 1       ; Pointer to current screen position
 _color:     RMB 1       ; Current color
 
-Q1:			; Reserved label for #MOBSHADOW
-_mobs:      RMB 3*8     ; MOB buffer
-
 _col0:      RMB 1       ; Collision status for MOB0
 _col1:      RMB 1       ; Collision status for MOB1
 _col2:      RMB 1       ; Collision status for MOB2
@@ -3286,6 +3285,9 @@ _col4:      RMB 1       ; Collision status for MOB4
 _col5:      RMB 1       ; Collision status for MOB5
 _col6:      RMB 1       ; Collision status for MOB6
 _col7:      RMB 1       ; Collision status for MOB7
+
+Q1:			; Reserved label for #MOBSHADOW
+_mobs:      RMB 3*8     ; MOB buffer
 
 SCRATCH:    ORG $100,$100,"-RWBN"
 	;

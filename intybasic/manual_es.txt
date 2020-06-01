@@ -1,12 +1,12 @@
 >>>>>>>>>>>>>  Manual del usuario de IntyBASIC  <<<<<<<<<<<<<<<
 
                  por Oscar Toledo G.
-       (c) Copyright Oscar Toledo G. 2014-2019
+       (c) Copyright Oscar Toledo G. 2014-2020
                 http://nanochess.org/
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 03-oct-2019
+Última revisión: 01-jun-2020
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -30,9 +30,11 @@ en inglés.
 
 >>>>>>>>>>>>>>  Cambios en esta versión
 
-v1.4.2 03-oct-2019  o Se agrega la secuencia de escape \\ para poner barra
+v1.4.2 01-jun-2020  o Se agrega la secuencia de escape \\ para poner barra
                       invertida en cadenas.
                     o Limita a 3 digitos las secuencias de escape numéricas.
+                    o Se agrega SCREEN DISABLE y SCREEN ENABLE para activar y
+                      desactivar el video.
 
 v1.4.1 12-jun-2019  o Se agrega BITMAP NORMAL, BITMAP INVERSE y BITMAP MIRROR_X
                       para ajustar la interpretación de las siguientes
@@ -1042,7 +1044,17 @@ label:
     mayúsculas) y los caracteres definidos 256-319.
 
     Por defecto IntyBASIC comienza en modo Color Stack.
-    
+
+  SCREEN DISABLE
+
+    Desactiva el video. El color actual de border será ilustrado sobre la pantalla
+    completa (puede cambiarse usando la sentencia BORDER). Se puede volver a activar
+    el video con SCREEN ENABLE o usando una sentencia MODE.
+
+  SCREEN ENABLE
+
+    Activa el video (conserva el modo previo puesto por MODE).
+
   SCREEN etiqueta[,offset_origen,offset_destino,columnas,lineas]
   SCREEN etiqueta[,offset_origen,offset_destino,columnas,lineas,ancho_origen]
 

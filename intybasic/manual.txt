@@ -1,12 +1,12 @@
 >>>>>>>>>>>>>  IntyBASIC user's manual  <<<<<<<<<<<<<<<
 
                  by Oscar Toledo G.
-       (c) Copyright 2014-2019 Oscar Toledo G.
+       (c) Copyright 2014-2020 Oscar Toledo G.
                 http://nanochess.org/
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Oct/03/2019.
+Last revision: Jun/01/2020.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,8 +23,9 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4.2 Oct/03/2019  o Added escape sequence \\ for inverse bar inside strings.
+v1.4.2 Jun/01/2020  o Added escape sequence \\ for inverse bar inside strings.
                     o Limited numeric escape sequences to 3 digits.
+                    o Added SCREEN ENABLE/DISABLE for enabling/disabling video.
 
 v1.4.1 Jun/12/2019  o Added BITMAP NORMAL, BITMAP INVERSE and BITMAP MIRROR_X
                       for adjusting interpretation of following BITMAP
@@ -1051,6 +1052,16 @@ label:
     and the defined cards 256 to 319.
 
     By default IntyBASIC starts in Color Stack mode.
+
+  SCREEN DISABLE
+
+    Disables the video output. The current color of border will fill the
+    screen (can be setup using the BORDER sentence). The video can be enabled
+    again with SCREEN ENABLE or using a MODE sentence.
+
+  SCREEN ENABLE
+
+    Enables the video output (preserves the previous video mode set by MODE).
 
   SCREEN label[,origin_offset,target_offset,cols,rows]
   SCREEN label[,origin_offset,target_offset,cols,rows,origin_width]
