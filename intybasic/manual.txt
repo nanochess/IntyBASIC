@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jun/01/2020.
+Last revision: Jun/17/2020.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -23,9 +23,10 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.4.2 Jun/01/2020  o Added escape sequence \\ for inverse bar inside strings.
+v1.4.2 Jun/17/2020  o Added escape sequence \\ for inverse bar inside strings.
                     o Limited numeric escape sequences to 3 digits.
                     o Added SCREEN ENABLE/DISABLE for enabling/disabling video.
+                    o Generated metavariable jlp wasn't 3 when using FLASH.
 
 v1.4.1 Jun/12/2019  o Added BITMAP NORMAL, BITMAP INVERSE and BITMAP MIRROR_X
                       for adjusting interpretation of following BITMAP
@@ -469,6 +470,20 @@ via Paypal ($9 USD suggested) to b-i+y-u+b-i (at) gmail.com
 
 If you find a bug, please report to same email and I'll try to look into
 it. Because lack of time I cannot guarantee it will be corrected.
+
+Also you can get the book "Programming Games for Intellivision" that is a book
+version of this manual, and also including an introductory course to game
+programming (Game of Ball, Monkey Moon, Space Raider & Bouncy Cube).
+
+Paperback:
+    https://www.lulu.com/en/en/shop/oscar-toledo-gutierrez/programming-games-for-intellivision/paperback/product-1p7mvg87.html
+
+Hardcover:
+    https://www.lulu.com/en/en/shop/oscar-toledo-gutierrez/programming-games-for-intellivision/hardcover/product-16ye5m5n.html
+
+Ebook:
+    https://nanochess.org/store.html
+
 
 
 >>>>>>>>>>>>>>  IntyBASIC language specification

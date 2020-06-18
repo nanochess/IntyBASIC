@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 01-jun-2020
+Última revisión: 17-jun-2020
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -35,6 +35,7 @@ v1.4.2 01-jun-2020  o Se agrega la secuencia de escape \\ para poner barra
                     o Limita a 3 digitos las secuencias de escape numéricas.
                     o Se agrega SCREEN DISABLE y SCREEN ENABLE para activar y
                       desactivar el video.
+                    o La metavariable generada jlp no era 3 al usar FLASH.
 
 v1.4.1 12-jun-2019  o Se agrega BITMAP NORMAL, BITMAP INVERSE y BITMAP MIRROR_X
                       para ajustar la interpretación de las siguientes
@@ -496,6 +497,20 @@ donación por Paypal (sugerido USD $9) a b+i-y+u-b+i-(at)-g+m-a+i-l-.-c-o+m
 
 Si encuentra un error, por favor reportelo al mismo email y trataré de buscarlo.
 Debido a mi falta de tiempo no puedo garantizar que será corregido.
+
+También puede adquirir mi libro "Programming Games for Intellivision" que es una
+representación de este manual en forma de libro, y además con un curso
+introductorio a la programación de juegos (Game of Ball, Monkey Moon,
+Space Raider y Bouncy Cube).
+
+Pasta suave:
+    https://www.lulu.com/en/en/shop/oscar-toledo-gutierrez/programming-games-for-intellivision/paperback/product-1p7mvg87.html
+
+Pasta dura:
+    https://www.lulu.com/en/en/shop/oscar-toledo-gutierrez/programming-games-for-intellivision/hardcover/product-16ye5m5n.html
+
+Ebook:
+    https://nanochess.org/store.html
 
 
 >>>>>>>>>>>>>>  Especificación del lenguaje IntyBASIC
