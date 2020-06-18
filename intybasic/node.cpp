@@ -726,7 +726,18 @@ void node::generate(int reg, int decision) {
                 right->annotate_index_for_subexpression();
                 output->emit_rr(N_MVOA, 0, 3);
             } else if (right->type == C_NUM && type != C_ASSIGN) {
-                // Optimize right side when it's constant
+                //
+                // GENERATION OF CODE FOR OPERANDS WITH CONSTANT IN THE RIGHT SIDE.
+                //
+                // It's an important section because many instructions have variations
+                // with immediate values.
+                //
+                // This saves one register + one loading immediate instruction.
+                //
+                // Also many operations can be optimized for certain immediate values.
+                //
+                // This section is one of three.
+                //
                 int val = right->value & 0xffff;
                 
                 if (left->type == C_EXTEND && (type == C_EQUAL || type == C_NOTEQUAL)) {
@@ -1081,9 +1092,17 @@ void node::generate(int reg, int decision) {
                         }
                     }
                 }
-                
-                // Optimize right side when it's variable
             } else if ((right->type == C_NAME || (right->type == C_PEEK && right->left->type == C_PLUS && right->left->right->type == C_NUM && right->left->left->type == C_NAME_RO)) && type != C_ASSIGN) {
+                //
+                // GENERATION OF CODE FOR OPERANDS WITH VARIABLE IN THE RIGHT SIDE.
+                //
+                // It's an important section because many instructions have variations
+                // allowing to bring operand data from memory.
+                //
+                // This saves one register + one instruction reading memory.
+                //
+                // This section is two of three.
+                //
                 string prefix;
                 int offset;
                 int variable;
@@ -1304,6 +1323,15 @@ void node::generate(int reg, int decision) {
                     output->emit_rlo(N_MVO, reg, LABEL_PREFIX, right->left->value, right->right->value);
                 }
             } else {
+                //
+                // GENERATION OF CODE FOR OPERANDS WITH COMPLEX SIDES.
+                //
+                // It generates code for all other things not optimized before in
+                // the other sections. But still doesn't some optimization for
+                // special cases.
+                //
+                // This section is three of three.
+                //
                 int reversed = 0;
                 
                 // Common tree generation
