@@ -3675,16 +3675,6 @@ public:
             return 2;
         }
         asm_output << "\t; IntyBASIC compiler " << VERSION << "\n";
-        if (jlp_used) {
-            asm_output << "\tIF DEFINED __FEATURE.CFGVAR\n";
-            if (jlp_used) {
-                if (flash_used)
-                    asm_output << "\t\tCFGVAR \"jlp\" = 3\n";
-                else
-                    asm_output << "\t\tCFGVAR \"jlp\" = 1\n";
-            }
-            asm_output << "\tENDI\n";
-        }
         strcpy(path, library_path);
 #ifdef _WIN32
         if (strlen(path) > 0 && path[strlen(path) - 1] != '\\')
@@ -3933,6 +3923,16 @@ public:
         // Finish compiled source code with epilogue
         asm_output << "\t;ENDFILE\n";
         asm_output << "\tSRCFILE \"\",0\n";
+        if (jlp_used) {
+            asm_output << "\tIF DEFINED __FEATURE.CFGVAR\n";
+            if (jlp_used) {
+                if (flash_used)
+                    asm_output << "\t\tCFGVAR \"jlp\" = 3\n";
+                else
+                    asm_output << "\t\tCFGVAR \"jlp\" = 1\n";
+            }
+            asm_output << "\tENDI\n";
+        }
         if (voice_used || ecs_used || flash_used) {
             asm_output << "\tIF DEFINED __FEATURE.CFGVAR\n";
             if (voice_used)
