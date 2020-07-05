@@ -867,7 +867,8 @@ label:
     loaded per frame (this was measured with an emulator in NTSC mode).
 
     This limit is reduced to 16 GRAM cards per frame when using the music
-    player (when using the PLAY statement).
+    player (when using the PLAY statement). This limit is further reduced
+    to 13 GRAM cards per frame when using the full ECS music player.
 
     Notice that there are two variants, namely DEFINE and DEFINE ALTERNATE.
     This allows you to change two cards sets in one frame. This can be useful

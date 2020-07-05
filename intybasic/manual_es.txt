@@ -867,7 +867,8 @@ label:
     Los gráficos serán cargados en el siguiente cuadro (WAIT)
 
     Note que hay un límite de carga de 18 GRAM por cuadro (medido con el emulador
-    en modo NTSC)
+    en modo NTSC). 16 GRAM cuando se usa el reproductor de música. 13 GRAM
+    cuando se usa el reproductor de música ECS.
     
     Este límite se reduce a 16 caracteres GRAM por cuadro cuando se usa el
     reproductor musical (sentencia PLAY)
