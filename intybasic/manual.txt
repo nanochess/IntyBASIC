@@ -237,7 +237,7 @@ v1.1   Jul/14/2015  o New RANDOM() function
                         * Combines pairs of instructions in more optimum ways.
                         * Array reading array(const) is more optimum
                         * Common subexpression removal for simple index into array.
-                        * Optimization for multiple substraction.
+                        * Optimization for multiple subtraction.
                         * Optimization for comparisons.
                         * Optimization for IF expr THEN GOTO.
                     * New contributions: keypad (GroovyBee), intro (Tarzilla) and
@@ -281,7 +281,7 @@ v1.0.1 Dec/12/2014  o Statements DEFINE, SCREEN and PLAY allow to use an array
                     o Again optimized code generation for PRINT.
                     o Optimized code generation for array access and PEEK.
                     o Optimized code generation for trees of addition and
-                      substraction with constant.
+                      subtraction with constant.
                     o Uses ultra-optimized macro for multiplication up to 127.
                       (provided by DZ-Jay)
                     o Speed up of code for keypad decoding.
@@ -304,7 +304,7 @@ v1.0  Nov/21/2014   o PRINT allows to display decimal numbers using a library
                     o Added VARPTR function to pass addresses to assembly functions.
                     o Added DEFINE ALTERNATE
                     o Optimization of code generation for expressions involving
-                      substraction and cases a+(-b) and a-(-b).
+                      subtraction and cases a+(-b) and a-(-b).
                     o Optimization of code generation for IF A AND 2
                     o Optimization of code generation for PRINT with strings.
                     o Optimization of code generation for = and <> with zero.
@@ -324,7 +324,7 @@ v0.9  Oct/10/2014   o Added ON GOTO/GOSUB statement.
                     o Added INCLUDE statement.
                     o In statement DEFINE now are allowed expressions in parameters
                       for card number and total cards.
-                    o Added fixed numbers 8.8 style and fixed add and substract
+                    o Added fixed numbers 8.8 style and fixed add and subtract
                       operators (+. and -.)
                     o Multiplication and division optimized for constant 256.
                     o Remainder optimized for constants 32, 64, 128 and 256.
@@ -1455,7 +1455,7 @@ label:
 The expression syntax is like a calculator.
 
 The usual precedence rules apply to expression operators. Addition and
-substraction have lower precedence than multiplication and division. This means
+subtraction have lower precedence than multiplication and division. This means
 1 + 2 * 3 = 7 not 9.
   
   A=5               Decimal number
@@ -1467,9 +1467,9 @@ substraction have lower precedence than multiplication and division. This means
   A="C"             Intellivision card code for letter
   A=B               Simple assignment
   A=A+B             Simple addition
-  A=A-B             Simple substraction
+  A=A-B             Simple subtraction
   #A=#A+.#B         Fixed addition (note use of 16-bits variables)
-  #A=#A-.#B         Fixed substraction (note use of 16-bits variables)
+  #A=#A-.#B         Fixed subtraction (note use of 16-bits variables)
   A=A*B             Simple multiplication
                     Multiplication by 2/4/8/16/32/64/128/256/512/1024/2048/4096 is
                     internally optimized.
@@ -1478,13 +1478,13 @@ substraction have lower precedence than multiplication and division. This means
                     efficient for most cases. (42 minimum or 702 cycles in worst case)
                     Multiplication of variable by variable uses intvnut's fast multiply routine (fixed 272 cycles)
                     When using --jlp switch the multiplication is accelerated by hardware
-  A=A/B	             Simple unsigned division (done by repeated substraction, it can be slow)
+  A=A/B             Simple unsigned division (done by repeated subtraction, it can be slow)
                     Division by 2/4/8/16/32/64/128/256 is internally optimized.
                     Division of variable by variable uses my fast division routine (214 to
                     517 cycles)
                     When using --jlp switch the division is accelerated by hardware
-  A=A%B		     Simple unsigned remainder
-                    Notice that it calculates the remainder by repeated substraction (which can be slow)
+  A=A%B             Simple unsigned remainder
+                    Notice that it calculates the remainder by repeated subtraction (which can be slow)
                     Remainder by powers of 2 internally uses AND.
                     Remainder of variable by variable uses my fast remainder
                     routine (214 to 517 cycles)
@@ -1820,16 +1820,18 @@ The number of 8-bits variables allowed are:
 
         228
         
-        Substract 3 if you use SCROLL
-        Substract 3 if you use VOICE
-        Substract 6 if you use the keypad
-        Substract 26 if you use PLAY
+        Subtract 3 if you use SCROLL
+        Subtract 3 if you use VOICE
+        Subtract 6 if you use the keypad
+        Subtract 28 if you use PLAY
+          * Subtract 22 more if you use ECS.
+          * Subtract one more if you use PLAY VOLUME.
 
 The number of 16-bits variables allowed are:
 
         47 (7962 if using --jlp or --cc3 switch)
         
-        Substract 20 if you use SCROLL or 30 if you use VOICE
+        Subtract 20 if you use SCROLL or 30 if you use VOICE
 
 Note each location of an array allocated with DIM counts as one variable.
 

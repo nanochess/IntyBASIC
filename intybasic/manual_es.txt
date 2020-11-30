@@ -1791,7 +1791,9 @@ El total de variables de 8 bits permitidas es:
         Reste 3 si usa SCROLL
         Reste 3 si usa VOICE
         Reste 6 si usa el teclado
-        Reste 26 si usa PLAY
+        Reste 28 si usa PLAY
+          * Reste 22 más si usa PLAY con ECS.
+          * Reste una más si usa PLAY VOLUME.
 
 El número de variables de 16 bits permitadas son:
 
