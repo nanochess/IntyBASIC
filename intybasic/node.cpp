@@ -26,7 +26,7 @@ node::node(enum lexical_component type, int value, class node *left, class node 
     this->left = left;
     this->right = right;
     
-    // Optimizes trees of addition/substraction operators
+    // Optimizes trees of addition/subtraction operators
     if (type == C_MINUS && right->type == C_NUM && left->type == C_PLUS && left->right->type == C_NUM) {
         right->value = left->right->value - right->value;
         this->left = left->left;
