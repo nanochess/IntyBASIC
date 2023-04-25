@@ -3940,7 +3940,7 @@ public:
             if (ecs_used)
                 asm_output << "\t\tCFGVAR \"ecs\" = 1\n";
             if (flash_used)
-                asm_output << "\t\tCFGVAR \"jlpflash\" = " << jlp_flash_size << "\n"; 
+                asm_output << "\t\tCFGVAR \"jlpflash\" = " << jlp_flash_size << "\n";
             asm_output << "\tENDI\n";
         }
         if (scroll_used)

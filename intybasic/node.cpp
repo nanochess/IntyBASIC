@@ -346,7 +346,10 @@ void node::label(void) {
     
     // Terminal nodes
     if (left == NULL && right == NULL) {
-        regs = 1;
+        if (type == C_USR)
+            regs = 10;
+        else
+            regs = 1;
         return;
     }
     
@@ -682,6 +685,8 @@ void node::generate(int reg, int decision) {
         case C_MUL:
         case C_DIV:
         case C_MOD:
+            
+            cerr << type << " " << left->regs << "," << right->regs << "\n";
             
             // Ultra-special cases
             if (type == C_MUL && left->type == C_NAME && right->type == C_NAME && !jlp_used) {
