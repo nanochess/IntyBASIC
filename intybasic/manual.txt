@@ -941,7 +941,7 @@ label:
       bits 2-0 = Lower bits of color
       bits 11-3 = Card number (0-255 for GROM, 256-319 for GRAM)
       bit 12 = Upper bit of color
-      bit 13 = Change color stack.
+      bit 13 = Priority (0= Over background cards, 1= Under background cards)
     
     The X,Y,F values are written as-is to STIC, please check the specifications at:
 

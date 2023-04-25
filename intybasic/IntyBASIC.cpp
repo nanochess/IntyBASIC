@@ -3551,7 +3551,7 @@ private:
                             }
                             macros[function] = new struct macro;
                             macros[function]->total_arguments = total_arguments;
-                            macros[function]->in_use = NULL;
+                            macros[function]->in_use = false;
                             if (lex != C_EQUAL) {
                                 emit_error("missing = in DEF FN");
                             } else {
