@@ -118,7 +118,7 @@ void microcode::dump(void) {
             else if (this->offset < 0)
                 asm_output << "-" << (-this->offset);
             asm_output << ") AND $FFFF,R" << this->r1;
-            // Note how the AND in expression solves a bug when substraction creates a big negative
+            // Note how the AND in expression solves a bug when subtraction creates a big negative
             // number, triggering an error in as1600
             break;
         case M_LR:  // Label and register: MVI V2,R0
