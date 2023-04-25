@@ -1406,8 +1406,8 @@ label:
     interrupt routine.
     
     If the stack exceeds the allowed limit, the sub-routine will stop the
-    program and show a prominent error message on the screen saying "Stack
-    overflow".
+    program and show a prominent error message on the screen saying “Stack
+    overflow”.
     
     This happens commonly when jumping to a PROCEDURE with GOSUB and getting
     out of the PROCEDURE with GOTO instead of RETURN.
