@@ -3392,7 +3392,7 @@ private:
                                     output->emit_d(N_DECLE, 27);
                                 } else if (name == "THIRTY") {
                                     output->emit_d(N_DECLE, 28);
-                                } else if (name == "FOURTY") {
+                                } else if (name == "FORTY") {
                                     output->emit_d(N_DECLE, 29);
                                 } else if (name == "FIFTY") {
                                     output->emit_d(N_DECLE, 30);

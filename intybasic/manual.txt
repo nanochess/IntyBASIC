@@ -216,7 +216,7 @@ v1.2   Aug/08/2015  o New option -w for disabling compilation warnings.
 v1.1   Jul/14/2015  o New RANDOM() function
                     o New DEF FN statement for macro expressions.
                     o Experimental CONT3 and CONT4 support, no keypad decoding (ECS)
-                    o INCLUDE now allows quotes and searchs also in library path.
+                    o INCLUDE now allows quotes and searches also in library path.
                     o Generates warning for assigned/non-read variables and also
                       for read/non-assigned variables.
                     o Multiplication algorithm optimized (no more successive addition
@@ -348,7 +348,7 @@ v0.7  Apr/02/2014   o Added support to access card codes of Intellivision letter
                       o Now CONT?.B0 B1 and B2 are checking individual buttons.
                       o Added support for controller keypads.
                     
-v0.6  Mar/02/2014   Solved bug where FOR STEP would go beyond admisible values.
+v0.6  Mar/02/2014   Solved bug where FOR STEP would go beyond admissible values.
                     Support for constants via CONST statement. Added example
                     of sprite offset correction in SCROLL.BAS
 
@@ -742,7 +742,7 @@ The following statements are available:
      The only valid assumption is that every single variable is zero after
      booting.
 
-     Also it's your responsability that the code doesn't take too long to
+     Also it's your responsibility that the code doesn't take too long to
      execute, otherwise video frame interrupts will accumulate and your memory
      stack will overflow.
 
@@ -1316,7 +1316,7 @@ label:
         PA5, PA4, PA3, PA2, PA1
         MATTEL, ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE
         TEN, ELEVEN, TWELVE, THIRTEEN, FOURTEEN, FIFTEEN, SIXTEEN, SEVENTEEN
-        EIGHTEEN, NINETEEN, TWENTY, THIRTY, FOURTY, FIFTY, SIXTY, SEVENTY
+        EIGHTEEN, NINETEEN, TWENTY, THIRTY, FORTY, FIFTY, SIXTY, SEVENTY
         EIGHTY, NINETY, HUNDRED, THOUSAND, TEEN, TY, PRESS, ENTER, OR, AND
         AA, AE1, AO, AR, AW, AX, AY, BB1, BB2, CH, DD1, DD2, DH1, DH2, EH,
         EL, ER1, ER2, EY, FF, GG1, GG2, GG3, HH1, HH2, IH, IY, JH, KK1,
@@ -1767,7 +1767,7 @@ Example 3:
   stop:    GOTO stop
         
 Display starts in color-stack mode, each card of the 20x12 screen can have the
-bit 13 set to 1 so it avances current pointer to color-stack and changes the
+bit 13 set to 1 so it advances current pointer to color-stack and changes the
 background color.
 
 In order to change the 4 color-stack predefined values, you should use this:
