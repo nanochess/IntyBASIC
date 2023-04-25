@@ -1406,7 +1406,7 @@ label:
     interrupt routine.
     
     If the stack exceeds the allowed limit, the sub-routine will stop the
-    program and show a prominent error message on the screen saying "Stack
+    program and show a prominent error message on the screen saying “Stack
     overflow”.
     
     This happens commonly when jumping to a PROCEDURE with GOSUB and getting
@@ -1883,12 +1883,12 @@ This information is used by the newest versions of the LTO-Flash software, and i
 
 Some examples of these tags:
 
-ASM CFGVAR "name" = “A woman looks for her cat"
-ASM CFGVAR "short_name" = “Cat search!”
-ASM CFGVAR "author" = “Mindy Cat Lover”
+ASM CFGVAR "name" = "A woman looks for her cat"
+ASM CFGVAR "short_name" = "Cat search!"
+ASM CFGVAR "author" = "Mindy Cat Lover"
 ASM CFGVAR "release_date" = "2018-07-20"
-ASM CFGVAR "license" = “public domain"
-ASM CFGVAR "music_by" = “Bea U. Ty” 
+ASM CFGVAR "license" = "public domain"
+ASM CFGVAR "music_by" = "Bea U. Ty" 
 
 The latest reference to these metadata tags is available at http://spatula-city.org/~im14u2c/intv/jzintv/doc/rom_fmt/id_tag.txt
 
