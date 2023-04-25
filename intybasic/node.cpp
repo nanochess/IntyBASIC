@@ -686,7 +686,9 @@ void node::generate(int reg, int decision) {
         case C_DIV:
         case C_MOD:
             
-            cerr << type << " " << left->regs << "," << right->regs << "\n";
+#if 0
+            std::cerr << type << " " << left->regs << "," << right->regs << "\n";
+#endif
             
             // Ultra-special cases
             if (type == C_MUL && left->type == C_NAME && right->type == C_NAME && !jlp_used) {
