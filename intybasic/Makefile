@@ -19,7 +19,7 @@ code.o: code.cpp global.h microcode.h code.h
 IntyBASIC.o: IntyBASIC.cpp global.h microcode.h code.h node.h
 
 man: intybasic
-	help2man --no-discard-stderr --name="BASIC language cross-compiler for the Intellivision" --output=$?.1 $?
+	help2man --no-discard-stderr --name="BASIC language cross-compiler for the Intellivision" --no-info --output=$?.1 ./$?
 
 
 clean:
