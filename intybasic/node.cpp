@@ -279,8 +279,8 @@ class node *node::node_right(void) {
 //
 // Set right node
 //
-void node::set_right(class node *right) {
-    this->right = right;
+void node::set_right(class node *new_right) {
+    this->right = new_right;
 }
 
 //
@@ -443,7 +443,16 @@ void node::generate(int reg, int decision) {
         return;
     }
     switch (type) {
-        default:        // Undefined node, never should happen
+//      default:        // Undefined node, never should happen
+        case C_END:
+        case C_STRING:
+        case C_LABEL:
+        case C_LPAREN:
+        case C_RPAREN:
+        case C_COLON:
+        case C_PERIOD:
+        case C_COMMA:
+        case C_ERR:
             output->emit_literal("\t; >>> Houston, we have a problem <<<");
             break;
         case C_NUM:     // Number
@@ -468,12 +477,12 @@ void node::generate(int reg, int decision) {
             break;
         case C_USR:     // Call user's function
         {
-            int reg;
+            int reg1;
             
-            reg = 0;
+            reg1 = 0;
             for (class node *explore = left; explore != NULL; explore = explore->right) {
-                explore->left->generate(reg, 0);
-                reg++;
+                explore->left->generate(reg1, 0);
+                reg1++;
             }
             output->emit_a(N_CALL, FUNC_PREFIX, value);
         }

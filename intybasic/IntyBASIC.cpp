@@ -116,7 +116,7 @@ void mangle(string name)
 {
     int c;
     
-    for (c = 0; c < name.length(); c++) {
+    for (c = 0; c < (int) name.length(); c++) {
         if (name[c] == '#')
             asm_output << '&';
         else
@@ -1370,6 +1370,8 @@ private:
                 emit_error("syntax error in call to FN");
                 break;
             }
+        } else {
+            argument = NULL;
         }
         accumulated.push_front(new lexical_element(lex, value, name));  // The actual one for later
         // Push macro into lexical analyzer
@@ -2062,8 +2064,8 @@ private:
                         v = 0;
                         while (1) {
                             if (lex == C_STRING) {  // String found
-                                for (c = 0; c < name.length(); c++) {
-                                    if (name[c] == 127 && c + 1 < name.length()) {
+                                for (c = 0; c < (int) name.length(); c++) {
+                                    if (name[c] == 127 && c + 1 < (int) name.length()) {
                                         c++;
                                         if (v == 0)
                                             v1 = (name[c] & 0xff) + 127;
@@ -2176,8 +2178,8 @@ private:
                                 int c;
                                 int v;
                                 
-                                for (c = 0; c < name.length(); c++) {
-                                    if (name[c] == 127 && c + 1 < name.length()) {
+                                for (c = 0; c < (int) name.length(); c++) {
+                                    if (name[c] == 127 && c + 1 < (int) name.length()) {
                                         c++;
                                         v = (name[c] & 0xff) + 127;
                                     } else {
@@ -2496,8 +2498,8 @@ private:
                             
                             output->emit_lr(N_MVI, "_screen", -1, 4);
                             p = -1;
-                            for (c = 0; c < name.length(); c++) {
-                                if (name[c] == 127 && c + 1 < name.length()) {
+                            for (c = 0; c < (int) name.length(); c++) {
+                                if (name[c] == 127 && c + 1 < (int) name.length()) {
                                     c++;
                                     v = ((name[c] & 0xff) + 127) * 8;
                                 } else {
@@ -3111,7 +3113,10 @@ private:
                                 case 'G': note = 7; break;
                                 case 'A': note = 9; break;
                                 case 'B': note = 11; break;
-                                default: emit_error("bad syntax for note in MUSIC"); break;
+                                default:
+                                    note = 0;
+                                    emit_error("bad syntax for note in MUSIC");
+                                    break;
                             }
                             switch (name[c++]) {
                                 case '2': note += 0 * 12; break;
@@ -3120,7 +3125,9 @@ private:
                                 case '5': note += 3 * 12; break;
                                 case '6': note += 4 * 12; break;
                                 case '7': if (note == 0) { note += 5 * 12; break; }
-                                default: emit_error("bad syntax for note in MUSIC"); break;
+                                default:
+                                    emit_error("bad syntax for note in MUSIC");
+                                    break;
                             }
                             note++;
                             if (name[c] == '#') {

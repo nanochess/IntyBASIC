@@ -6,8 +6,8 @@
 //  Copyright (c) 2016 Oscar Toledo. All rights reserved.
 //
 
-#ifndef __intybasic__microcode__
-#define __intybasic__microcode__
+#ifndef _intybasic_microcode_
+#define _intybasic_microcode_
 
 enum opcode {
     N_ADCR, N_ADD, N_ADDA, N_ADDI, N_ADDR, N_AND, N_ANDA, N_ANDI, N_ANDR,
@@ -16,12 +16,12 @@ enum opcode {
     N_INCR, N_MOVR, N_MVI, N_MVIA, N_MVII, N_MVO, N_MVOA, N_MULT, N_NEGR, N_NOP,
     N_PSHR, N_PULR, N_RRC, N_RETURN, N_RSWD,
     N_SARC, N_SLL, N_SLR, N_SUB, N_SUBA, N_SUBI, N_SUBR, N_SWAP,
-    N_TSTR, N_XOR, N_XORA, N_XORI, N_XORR,
+    N_TSTR, N_XOR, N_XORA, N_XORI, N_XORR
 };
 
 enum microcode_style {
     M_SINGLE, M_R, M_RR, M_NR, M_NNR, M_LR, M_RL,
-    M_A, M_S, M_M, M_L, M_D, M_D2, M_DL, M_LITERAL,
+    M_A, M_S, M_M, M_L, M_D, M_D2, M_DL, M_LITERAL
 };
 
 //
@@ -46,4 +46,4 @@ public:
     void dump(void);
 };
 
-#endif /* defined(__intybasic__microcode__) */
+#endif /* defined(_intybasic_microcode_) */

@@ -6,8 +6,8 @@
 //  Copyright (c) 2016 Oscar Toledo. All rights reserved.
 //
 
-#ifndef __intybasic__code__
-#define __intybasic__code__
+#ifndef _intybasic_code_
+#define _intybasic_code_
 
 //
 // Intermediate code generator with peephole optimization
@@ -80,4 +80,4 @@ public:
     void dump(void);
 };
 
-#endif /* defined(__intybasic__code__) */
+#endif /* defined(_intybasic_code_) */

@@ -6,8 +6,8 @@
 //  Copyright (c) 2016 Oscar Toledo. All rights reserved.
 //
 
-#ifndef intybasic_global_h
-#define intybasic_global_h
+#ifndef _intybasic_global_h_
+#define _intybasic_global_h_
 
 #include <iostream>
 #include <fstream>

@@ -6,8 +6,8 @@
 //  Copyright (c) 2016 Oscar Toledo. All rights reserved.
 //
 
-#ifndef __intybasic__node__
-#define __intybasic__node__
+#ifndef _intybasic_node_
+#define _intybasic_node_
 
 //
 // Expression tree builder
@@ -33,4 +33,4 @@ public:
     void generate(int reg, int decision);
 };
     
-#endif /* defined(__intybasic__node__) */
+#endif /* defined(_intybasic_node_) */
