@@ -10,7 +10,7 @@
 #define _intybasic_code_
 
 //
-// Intermediate code generator with peephole optimization
+// Intermediate code generator with peephole optimization.
 //
 class code {
     
@@ -18,16 +18,16 @@ class code {
     
     int cycles;
     
-    // Relates which registers contains what constants or addresses
+    // Relates which registers contain which constants or addresses.
     struct {
-        int valid;          // This content is valid
+        int valid;          // This content is valid.
         string prefix;      // Refers to this prefix label... (empty string for value)
         int value;          // ...contains this label number or value...
-        int offset;         // ...plus this offset
+        int offset;         // ...plus this offset.
     } register_content[8];
     
-    int flags_valid;        // Flags currently are valid
-    int flags_register;     // Which register evaluation is in flags
+    int flags_valid;        // Which flags are valid currently.
+    int flags_register;     // Which register evaluation is in flags.
     
     bool subexpression_valid;   // Subexpression in r3 is valid...
     int subexpression_base;
