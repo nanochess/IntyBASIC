@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 17-jun-2020
+Última revisión: 13-nov-2024
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -29,6 +29,9 @@ en inglés.
 
 
 >>>>>>>>>>>>>>  Cambios en esta versión
+
+v1.5.0 13-nov-2024  o Se agrega SELECT CASE / END SELECT.
+                    o Se solucionan varios pequeños bugs.
 
 v1.4.2 01-jun-2020  o Se agrega la secuencia de escape \\ para poner barra
                       invertida en cadenas.
@@ -740,6 +743,20 @@ Las siguientes sentencias están disponibles:
      Esta sentencia puede ser más rápida de ejecutar utilizando el modificador
      FAST, evitará checar limites, si su lista de etiquetas no cubre la expresión
      completa entonces su PROGRAMA FALLARA.
+
+
+  SELECT CASE expr
+     CASE 1
+       [sentencia]
+     CASE 2 TO 4
+       [sentencia]
+     CASE ELSE
+       [sentencia]
+  END CASE
+
+     Evalúa la expresión, y selecciona las sentencias para ejecutar a partir de
+     las sentencias CASE. CASE.ELSE debe ser la última sentencia si se requiere
+     manejar valores no especificados. Se puede salir usando EXIT SELECT.
 
 
   ON FRAME GOSUB etiqueta

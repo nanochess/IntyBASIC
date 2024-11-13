@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 First developed: Jan/14/2014
-Last revision: Jun/17/2020.
+Last revision: Nov/13/2024.
 
 
 >>>>>>>>>>>>>>  Legal notice
@@ -22,6 +22,9 @@ All trademarks are property of their respective owners.
 
 
 >>>>>>>>>>>>>>  Changes in this version
+
+v1.5.0 Nov/13/2024  o Added SELECT CASE / END SELECT.
+                    o Solved several tiny bugs.
 
 v1.4.2 Jun/17/2020  o Added escape sequence \\ for inverse bar inside strings.
                     o Limited numeric escape sequences to 3 digits.
@@ -729,6 +732,21 @@ The following statements are available:
      This statement can be made faster in execution using the FAST modifier,
      it will avoid checking boundaries, if your list of labels doesn't cover
      the full expression range then your PROGRAM WILL CRASH.
+
+
+  SELECT CASE expr
+     CASE 1
+       [statement]
+     CASE 2 TO 4
+       [statement]
+     CASE ELSE
+       [statement]
+  END CASE
+
+     It evaluates the expression, and selects the statements to execute from the
+     CASE statements. CASE ELSE should be the last statement if it is required to
+     handle non-specified values. You can exit using EXIT SELECT.
+
 
   ON FRAME GOSUB label
   

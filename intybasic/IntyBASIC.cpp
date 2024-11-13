@@ -34,7 +34,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.4.2 Jun/01/2020";      // Compiler version
+const string VERSION = "v1.5.0 Nov/13/2024";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -95,7 +95,7 @@ static const char *lexical_names[] = {
 // Representation for a loop
 //
 struct loop {
-    int type;           // 0=FOR, 1=WHILE, 2=IF, 3=DO WHILE/UNTIL LOOP, 4=DO LOOP WHILE/UNTIL
+    enum {NESTED_FOR, NESTED_WHILE, NESTED_IF, NESTED_DO, NESTED_DO_LOOP, NESTED_SELECT} type;
     class node *step;
     class node *final;
     string var;
@@ -1619,7 +1619,7 @@ private:
                         get_lex();
                         if (lex == C_END) {
                             block = 1;
-                            new_loop.type = 2;
+                            new_loop.type = loop::NESTED_IF;
                             new_loop.step = NULL;
                             new_loop.final = NULL;
                             new_loop.var = "";
@@ -1655,7 +1655,7 @@ private:
                     get_lex();
                     if (loops.size() == 0) {
                         emit_error("ELSEIF without IF");
-                    } else if (loops.front().type != 2 || loops.front().label_loop == 0) {
+                    } else if (loops.front().type != loop::NESTED_IF || loops.front().label_loop == 0) {
                         emit_error("bad nested ELSEIF");
                     } else {
                         if (loops.front().var != "1") {
@@ -1687,7 +1687,7 @@ private:
                     get_lex();
                     if (loops.size() == 0) {
                         emit_error("ELSE without IF");
-                    } else if (loops.front().type != 2) {
+                    } else if (loops.front().type != loop::NESTED_IF) {
                         emit_error("bad nested ELSE");
                     } else if (loops.front().label_loop == 0) {
                         emit_error("more than one ELSE");
@@ -1705,11 +1705,9 @@ private:
                     continue;
                 } else if (name == "END") {
                     get_lex();
-                    if (lex != C_NAME || name != "IF") {
-                        emit_error("wrong END");
-                    } else {
+                    if (lex == C_NAME && name == "IF") {
                         get_lex();
-                        if (loops.size() == 0 || loops.front().type != 2) {
+                        if (loops.size() == 0 || loops.front().type != loop::NESTED_IF) {
                             emit_error("Bad nested END IF");
                         } else {
                             if (loops.front().var == "1")
@@ -1718,6 +1716,18 @@ private:
                                 output->emit_l(TEMP_PREFIX, loops.front().label_loop);
                             loops.pop_front();
                         }
+                    } else if (lex == C_NAME && name == "SELECT") {
+                        get_lex();
+                        if (loops.size() == 0 || loops.front().type != loop::NESTED_SELECT) {
+                            emit_error("Bad nested END SELECT");
+                        } else {
+                            if (loops.front().label_loop != 0)
+                                output->emit_l(TEMP_PREFIX, loops.front().label_loop);
+                            output->emit_l(TEMP_PREFIX, loops.front().label_exit);
+                            loops.pop_front();
+                        }
+                    } else {
+                        emit_error("wrong END");
                     }
                 } else if (name == "FOR") {  
                     int label_loop;
@@ -1793,7 +1803,7 @@ private:
                                 emit_warning("Infinite loop because STEP is zero");
                         }
                     }
-                    new_loop.type = 0;
+                    new_loop.type = loop::NESTED_FOR;
                     new_loop.step = step;
                     new_loop.final = final;
                     new_loop.var = loop;
@@ -1811,7 +1821,7 @@ private:
                         int label_exit = loops.front().label_exit;
                         string loop = loops.front().var;
                         
-                        if (loops.front().type != 0) {
+                        if (loops.front().type != loop::NESTED_FOR) {
                             emit_error("bad nested NEXT");
                             if (lex == C_NAME)
                                 get_lex();
@@ -1861,7 +1871,7 @@ private:
                         output->emit_r(N_TSTR, 0);
                         output->emit_a(N_BEQ, TEMP_PREFIX, label_exit);
                     }
-                    new_loop.type = 1;
+                    new_loop.type = loop::NESTED_WHILE;
                     new_loop.step = NULL;
                     new_loop.final = NULL;
                     new_loop.var = "";
@@ -1872,7 +1882,7 @@ private:
                     get_lex();
                     if (loops.size() == 0) {
                         emit_error("WEND without WHILE");
-                    } else if (loops.front().type != 1) {
+                    } else if (loops.front().type != loop::NESTED_WHILE) {
                         emit_error("bad nested WEND");
                     } else {
                         output->emit_a(N_B, TEMP_PREFIX, loops.front().label_loop);
@@ -1897,7 +1907,7 @@ private:
                             output->emit_a(N_BEQ, TEMP_PREFIX, label_exit);
                         }
                         new_loop.var = "1"; // Uses exit label
-                        new_loop.type = 3;  // Condition at top
+                        new_loop.type = loop::NESTED_DO;  // Condition at top
                     } else if (lex == C_NAME && name == "UNTIL") {
                         int label_temp = next_local++;
                         
@@ -1911,10 +1921,10 @@ private:
                         output->emit_a(N_B, TEMP_PREFIX, label_exit);
                         output->emit_l(TEMP_PREFIX, label_temp);
                         new_loop.var = "1"; // Uses exit label
-                        new_loop.type = 3;  // Condition at top
+                        new_loop.type = loop::NESTED_DO;  // Condition at top
                     } else {
                         new_loop.var = ""; // Doesn't use exit label (yet)
-                        new_loop.type = 4;  // Condition at bottom
+                        new_loop.type = loop::NESTED_DO_LOOP;  // Condition at bottom
                     }
                     new_loop.step = NULL;
                     new_loop.final = NULL;
@@ -1925,11 +1935,11 @@ private:
                     get_lex();
                     if (loops.size() == 0) {
                         emit_error("LOOP without DO");
-                    } else if (loops.front().type == 3) {
+                    } else if (loops.front().type == loop::NESTED_DO) {
                         output->emit_a(N_B, TEMP_PREFIX, loops.front().label_loop);
                         output->emit_l(TEMP_PREFIX, loops.front().label_exit);
                         loops.pop_front();
-                    } else if (loops.front().type == 4) {
+                    } else if (loops.front().type == loop::NESTED_DO_LOOP) {
                         enum lexical_component type;
                         
                         if (lex == C_NAME && name == "WHILE") {
@@ -1960,13 +1970,94 @@ private:
                     } else {
                         emit_error("bad nested LOOP");
                     }
+                } else if (name == "SELECT") {
+                    int label_loop;
+                    int label_exit;
+                    enum lexical_component type;
+                    struct loop new_loop;
+                    
+                    get_lex();
+                    label_exit = next_local++;
+                    if (lex == C_NAME && name == "CASE") {
+                        get_lex();
+                        type = eval_expr(0, 0);
+                    } else {
+                        emit_error("missing CASE after SELECT");
+                    }
+                    new_loop.type = loop::NESTED_SELECT;
+                    new_loop.step = NULL;
+                    new_loop.final = NULL;
+                    new_loop.var = "";
+                    new_loop.label_loop = 0;
+                    new_loop.label_exit = label_exit;
+                    loops.push_front(new_loop);
+                } else if (name == "CASE") {
+                    get_lex();
+                    if (loops.size() == 0 || loops.front().type != loop::NESTED_SELECT) {
+                        emit_error("CASE without SELECT CASE");
+                    } else {
+                        if (loops.front().label_loop != 0) {
+                            output->emit_a(N_B, TEMP_PREFIX, loops.front().label_exit);
+                            output->emit_l(TEMP_PREFIX, loops.front().label_loop);
+                        }
+                        if (lex == C_NAME && name == "ELSE") {
+                            get_lex();
+                            if (loops.front().label_loop == 0) {
+                                emit_error("More than one CASE ELSE");
+                            } else {
+                                loops.front().label_loop = 0;
+                            }
+                        } else {
+                            class node *tree;
+                            int type;
+                            int min;
+                            int max;
+                            
+                            tree = eval_level0(&type);
+                            if (tree->node_type() != C_NUM) {
+                                emit_error("not a constant expression in CASE");
+                                min = 0;
+                            } else {
+                                min = tree->node_value();
+                            }
+                            delete tree;
+                            tree = NULL;
+                            if (lex == C_NAME && name == "TO") {
+                                get_lex();
+                                tree = eval_level0(&type);
+                                if (tree->node_type() != C_NUM) {
+                                    emit_error("not a constant expression in CASE TO");
+                                    max = min;
+                                } else {
+                                    max = tree->node_value();
+                                }
+                                delete tree;
+                                tree = NULL;
+                            } else {
+                                max = min;
+                            }
+                            if (min > max) {
+                                emit_error("Maximum range of CASE is lesser than minimum");
+                            }
+                            loops.front().label_loop = next_local++;
+                            if (min == max) {
+                                output->emit_nr(N_CMPI, "", min, 0);
+                                output->emit_a(N_BNE, TEMP_PREFIX, loops.front().label_loop);
+                            } else {
+                                output->emit_nr(N_CMPI, "", min, 0);
+                                output->emit_a(N_BNC, TEMP_PREFIX, loops.front().label_loop);
+                                output->emit_nr(N_CMPI, "", max + 1, 0);
+                                output->emit_a(N_BC, TEMP_PREFIX, loops.front().label_loop);
+                            }
+                        }
+                    }
                 } else if (name == "EXIT") {
                     get_lex();
                     
                     // Avoid IF blocks
                     loop_explorer = loops.begin();
                     while (loop_explorer != loops.end()) {
-                        if (loop_explorer->type != 2)
+                        if (loop_explorer->type != loop::NESTED_IF)
                             break;
                         ++loop_explorer;
                     }
@@ -1977,7 +2068,7 @@ private:
                             emit_error("missing type of EXIT, WHILE/FOR/DO");
                         } else if (name == "FOR") {
                             get_lex();
-                            if (loops.size() == 0 || loop_explorer->type != 0) {
+                            if (loops.size() == 0 || loop_explorer->type != loop::NESTED_FOR) {
                                 emit_error("EXIT FOR without FOR");
                             } else {
                                 if (loop_explorer->label_exit == 0)
@@ -1986,21 +2077,28 @@ private:
                             }
                         } else if (name == "WHILE") {
                             get_lex();
-                            if (loops.size() == 0 || loop_explorer->type != 1) {
+                            if (loops.size() == 0 || loop_explorer->type != loop::NESTED_WHILE) {
                                 emit_error("EXIT WHILE without WHILE");
                             } else {
                                 output->emit_a(N_B, TEMP_PREFIX, loop_explorer->label_exit);
                             }
                         } else if (name == "DO") {
                             get_lex();
-                            if (loops.size() == 0 || (loop_explorer->type != 3 && loop_explorer->type != 4)) {
+                            if (loops.size() == 0 || (loop_explorer->type != loop::NESTED_DO && loop_explorer->type != loop::NESTED_DO_LOOP)) {
                                 emit_error("EXIT DO without DO");
                             } else {
                                 loop_explorer->var = "1";
                                 output->emit_a(N_B, TEMP_PREFIX, loop_explorer->label_exit);
                             }
+                        } else if (name == "SELECT") {
+                            get_lex();
+                            if (loops.size() == 0 || loop_explorer->type != loop::NESTED_SELECT) {
+                                emit_error("EXIT SELECT without SELECT");
+                            } else {
+                                output->emit_a(N_B, TEMP_PREFIX, loop_explorer->label_exit);
+                            }
                         } else {
-                            emit_error("only supported EXIT WHILE/FOR/DO");
+                            emit_error("only supported EXIT WHILE/FOR/DO/SELECT");
                             get_lex();
                         }
                     }
@@ -3819,7 +3917,7 @@ public:
                     inside_proc = labels[procedure];
                     last_is_return = 0;
                     output->trash_registers();
-                } else if (name == "END" && sneak_peek() != 'I') {  // END (and not END IF)
+                } else if (name == "END" && sneak_peek() != 'I' && sneak_peek() != 'S') {  // END (and not END IF)
                     if (!inside_proc)
                         emit_warning("END without PROCEDURE");
                     else if (loops.size() > 0)
@@ -4234,7 +4332,7 @@ int main(int argc, const char * argv[])
     int start;
     
     std::cerr << "\nIntyBASIC compiler " << VERSION << "\n";
-    std::cerr << "(c) 2014-2020 Oscar Toledo G. http://nanochess.org/\n\n";
+    std::cerr << "(c) 2014-2024 Oscar Toledo G. http://nanochess.org/\n\n";
     
     // Get year and default title for program
     // And yep, use old-style C functions :)
