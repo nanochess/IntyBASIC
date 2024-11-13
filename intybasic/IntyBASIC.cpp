@@ -45,6 +45,7 @@ const string NAME_MANGLING_ASSEMBLER = "";
 const string NAME_MANGLING_VAR = "var_";
 const string NAME_MANGLING_ARRAY = "array_";
 const string NAME_MANGLING_LABEL = "label_";
+const string NAME_MANGLING_CONST = "const_";
 
 const int CALLED_BY_GOTO = 0x04;
 const int CALLED_BY_GOSUB = 0x08;
@@ -2796,6 +2797,9 @@ private:
                         } else {
                             constants[assigned] = (tree->node_value() & 0xffff) | 0x10000;
                         }
+                        asm_output << NAME_MANGLING_CONST;
+                        mangle(assigned);
+                        asm_output << ":\tEQU " << (tree->node_value() & 0xffff) << "\n";
                         delete tree;
                         tree = NULL;
                     }
