@@ -261,6 +261,7 @@ _int_vector:     PROC
 	MVO     R0,     $2C     ; Border color
 	MVI _border_mask,R0
 	MVO     R0,     $32     ; Border mask
+    IF DEFINED intybasic_col
 	;
 	; Save collision registers for further use and clear them
 	;
@@ -282,6 +283,7 @@ _int_vector:     PROC
 	MVO@ R0,R5  ; _col6
 	MVI@ R4,R0
 	MVO@ R0,R5  ; _col7
+    ENDI
 	
     IF DEFINED intybasic_scroll
 
@@ -3253,30 +3255,30 @@ uf_udiv16:	PROC
 
 Q2:	; Reserved label for #BACKTAB
 
-	ORG $319,$319,"-RWB"
 	;
 	; 16-bits variables
 	; Note IntyBASIC variables grow up starting in $308.
 	;
-	IF DEFINED intybasic_voice
+
+BASE_16BIT_SYSTEM_VARS: QSET $33f
+    IF DEFINED intybasic_voice
+BASE_16BIT_SYSTEM_VARS: QSET BASE_16BIT_SYSTEM_VARS-10
+    ENDI
+    IF DEFINED intybasic_col
+BASE_16BIT_SYSTEM_VARS: QSET BASE_16BIT_SYSTEM_VARS-8
+    ENDI
+    IF DEFINED intybasic_scroll
+BASE_16BIT_SYSTEM_VARS: QSET BASE_16BIT_SYSTEM_VARS-20
+    ENDI
+
+	ORG BASE_16BIT_SYSTEM_VARS,BASE_16BIT_SYSTEM_VARS,"-RWB"
+
+    IF DEFINED intybasic_voice
 IV.Q:      RMB 8    ; IV_xxx	16-bit	  Voice queue  (8 words)
 IV.FPTR:   RMB 1    ; IV_xxx	16-bit	  Current FIFO ptr.
 IV.PPTR:   RMB 1    ; IV_xxx	16-bit	  Current Phrase ptr.
-	ENDI
-
-	ORG $323,$323,"-RWB"
-
-_scroll_buffer: RMB 20  ; Sometimes this is unused
-_music_gosub:	RMB 1	; GOSUB pointer
-_music_table:	RMB 1	; Note table
-_music_p:	RMB 1	; Pointer to music
-_frame:	 RMB 1   ; Current frame
-_read:	  RMB 1   ; Pointer to DATA
-_gram_bitmap:   RMB 1   ; Bitmap for definition
-_gram2_bitmap:  RMB 1   ; Secondary bitmap for definition
-_screen:    RMB 1       ; Pointer to current screen position
-_color:     RMB 1       ; Current color
-
+    ENDI
+    IF DEFINED intybasic_col
 _col0:      RMB 1       ; Collision status for MOB0
 _col1:      RMB 1       ; Collision status for MOB1
 _col2:      RMB 1       ; Collision status for MOB2
@@ -3285,6 +3287,19 @@ _col4:      RMB 1       ; Collision status for MOB4
 _col5:      RMB 1       ; Collision status for MOB5
 _col6:      RMB 1       ; Collision status for MOB6
 _col7:      RMB 1       ; Collision status for MOB7
+    ENDI
+    IF DEFINED intybasic_scroll
+_scroll_buffer: RMB 20  ; Sometimes this is unused
+    ENDI
+_music_gosub:	RMB 1	; GOSUB pointer
+_music_table:	RMB 1	; Note table
+_music_p:	RMB 1	; Pointer to music
+_frame:		RMB 1   ; Current frame
+_read:		RMB 1   ; Pointer to DATA
+_gram_bitmap:   RMB 1   ; Bitmap for definition
+_gram2_bitmap:  RMB 1   ; Secondary bitmap for definition
+_screen:	RMB 1	; Pointer to current screen position
+_color:		RMB 1	; Current color
 
 Q1:			; Reserved label for #MOBSHADOW
 _mobs:      RMB 3*8     ; MOB buffer

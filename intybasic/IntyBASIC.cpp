@@ -34,7 +34,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.5.0 Nov/13/2024";      // Compiler version
+const string VERSION = "v1.5.0 Nov/15/2024";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -57,15 +57,16 @@ int next_local = 1;
 
 ofstream asm_output;
 
-bool optimized;      // Indicates if expression for IF statement jump was optimized
-bool jlp_used;       // Indicates if JLP is used
-int jlp_flash_size;  // Indicates JLP flash size
-bool cc3_used;       // Indicates if CC3 is used
-bool fastmult_used;  // Indicates if fast multiplication is used
-bool fastdiv_used;   // Indicates if fast division/remainder is used
-bool music_used;     // Indicates if music used
-bool music_ecs_used; // Indicates if ECS music used
-bool warnings;       // Indicates if warnings are generated
+bool optimized;      // Indicates if expression for IF statement jump was optimized.
+bool jlp_used;       // Indicates if JLP is used.
+int jlp_flash_size;  // Indicates JLP flash size.
+bool cc3_used;       // Indicates if CC3 is used.
+bool fastmult_used;  // Indicates if fast multiplication is used.
+bool fastdiv_used;   // Indicates if fast division/remainder is used.
+bool music_used;     // Indicates if music used.
+bool music_ecs_used; // Indicates if ECS music used.
+bool warnings;       // Indicates if warnings are generated.
+bool col_used;       // Indicates if collisions are used.
 
 int program_year;
 char program_title[256];
@@ -338,7 +339,10 @@ private:
                 emit_warning("number exceeds 16 bits");
             }
             name = "";
-            if (line_pos < line_size && line[line_pos] == '.'
+            if (line_pos < line_size && (line[line_pos] == 'u' || line[line_pos] == 'U')) {
+                line_pos++;
+                name = "u";
+            } else if (line_pos < line_size && line[line_pos] == '.'
                 && line_pos + 1 < line_size && isdigit(line[line_pos + 1])) {
                 if (value > 255) {
                     emit_warning("fixed number exceeds basic 8 bits");
@@ -385,8 +389,12 @@ private:
                 value = (value << 4) | temp;
                 line_pos++;
             }
-            lex = C_NUM;
             name = "";
+            if (line_pos < line_size && (line[line_pos] == 'u' || line[line_pos] == 'U')) {
+                line_pos++;
+                name = "u";
+            }
+            lex = C_NUM;
             line_start = 0;
             return;
         }
@@ -398,8 +406,12 @@ private:
                 value = (value << 1) | (line[line_pos] & 1);
                 line_pos++;
             }
-            lex = C_NUM;
             name = "";
+            if (line_pos < line_size && (line[line_pos] == 'u' || line[line_pos] == 'U')) {
+                line_pos++;
+                name = "u";
+            }
+            lex = C_NUM;
             line_start = 0;
             return;
         }
@@ -951,27 +963,35 @@ private:
                 return tree;
             } else if (name == "COL0") {
                 get_lex();
+                col_used = true;
                 return new node(C_VAR, 0, NULL, NULL);
             } else if (name == "COL1") {
                 get_lex();
+                col_used = true;
                 return new node(C_VAR, 1, NULL, NULL);
             } else if (name == "COL2") {
                 get_lex();
+                col_used = true;
                 return new node(C_VAR, 2, NULL, NULL);
             } else if (name == "COL3") {
                 get_lex();
+                col_used = true;
                 return new node(C_VAR, 3, NULL, NULL);
             } else if (name == "COL4") {
                 get_lex();
+                col_used = true;
                 return new node(C_VAR, 4, NULL, NULL);
             } else if (name == "COL5") {
                 get_lex();
+                col_used = true;
                 return new node(C_VAR, 5, NULL, NULL);
             } else if (name == "COL6") {
                 get_lex();
+                col_used = true;
                 return new node(C_VAR, 6, NULL, NULL);
             } else if (name == "COL7") {
                 get_lex();
+                col_used = true;
                 return new node(C_VAR, 7, NULL, NULL);
             } else if (name == "FRAME") {
                 get_lex();
@@ -1024,6 +1044,7 @@ private:
                 return tree;
             } else if (name == "VARPTR") {  // Access to variable/array/label address
                 get_lex();
+                *type = 1;  // Unsigned
                 if (lex != C_NAME) {
                     emit_error("missing variable name for VARPTR");
                     return new node(C_NUM, 0, NULL, NULL);
@@ -1204,6 +1225,8 @@ private:
                 return tree;
             }
             if ((constants[name] & 0x10000) != 0) {
+                if ((constants[name] & 0x20000) != 0)
+                    *type = 1;
                 temp = constants[name] & 0xffff;
                 get_lex();
                 return new node(C_NUM, temp, NULL, NULL);
@@ -1226,6 +1249,8 @@ private:
             int temp;
             
             temp = value;
+            if (name == "u")
+                *type = 1;
             get_lex();
             return new node(C_NUM, temp, NULL, NULL);
         }
@@ -2775,6 +2800,8 @@ private:
                         get_lex();
                     }
                 } else if (name == "CONST") {
+                    int c;
+                    
                     get_lex();
                     if (lex != C_NAME) {
                         emit_error("name required for constant assignment");
@@ -2795,7 +2822,10 @@ private:
                         if (tree->node_type() != C_NUM) {
                             emit_error("not a constant expression in CONST");
                         } else {
-                            constants[assigned] = (tree->node_value() & 0xffff) | 0x10000;
+                            c = 0x10000;
+                            if (type != 0)
+                                c |= 0x20000;
+                            constants[assigned] = (tree->node_value() & 0xffff) | c;
                         }
                         asm_output << NAME_MANGLING_CONST;
                         mangle(assigned);
@@ -3756,6 +3786,7 @@ public:
         ecs_used = false;
         flash_used = false;
         playvol_used = false;
+        col_used = false;
         jlp_used = ((flags & 1) != 0);
         jlp_flash_size = 16;
         cc3_used = ((flags & 2) != 0);
@@ -4054,6 +4085,8 @@ public:
         }
         if (scroll_used)
             asm_output << "intybasic_scroll:\tequ 1\t; Forces to include scroll library\n";
+        if (col_used)
+            asm_output << "intybasic_col:\tequ 1\t; Forces to include collision detection\n";
         if (keypad_used)
             asm_output << "intybasic_keypad:\tequ 1\t; Forces to include keypad library\n";
         if (music_used)
@@ -4286,12 +4319,13 @@ public:
         if (jlp_used || cc3_used) {
             available_vars = 0x9f80 - 0x8040;
         } else {
+            available_vars = 0x33f - 0x2f0 - 24;
             if (voice_used)
-                available_vars = 0x319 - 0x2f0 - 24;
-            else if (scroll_used)
-                available_vars = 0x323 - 0x2f0 - 24;
-            else
-                available_vars = 0x337 - 0x2f0 - 24;
+                available_vars -= 10;
+            if (scroll_used)
+                available_vars -= 20;
+            if (col_used)
+                available_vars -= 8;
         }
         if (used_space > available_vars) {
             std::cerr << "Error: Use of 16-bits variables exceeds available space (" << used_space << " vs " << available_vars << ")\n";
