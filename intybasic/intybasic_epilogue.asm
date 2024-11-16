@@ -283,6 +283,9 @@ _int_vector:     PROC
 	MVO@ R0,R5  ; _col6
 	MVI@ R4,R0
 	MVO@ R0,R5  ; _col7
+	MOVR R5,R4	; MVII #_mobs,R4
+    ELSE
+	MVII #_mobs,R4
     ENDI
 	
     IF DEFINED intybasic_scroll
@@ -299,7 +302,6 @@ _int_vector:     PROC
 	;
 	; Updates sprites (MOBs)
 	;
-	MOVR R5,R4	; MVII #_mobs,R4
 	CLRR R5		; X-coordinates
     REPEAT 8
 	MVI@ R4,R0
