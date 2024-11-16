@@ -6,7 +6,7 @@
                E-mail: biyubi@gmail.com
 
 Primera revisión: 14-ene-2014
-Última revisión: 15-nov-2024
+Última revisión: 16-nov-2024
 
 
 >>>>>>>>>>>>>>  Aviso legal
@@ -32,6 +32,7 @@ en inglés.
 
 v1.5.0 15-nov-2024  o Se agrega SELECT CASE / END SELECT.
                     o Se agrega soporte para números sin signo (sufijo U).
+                    o Se agrega soporte para conversión de tipo SIGNED/UNSIGNED en expresiones.
                     o Disponibles 8 variables extras de 16 bit si no se usa COL0-7.
                     o Se solucionan varios pequeños bugs.
 
@@ -1507,6 +1508,9 @@ puede usar números sin signo y esto se preserva cuando se usan en operaciones.
   A=A XOR B
   A=NOT A
   A=-A
+  A=+A              Sin efecto en el valor.
+  A=SIGNED A        Sin efecto en el valor, pero se vuelve tipo con signo. Útil en comparaciones.
+  A=UNSIGNED A      Sin efecto en el valor, pero se vuelve tipo sin signo. Útil en comparaciones.
   A=A=B             Si A y B son iguales el resultado es $ffff (-1) de lo contrario es cero.
   A=A<>B
   A=A<B

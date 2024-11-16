@@ -34,7 +34,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.5.0 Nov/15/2024";      // Compiler version
+const string VERSION = "v1.5.0 Nov/16/2024";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -798,7 +798,7 @@ private:
     {
         class node *left;
         
-        if (lex == C_MINUS) {
+        if (lex == C_MINUS) {   // Unary -
             get_lex();
             if (lex == C_NUM && name == ".") {  // Ok, fractional value, special case
                 value = ((value & 0xff00) >> 8) | ((value & 0x00ff) << 8);
@@ -810,10 +810,21 @@ private:
                 left = eval_level7(type);
                 left = new node(C_NEG, 0, left, NULL);
             }
+        } else if (lex == C_PLUS) { // Unary +
+            get_lex();
+            left = eval_level7(type);
         } else if (lex == C_NAME && name == "NOT") {
             get_lex();
             left = eval_level7(type);
             left = new node(C_NOT, 0, left, NULL);
+        } else if (lex == C_NAME && name == "SIGNED") {
+            get_lex();
+            left = eval_level7(type);
+            *type = 0;
+        } else if (lex == C_NAME && name == "UNSIGNED") {
+            get_lex();
+            left = eval_level7(type);
+            *type = 1;
         } else {
             left = eval_level7(type);
         }
