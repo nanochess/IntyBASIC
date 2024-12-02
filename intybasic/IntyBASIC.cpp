@@ -3745,8 +3745,82 @@ private:
                             get_lex();
                             option_warnings = false;
                         }
+                    } else if (name == "MAP") {
+                        class node *tree;
+                        int type;
+                        int map;
+
+                        get_lex();
+                        tree = eval_level0(&type);
+                        if (tree->node_type() != C_NUM) {
+                            emit_error("only constant expression for OPTION MAP parameter");
+                        } else {
+                            map = tree->node_value();
+                            if (map < 0 || map > 7)
+                                emit_error("bad map for OPTION MAP");
+                            asm_output << "ROM.Setup " << map << "\n";
+                        }
+
                     } else {
                         emit_error("non-recognized OPTION");
+                    }
+                } else if (name == "SEGMENT") {
+                    class node *tree;
+                    int type;
+                    int first = -1;
+                    int second = -1;
+
+                    get_lex();
+                    tree = eval_level0(&type);
+                    if (tree->node_type() != C_NUM) {
+                        emit_error("only constant expression for SEGMENT parameter");
+                    } else {
+                        first = tree->node_value() & 0xffff;
+                    }
+                    delete tree;
+                    tree = NULL;
+                    if (lex == C_NAME && name == "BANK") {
+                        get_lex();
+                        tree = eval_level0(&type);
+                        if (tree->node_type() != C_NUM) {
+                            emit_error("only constant expression for SEGMENT BANK parameter");
+                        } else {
+                            second = tree->node_value() & 0xffff;
+                        }
+                        delete tree;
+                        tree = NULL;
+                    }
+                    if (second == -1) {
+                        asm_output << "ROM.SelectSegment " << first << "\n";
+                    } else {
+                        asm_output << "ROM.SelectBank " << first << "," << second << "\n";
+
+                    }
+                } else if (name == "BANK") {
+                    class node *tree;
+                    int type;
+
+                    get_lex();
+                    if (lex == C_NAME && name == "SELECT") {
+                        get_lex();
+                        tree = eval_level0(&type);
+                        if (tree->node_type() != C_NUM) {
+                            emit_error("only constant expression for BANK SELECT parameter");
+                        } else {
+                            type = tree->node_value();
+                            asm_output << "ROM.SwitchBank -1," << (tree->node_value() & 0xffff) << "\n";
+                        }
+                        delete tree;
+                        tree = NULL;
+                    } else {
+                        tree = eval_level0(&type);
+                        if (tree->node_type() != C_NUM) {
+                            emit_error("only constant expression for BANK parameter");
+                        } else {
+                            asm_output << "ROM.SelectBank -1," << (tree->node_value() & 0xffff) << "\n";
+                        }
+                        delete tree;
+                        tree = NULL;
                     }
                 } else if (macros[name] != NULL) {  // Function (macro)
                     if (!replace_macro()) {
