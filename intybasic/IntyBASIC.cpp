@@ -67,6 +67,7 @@ bool music_used;     // Indicates if music used.
 bool music_ecs_used; // Indicates if ECS music used.
 bool warnings;       // Indicates if warnings are generated.
 bool col_used;       // Indicates if collisions are used.
+int intybasic_map;   // ROM map used.
 
 int program_year;
 char program_title[256];
@@ -3758,7 +3759,7 @@ private:
                             map = tree->node_value();
                             if (map < 0 || map > 7)
                                 emit_error("bad map for OPTION MAP");
-                            asm_output << "ROM.Setup " << map << "\n";
+                            intybasic_map = map;
                         }
 
                     } else {
@@ -3856,6 +3857,8 @@ public:
         char *p;
         int eof;
         string procedure;
+        string temporary_file;
+        int c;
         
         global_label = "";
         line_number = 0;
@@ -3879,6 +3882,7 @@ public:
         option_warnings = true;
         fastmult_used = false;
         fastdiv_used = false;
+        intybasic_map = 0;
         
         frame_drive = -1;
 
@@ -3887,43 +3891,23 @@ public:
         active_include = 0;
         next_include = 0;
         err_code = 0;
+        
+        temporary_file = tmpnam(NULL);
+        
         input.open(input_file);
         if (!input.is_open()) {
             std::cerr << "Error: Unable to open input file: " << input_file << "\n";
             return 2;
         }
         output = new code;
-        asm_output.open(output_file);
+
+        asm_output.open(temporary_file);
         if (!asm_output.is_open()) {
-            std::cerr << "Error: Unable to open output file: " << output_file << "\n";
+            std::cerr << "Error: Unable to open temporary output file: " << output_file << "\n";
             input.close();
             return 2;
         }
         asm_output << "\t; IntyBASIC compiler " << VERSION << "\n";
-        strcpy(path, library_path);
-#ifdef _WIN32
-        if (strlen(path) > 0 && path[strlen(path) - 1] != '\\')
-            strcat(path, "\\");
-#else
-        if (strlen(path) > 0 && path[strlen(path) - 1] != '/')
-            strcat(path, "/");
-#endif
-        strcat(path, "intybasic_prologue.asm");
-        included.open(path);
-        if (included.is_open()) {
-            while (getline(included, line)) {
-                chomp(line);
-                if (line.find(";IntyBASIC MARK DON'T CHANGE") != string::npos) {  // Location to replace title
-                    asm_output << "\tBYTE " << program_year << ",'" << program_title << "',0\n";
-                } else {
-                    asm_output << line << "\n";
-                }
-            }
-            included.close();
-        } else {
-            std::cerr << "Error: Unable to include prologue: " << path << "\n";
-            err_code = 2;
-        }
 
         //
         // Clean JLP/CC3 RAM
@@ -3987,7 +3971,6 @@ public:
             }
             if (eof)
                 break;
-//            std::cerr << line << "\n";
             line_start = 1;
             line_pos = 0;
             line_size = line.length();
@@ -4148,6 +4131,20 @@ public:
         // Finish compiled source code with epilogue
         asm_output << "\t;ENDFILE\n";
         asm_output << "\tSRCFILE \"\",0\n";
+        
+        asm_output.close();
+        input.close();
+
+        // Now open the real output file
+        asm_output.open(output_file);
+        if (!asm_output.is_open()) {
+            std::cerr << "Error: Unable to open assembly output file: " << output_file << "\n";
+            return 2;
+        }
+        asm_output << "\tROMW 16\n";
+
+        asm_output << "intybasic_map:\tequ " << intybasic_map << "\t; ROM map used\n";
+        asm_output << "intybasic_jlp:\tequ " << (jlp_used ? 1 : 0) << "\t; JLP is used\n";
         if (jlp_used) {
             asm_output << "\tIF DEFINED __FEATURE.CFGVAR\n";
             if (jlp_used) {
@@ -4158,6 +4155,9 @@ public:
             }
             asm_output << "\tENDI\n";
         }
+        asm_output << "intybasic_ecs:\tequ " << (ecs_used ? 1 : 0) << "\t; Forces to include ECS startup\n";
+        asm_output << "intybasic_voice:\tequ " << (voice_used ? 1 : 0) << "\t; Forces to include voice library\n";
+        asm_output << "intybasic_flash:\tequ " << (flash_used ? 1 : 0) << "\t; Forces to include Flash memory library\n";
         if (voice_used || ecs_used || flash_used) {
             asm_output << "\tIF DEFINED __FEATURE.CFGVAR\n";
             if (voice_used)
@@ -4168,32 +4168,60 @@ public:
                 asm_output << "\t\tCFGVAR \"jlpflash\" = " << jlp_flash_size << "\n";
             asm_output << "\tENDI\n";
         }
-        if (scroll_used)
-            asm_output << "intybasic_scroll:\tequ 1\t; Forces to include scroll library\n";
-        if (col_used)
-            asm_output << "intybasic_col:\tequ 1\t; Forces to include collision detection\n";
-        if (keypad_used)
-            asm_output << "intybasic_keypad:\tequ 1\t; Forces to include keypad library\n";
-        if (music_used)
-            asm_output << "intybasic_music:\tequ 1\t; Forces to include music library\n";
-        if (music_ecs_used)
-            asm_output << "intybasic_music_ecs:\tequ 1\t; Forces to include music library\n";
-        if (playvol_used)
-            asm_output << "intybasic_music_volume:\tequ 1\t; Forces to include music volume change\n";
-        if (stack_used)
-            asm_output << "intybasic_stack:\tequ 1\t; Forces to include stack overflow checking\n";
-        if (numbers_used)
-            asm_output << "intybasic_numbers:\tequ 1\t; Forces to include numbers library\n";
-        if (voice_used)
-            asm_output << "intybasic_voice:\tequ 1\t; Forces to include voice library\n";
-        if (ecs_used)
-            asm_output << "intybasic_ecs:\tequ 1\t; Forces to include ECS startup\n";
-        if (fastmult_used)
-            asm_output << "intybasic_fastmult:\tequ 1\t; Forces to include fast multiplication\n";
-        if (fastdiv_used)
-            asm_output << "intybasic_fastdiv:\tequ 1\t; Forces to include fast division/remainder\n";
-        if (flash_used)
-            asm_output << "intybasic_flash:\tequ 1\t; Forces to include Flash memory library\n";
+        asm_output << "intybasic_scroll:\tequ " << (scroll_used ? 1 : 0) << "\t; Forces to include scroll library\n";
+        asm_output << "intybasic_col:\tequ " << (col_used ? 1 : 0) << "\t; Forces to include collision detection\n";
+        asm_output << "intybasic_keypad:\tequ " << (keypad_used ? 1 : 0) << "\t; Forces to include keypad library\n";
+        asm_output << "intybasic_music:\tequ " << (music_used ? 1 : 0) << "\t; Forces to include music library\n";
+        asm_output << "intybasic_music_ecs:\tequ " << (music_ecs_used ? 1 : 0) << "\t; Forces to include music library\n";
+        asm_output << "intybasic_music_volume:\tequ " << (playvol_used ? 1 : 0) << "\t; Forces to include music volume change\n";
+        asm_output << "intybasic_stack:\tequ " << (stack_used ? 1 : 0) << "\t; Forces to include stack overflow checking\n";
+        asm_output << "intybasic_numbers:\tequ " << (numbers_used ? 1 : 0) << "\t; Forces to include numbers library\n";
+        asm_output << "intybasic_fastmult:\tequ " << (fastmult_used ? 1 : 0) << "\t; Forces to include fast multiplication\n";
+        asm_output << "intybasic_fastdiv:\tequ " << (fastdiv_used ? 1 : 0) << "\t; Forces to include fast division/remainder\n";
+        
+        // All constants are now generated
+        
+        // Copy the prologue
+        strcpy(path, library_path);
+#ifdef _WIN32
+        if (strlen(path) > 0 && path[strlen(path) - 1] != '\\')
+            strcat(path, "\\");
+#else
+        if (strlen(path) > 0 && path[strlen(path) - 1] != '/')
+            strcat(path, "/");
+#endif
+        strcat(path, "intybasic_prologue.asm");
+        included.open(path);
+        if (included.is_open()) {
+            while (getline(included, line)) {
+                chomp(line);
+                if (line.find(";IntyBASIC MARK DON'T CHANGE") != string::npos) {  // Location to replace title
+                    asm_output << "\tBYTE " << program_year << ",'" << program_title << "',0\n";
+                } else {
+                    asm_output << line << "\n";
+                }
+            }
+            included.close();
+        } else {
+            std::cerr << "Error: Unable to include prologue: " << path << "\n";
+            err_code = 2;
+        }
+
+        // Copy the compiled program
+        included.open(temporary_file);
+        if (included.is_open()) {
+            while (getline(included, line)) {
+                chomp(line);
+                asm_output << line << "\n";
+            }
+            included.close();
+        } else {
+            std::cerr << "Error: Unable to include compiled program: " << temporary_file << "\n";
+            err_code = 2;
+        }
+        remove(temporary_file.c_str());
+
+        // Copy the epilogue
         strcpy(path, library_path);
 #ifdef _WIN32
         if (strlen(path) > 0 && path[strlen(path) - 1] != '\\')
@@ -4434,7 +4462,6 @@ public:
 #endif
     
         asm_output.close();
-        input.close();
         std::cerr << "Compilation finished\n\n";
         return err_code;
     }

@@ -61,6 +61,8 @@
 	; 
 stuck:	B stuck
 
+	ROM.SelectDefaultSegment
+
 	;
 	; Copy screen helper for SCREEN wide statement
 	;
@@ -118,7 +120,7 @@ CPYBLK:	PROC
 	;
 _wait:  PROC
 
-    IF DEFINED intybasic_keypad
+    IF intybasic_keypad
 	MVI $01FF,R0
 	COMR R0
 	ANDI #$FF,R0
@@ -198,7 +200,7 @@ _set_isr:	PROC
 	;
 _int_vector:     PROC
 
-    IF DEFINED intybasic_stack
+    IF intybasic_stack
 	CMPI #$308,R6
 	BNC @@vs
 	MVO R0,$20	; Enables display
@@ -261,7 +263,7 @@ _int_vector:     PROC
 	MVO     R0,     $2C     ; Border color
 	MVI _border_mask,R0
 	MVO     R0,     $32     ; Border mask
-    IF DEFINED intybasic_col
+    IF intybasic_col
 	;
 	; Save collision registers for further use and clear them
 	;
@@ -288,7 +290,7 @@ _int_vector:     PROC
 	MVII #_mobs,R4
     ENDI
 	
-    IF DEFINED intybasic_scroll
+    IF intybasic_scroll
 
 	;
 	; Scrolling things
@@ -321,7 +323,7 @@ _int_vector:     PROC
 	MVO@ R0,R5
 	MVO@ R0,R5
 
-    IF DEFINED intybasic_music
+    IF intybasic_music
      	MVI _ntsc,R0
 	RRC R0,1	 ; PAL?
 	BNC @@vo97      ; Yes, always emit sound
@@ -333,7 +335,7 @@ _int_vector:     PROC
 @@vo14:	MVO R0,_music_frame
 	BEQ @@vo15
 @@vo97:	CALL _emit_sound
-    IF DEFINED intybasic_music_ecs
+    IF intybasic_music_ecs
 	CALL _emit_sound_ecs
     ENDI
 @@vo15:
@@ -403,7 +405,7 @@ _int_vector:     PROC
 	MVO R0,_gram2_bitmap
 @@vii1:
 
-    IF DEFINED intybasic_scroll
+    IF intybasic_scroll
 	;
 	; Frame scroll support
 	;
@@ -516,7 +518,7 @@ _int_vector:     PROC
 @@vi4:
     ENDI
 
-    IF DEFINED intybasic_voice
+    IF intybasic_voice
 	;
 	; Intellivoice support
 	;
@@ -528,7 +530,7 @@ _int_vector:     PROC
 	;
 	CALL _next_random
 
-    IF DEFINED intybasic_music
+    IF intybasic_music
 	; Generate sound for next frame
        	MVI _ntsc,R0
 	RRC R0,1	 ; PAL?
@@ -579,7 +581,7 @@ ENDM
 	JR R5
 	ENDP
 
-    IF DEFINED intybasic_music
+    IF intybasic_music
 
 	;
 	; Music player, comes from my game Princess Quest for Intellivision
@@ -630,7 +632,7 @@ pal_note_table:    PROC
 	; Music tracker init
 	;
 _init_music:	PROC
-    IF DEFINED intybasic_music
+    IF intybasic_music
 	MVI _ntsc,R0
 	RRC R0,1
 	MVII #ntsc_note_table,R0
@@ -639,7 +641,7 @@ _init_music:	PROC
 @@0:	MVO R0,_music_table
 	MVII #$38,R0	; $B8 blocks controllers o.O!
 	MVO R0,_music_mix
-    IF DEFINED intybasic_music_ecs
+    IF intybasic_music_ecs
 	MVO R0,_music2_mix
     ENDI
 	CLRR R0
@@ -648,7 +650,7 @@ _init_music:	PROC
     ENDI
 	ENDP
 
-    IF DEFINED intybasic_music
+    IF intybasic_music
 	;
 	; Start music
 	; R0 = Pointer to music
@@ -679,7 +681,7 @@ _generate_music:	PROC
 	ANDI #$C0,R0
 	XORI #$38,R0
 	MVO R0,_music_mix
-    IF DEFINED intybasic_music_ecs
+    IF intybasic_music_ecs
 	MVI _music2_mix,R0
 	ANDI #$C0,R0
 	XORI #$38,R0
@@ -690,7 +692,7 @@ _generate_music:	PROC
 	MVO R1,_music_vol2
 	MVI _music_tc,R3
 	MVO R1,_music_vol3
-    IF DEFINED intybasic_music_ecs
+    IF intybasic_music_ecs
 	MVO R1,_music2_vol1
 	NOP
 	MVO R1,_music2_vol2
@@ -708,7 +710,7 @@ _generate_music:	PROC
 	MVI _music_t,R2
 	CMPI #$FA00,R1	; Volume?
 	BNC @@42
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	BEQ @@40
     ENDI
 	CMPI #$FF00,R1	; Speed?
@@ -727,7 +729,7 @@ _generate_music:	PROC
 	MOVR R0,R4
 	B @@15
 
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 @@40:	
 	MVO R0,_music_vol
 	B @@41
@@ -788,7 +790,7 @@ _generate_music:	PROC
 	MVO R1,_music_n4
 	MVO R3,_music_s4
 	
-    IF DEFINED intybasic_music_ecs
+    IF intybasic_music_ecs
 	MVI _music_p,R4
 	MVI@ R4,R0
 	MVI@ R4,R1
@@ -929,7 +931,7 @@ _generate_music:	PROC
 	MVO R1,_music_s4
 
 @@4:
-    IF DEFINED intybasic_music_ecs
+    IF intybasic_music_ecs
 	;
 	; Construct main voice
 	;
@@ -1052,7 +1054,7 @@ _bass_instrument:	PROC
 	SLL R3,2	; Lower 2 octaves
 	ADDI #_bass_volume,R1
 	MVI@ R1,R1	; Bass effect
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	B _global_volume
     ELSE
 	JR R5
@@ -1077,7 +1079,7 @@ _bass_volume:	PROC
 _piano_instrument:	PROC
 	ADDI #_piano_volume,R1
 	MVI@ R1,R1
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	B _global_volume
     ELSE
 	JR R5
@@ -1107,7 +1109,7 @@ _clarinet_instrument:	PROC
 	ADCR R3
 	ADDI #_clarinet_volume-_clarinet_vibrato,R1
 	MVI@ R1,R1
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	B _global_volume
     ELSE
 	JR R5
@@ -1143,7 +1145,7 @@ _flute_instrument:	PROC
 	ADD@ R1,R3
 	ADDI #_flute_volume-_flute_vibrato,R1
 	MVI@ R1,R1
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	B _global_volume
     ELSE
 	JR R5
@@ -1165,7 +1167,7 @@ _flute_volume:	PROC
 	DECLE 11,11,11,11,10,10,10,10
 	ENDP
 
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 
 _global_volume:	PROC
 	MVI _music_vol,R2
@@ -1199,7 +1201,7 @@ _global_volume:	PROC
 
     ENDI
 
-    IF DEFINED intybasic_music_ecs
+    IF intybasic_music_ecs
 	;
 	; Emits sound for ECS
 	;
@@ -1294,7 +1296,7 @@ _emit_sound:	PROC
 	; Activates drum
 	;
 _activate_drum:	PROC
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	BEGIN
     ENDI
 	MVI _music_mode,R2
@@ -1304,7 +1306,7 @@ _activate_drum:	PROC
 	TSTR R0
 	BNE @@1
 	MVII #11,R1
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	CALL _global_volume
     ENDI
 	MVO R1,_music_vol1
@@ -1312,7 +1314,7 @@ _activate_drum:	PROC
 	ANDI #$F6,R0
 	XORI #$01,R0
 	MVO R0,_music_mix
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	RETURN
     ELSE
 	JR R5
@@ -1322,7 +1324,7 @@ _activate_drum:	PROC
 	TSTR R0
 	BNE @@2
 	MVII #11,R1
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	CALL _global_volume
     ENDI
 	MVO R1,_music_vol2
@@ -1330,7 +1332,7 @@ _activate_drum:	PROC
 	ANDI #$ED,R0
 	XORI #$02,R0
 	MVO R0,_music_mix
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	RETURN
     ELSE
 	JR R5
@@ -1342,7 +1344,7 @@ _activate_drum:	PROC
 	TSTR R0
 	BNE @@3
 	MVII #11,R1
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	CALL _global_volume
     ENDI
 	MVO R1,_music_vol3
@@ -1350,7 +1352,7 @@ _activate_drum:	PROC
 	ANDI #$DB,R0
 	XORI #$04,R0
 	MVO R0,_music_mix
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	RETURN
     ELSE
 	JR R5
@@ -1360,7 +1362,7 @@ _activate_drum:	PROC
 	ANDI #$EF,R0
 	MVO R0,_music_mix
 @@0:	
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	RETURN
     ELSE
 	JR R5
@@ -1368,12 +1370,12 @@ _activate_drum:	PROC
 
 	ENDP
 
-    IF DEFINED intybasic_music_ecs
+    IF intybasic_music_ecs
 	;
 	; Activates drum
 	;
 _activate_drum_ecs:	PROC
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	BEGIN
     ENDI
 	MVI _music_mode,R2
@@ -1383,7 +1385,7 @@ _activate_drum_ecs:	PROC
 	TSTR R0
 	BNE @@1
 	MVII #11,R1
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	CALL _global_volume
     ENDI
 	MVO R1,_music2_vol1
@@ -1391,7 +1393,7 @@ _activate_drum_ecs:	PROC
 	ANDI #$F6,R0
 	XORI #$01,R0
 	MVO R0,_music2_mix
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	RETURN
     ELSE
 	JR R5
@@ -1401,7 +1403,7 @@ _activate_drum_ecs:	PROC
 	TSTR R0
 	BNE @@2
 	MVII #11,R1
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	CALL _global_volume
     ENDI
 	MVO R1,_music2_vol2
@@ -1409,7 +1411,7 @@ _activate_drum_ecs:	PROC
 	ANDI #$ED,R0
 	XORI #$02,R0
 	MVO R0,_music2_mix
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	RETURN
     ELSE
 	JR R5
@@ -1421,7 +1423,7 @@ _activate_drum_ecs:	PROC
 	TSTR R0
 	BNE @@3
 	MVII #11,R1
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	CALL _global_volume
     ENDI
 	MVO R1,_music2_vol3
@@ -1429,7 +1431,7 @@ _activate_drum_ecs:	PROC
 	ANDI #$DB,R0
 	XORI #$04,R0
 	MVO R0,_music2_mix
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	RETURN
     ELSE
 	JR R5
@@ -1439,7 +1441,7 @@ _activate_drum_ecs:	PROC
 	ANDI #$EF,R0
 	MVO R0,_music2_mix
 @@0:	
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 	RETURN
     ELSE
 	JR R5
@@ -1451,7 +1453,7 @@ _activate_drum_ecs:	PROC
 
     ENDI
     
-    IF DEFINED intybasic_numbers
+    IF intybasic_numbers
 
 	;
 	; Following code from as1600 libraries, prnum16.asm
@@ -1667,7 +1669,7 @@ PRNUM16 PROC
 	
     ENDI
 
-    IF DEFINED intybasic_voice
+    IF intybasic_voice
 ;;==========================================================================;;
 ;;  SP0256-AL2 Allophones						   ;;
 ;;									  ;;
@@ -2789,7 +2791,7 @@ IV_INIT_and_wait:     EQU _wait	; No voice init; just WAIT.
 
     ENDI
 
-	IF DEFINED intybasic_flash
+	IF intybasic_flash
 
 ;; ======================================================================== ;;
 ;;  JLP "Save Game" support						 ;;
@@ -2907,7 +2909,7 @@ JF.CMD      PROC
 
 	ENDI
 
-	IF DEFINED intybasic_fastmult
+	IF intybasic_fastmult
 
 ; Quarter Square Multiplication
 ; Assembly code by Joe Zbiciak, 2015
@@ -3102,7 +3104,7 @@ qs_mpy16:   PROC
 
 	ENDI
 
-	IF DEFINED intybasic_fastdiv
+	IF intybasic_fastdiv
 
 ; Fast unsigned division/remainder
 ; Assembly code by Oscar Toledo G. Jul/10/2015
@@ -3238,20 +3240,9 @@ uf_udiv16:	PROC
 
 	ENDI
 
-	IF DEFINED intybasic_ecs
-	ORG $4800	; Available up to $4FFF
+	ROM.End
 
-	; Disable ECS ROMs so that they don't conflict with us
-	MVII    #$2A5F, R0
-	MVO     R0,     $2FFF
-	MVII    #$7A5F, R0
-	MVO     R0,     $7FFF
-	MVII    #$EA5F, R0
-	MVO     R0,     $EFFF
-
-	B       $1041       ; resume boot
-
-	ENDI
+	ROM.OutputRomStats
 
 	ORG $200,$200,"-RWB"
 
@@ -3263,24 +3254,24 @@ Q2:	; Reserved label for #BACKTAB
 	;
 
 BASE_16BIT_SYSTEM_VARS: QSET $33f
-    IF DEFINED intybasic_voice
+    IF intybasic_voice
 BASE_16BIT_SYSTEM_VARS: QSET BASE_16BIT_SYSTEM_VARS-10
     ENDI
-    IF DEFINED intybasic_col
+    IF intybasic_col
 BASE_16BIT_SYSTEM_VARS: QSET BASE_16BIT_SYSTEM_VARS-8
     ENDI
-    IF DEFINED intybasic_scroll
+    IF intybasic_scroll
 BASE_16BIT_SYSTEM_VARS: QSET BASE_16BIT_SYSTEM_VARS-20
     ENDI
 
 	ORG BASE_16BIT_SYSTEM_VARS,BASE_16BIT_SYSTEM_VARS,"-RWB"
 
-    IF DEFINED intybasic_voice
+    IF intybasic_voice
 IV.Q:      RMB 8    ; IV_xxx	16-bit	  Voice queue  (8 words)
 IV.FPTR:   RMB 1    ; IV_xxx	16-bit	  Current FIFO ptr.
 IV.PPTR:   RMB 1    ; IV_xxx	16-bit	  Current Phrase ptr.
     ENDI
-    IF DEFINED intybasic_col
+    IF intybasic_col
 _col0:      RMB 1       ; Collision status for MOB0
 _col1:      RMB 1       ; Collision status for MOB1
 _col2:      RMB 1       ; Collision status for MOB2
@@ -3290,7 +3281,7 @@ _col5:      RMB 1       ; Collision status for MOB5
 _col6:      RMB 1       ; Collision status for MOB6
 _col7:      RMB 1       ; Collision status for MOB7
     ENDI
-    IF DEFINED intybasic_scroll
+    IF intybasic_scroll
 _scroll_buffer: RMB 20  ; Sometimes this is unused
     ENDI
 _music_gosub:	RMB 1	; GOSUB pointer
@@ -3321,7 +3312,7 @@ _gram2_total:   RMB 1   ; Contains total GRAM cards for definition
 _mode_select:   RMB 1   ; Graphics mode selection
 _border_color:  RMB 1   ; Border color
 _border_mask:   RMB 1   ; Border mask
-    IF DEFINED intybasic_keypad
+    IF intybasic_keypad
 _cnt1_p0:   RMB 1       ; Debouncing 1
 _cnt1_p1:   RMB 1       ; Debouncing 2
 _cnt1_key:  RMB 1       ; Currently pressed key
@@ -3329,12 +3320,12 @@ _cnt2_p0:   RMB 1       ; Debouncing 1
 _cnt2_p1:   RMB 1       ; Debouncing 2
 _cnt2_key:  RMB 1       ; Currently pressed key
     ENDI
-    IF DEFINED intybasic_scroll
+    IF intybasic_scroll
 _scroll_x:  RMB 1       ; Scroll X offset
 _scroll_y:  RMB 1       ; Scroll Y offset
 _scroll_d:  RMB 1       ; Scroll direction
     ENDI
-    IF DEFINED intybasic_music
+    IF intybasic_music
 _music_start:	RMB 2	; Start of music
 
 _music_mode: RMB 1      ; Music mode (0= Not using PSG, 2= Simple, 4= Full, add 1 if using noise channel for drums)
@@ -3365,7 +3356,7 @@ _music_vol1:	RMB 1   ; Volume A
 _music_vol2:	RMB 1   ; Volume B
 _music_vol3:	RMB 1   ; Volume C
     ENDI
-    IF DEFINED intybasic_music_ecs
+    IF intybasic_music_ecs
 _music_i5:  RMB 1       ; Instrument 5
 _music_s5:  RMB 1       ; Sample pointer 5
 _music_n5:  RMB 1       ; Note 5
@@ -3390,13 +3381,12 @@ _music2_vol1:	RMB 1   ; Volume A
 _music2_vol2:	RMB 1   ; Volume B
 _music2_vol3:	RMB 1   ; Volume C
     ENDI
-    IF DEFINED intybasic_music_volume
+    IF intybasic_music_volume
 _music_vol:	RMB 1	; Global music volume
     ENDI
-    IF DEFINED intybasic_voice
+    IF intybasic_voice
 IV.QH:     RMB 1    ; IV_xxx	8-bit	   Voice queue head
 IV.QT:     RMB 1    ; IV_xxx	8-bit	   Voice queue tail
 IV.FLEN:   RMB 1    ; IV_xxx	8-bit	   Length of FIFO data
     ENDI
-
 
