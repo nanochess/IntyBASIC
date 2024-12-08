@@ -285,9 +285,6 @@ _int_vector:     PROC
 	MVO@ R0,R5  ; _col6
 	MVI@ R4,R0
 	MVO@ R0,R5  ; _col7
-	MOVR R5,R4	; MVII #_mobs,R4
-    ELSE
-	MVII #_mobs,R4
     ENDI
 	
     IF intybasic_scroll
@@ -304,6 +301,7 @@ _int_vector:     PROC
 	;
 	; Updates sprites (MOBs)
 	;
+	MVII #_mobs,R4
 	CLRR R5		; X-coordinates
     REPEAT 8
 	MVI@ R4,R0
@@ -313,6 +311,7 @@ _int_vector:     PROC
 	MVI@ R4,R0
 	MVO@ R0,R5
     ENDR
+    IF intybasic_col
 	CLRR R0		; Erase collision bits (R5 = $18)
 	MVO@ R0,R5
 	MVO@ R0,R5
@@ -322,6 +321,7 @@ _int_vector:     PROC
 	MVO@ R0,R5
 	MVO@ R0,R5
 	MVO@ R0,R5
+    ENDI
 
     IF intybasic_music
      	MVI _ntsc,R0
