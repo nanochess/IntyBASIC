@@ -34,7 +34,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.5.0 Nov/16/2024";      // Compiler version
+const string VERSION = "v1.5.0 Dec/10/2024";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -3803,16 +3803,30 @@ private:
 
                     get_lex();
                     if (lex == C_NAME && name == "SELECT") {
+                        int first = -1;
+                        int second = -1;
+                        
                         get_lex();
                         tree = eval_level0(&type);
                         if (tree->node_type() != C_NUM) {
                             emit_error("only constant expression for BANK SELECT parameter");
                         } else {
-                            type = tree->node_value();
-                            asm_output << "ROM.SwitchBank -1," << (tree->node_value() & 0xffff) << "\n";
+                            second = tree->node_value() & 0xffff;
                         }
                         delete tree;
                         tree = NULL;
+                        if (lex == C_NAME && name == "SEGMENT") {
+                            get_lex();
+                            tree = eval_level0(&type);
+                            if (tree->node_type() != C_NUM) {
+                                emit_error("only constant expression for BANK SELECT SEGMENT parameter");
+                            } else {
+                                first = tree->node_value() & 0xffff;
+                            }
+                            delete tree;
+                            tree = NULL;
+                        }
+                        asm_output << "ROM.SwitchBank " << first << "," << (tree->node_value() & 0xffff) << "\n";
                     } else {
                         tree = eval_level0(&type);
                         if (tree->node_type() != C_NUM) {
@@ -3857,7 +3871,7 @@ public:
         char *p;
         int eof;
         string procedure;
-        string temporary_file;
+        char *temporary_file;
         int c;
         
         global_label = "";
@@ -4219,7 +4233,7 @@ public:
             std::cerr << "Error: Unable to include compiled program: " << temporary_file << "\n";
             err_code = 2;
         }
-        remove(temporary_file.c_str());
+        remove(temporary_file);
 
         // Copy the epilogue
         strcpy(path, library_path);
