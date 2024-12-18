@@ -91,10 +91,10 @@ _rom_stat       STRUCT  0
 
 ;; ======================================================================== ;;
 ;;  __rom_raise_error(err, desc)                                            ;;
-;;  Generates an assembler error.                                           ;;
+;;  Generates an assembler error and sets the global error flag.            ;;
 ;;                                                                          ;;
 ;;  NOTE:   Both strings must be devoid of semi-colons and commas, or       ;;
-;;          Bad Things may happen during pre-processing.                    ;;
+;;          Bad Things(tm) may happen during pre-processing.                ;;
 ;;                                                                          ;;
 ;;  ARGUMENTS                                                               ;;
 ;;      err         The error message.                                      ;;
@@ -123,7 +123,7 @@ ENDM
 
 ;; ======================================================================== ;;
 ;;  __rom_reset_error                                                       ;;
-;;  Resets the error flag.                                                  ;;
+;;  Resets the global error flag.                                           ;;
 ;;                                                                          ;;
 ;;  ARGUMENTS                                                               ;;
 ;;      None.                                                               ;;
@@ -141,7 +141,7 @@ ENDM
 ;;  Validates the requested ROM map.                                        ;;
 ;;                                                                          ;;
 ;;  ARGUMENTS                                                               ;;
-;;      map         The ROM map selected. Valid values are 0 to 5.          ;;
+;;      map         The ROM map selected. Valid values are 0 to 7.          ;;
 ;;                                                                          ;;
 ;;  OUTPUT                                                                  ;;
 ;;      _rom.error  -1 on failure.                                          ;;
@@ -662,7 +662,7 @@ MACRO   __rom_try_open_seg(segnum, min)
 ENDM
 
 ;; ======================================================================== ;;
-;;  _rom_select_segment(seg)                                                ;;
+;;  __rom_select_segment(seg)                                               ;;
 ;;  Relocates the program counter to a static ROM segment.  Also closes the ;;
 ;;  currently open segment, keeping track of its usage.                     ;;
 ;;                                                                          ;;
@@ -672,7 +672,7 @@ ENDM
 ;;  OUTPUT                                                                  ;;
 ;;      _rom.error  -1 on failure.                                          ;;
 ;; ======================================================================== ;;
-MACRO   _rom_select_segment(seg)
+MACRO   __rom_select_segment(seg)
 ;
         IF (_rom.error = _rom.null)
                 __rom_validate_segment(%seg%)
@@ -1111,7 +1111,7 @@ MACRO   ROM.SelectDefaultSegment
 
             ; Ignore when the legacy map is selected
             IF (_rom.map > 0)
-                _rom_select_segment(0)
+                __rom_select_segment(0)
             ENDI
 
         ENDI
@@ -1139,14 +1139,14 @@ MACRO   ROM.SelectSegment seg
                 __rom_assert_setup("SelectSegment")
 
         IF (_rom.error = _rom.null)
-                _rom_select_segment(%seg%)
+                __rom_select_segment(%seg%)
         ENDI
 
     LISTING "prev"
 ENDM
 
 ;; ======================================================================== ;;
-;;  ROM.SelectBank bank                                                     ;;
+;;  ROM.SelectBank seg, bank                                                ;;
 ;;  Relocates the program counter to a dynamic ROM segment bank.  Also      ;;
 ;;  closes the currently open segment, keeping track of its usage.          ;;
 ;;                                                                          ;;
@@ -1249,10 +1249,11 @@ _rom.segnum     QSET    (_rom.segnum + 1)
 ENDM
 
 ;; ======================================================================== ;;
-;;  ROM.SwitchBank(bank)                                                    ;;
+;;  ROM.SwitchBank seg, bank                                                ;;
 ;;  Switches a dynamic ROM segment to the requested bank.                   ;;
 ;;                                                                          ;;
 ;;  ARGUMENTS                                                               ;;
+;;      seg         The dynamic ROM segment, or -1 for the first one.       ;;
 ;;      bank        The dynamic ROM segment bank number to activate.        ;;
 ;;                                                                          ;;
 ;;  OUTPUT                                                                  ;;
