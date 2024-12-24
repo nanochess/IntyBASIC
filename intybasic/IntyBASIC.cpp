@@ -4159,6 +4159,7 @@ public:
 
         asm_output << "intybasic_map:\tequ " << intybasic_map << "\t; ROM map used\n";
         asm_output << "intybasic_jlp:\tequ " << (jlp_used ? 1 : 0) << "\t; JLP is used\n";
+        asm_output << "intybasic_cc3:\tequ " << (cc3_used ? (cc3_start >> 8) : 0) << "\t; CC3 is used and where is RAM\n";
         if (jlp_used) {
             asm_output << "\tIF DEFINED __FEATURE.CFGVAR\n";
             if (jlp_used) {

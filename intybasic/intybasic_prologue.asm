@@ -1517,6 +1517,21 @@ _MAIN4:				; This loop is courtesy of GroovyBee
 	MVII #$308,R4		; 16-bit scratch RAM
 	CALL FILLZERO
 
+	MVII #$058,R1		; 88 words of 16 bits
+	MVII #$308,R4		; 16-bit scratch RAM
+	CALL FILLZERO
+
+    IF intybasic_jlp
+	MVII #$1F40,R1		; Words of 16 bits
+	MVII #$8040,R4		; 16-bit scratch RAM
+	CALL FILLZERO
+    ENDI
+    IF intybasic_cc3
+	MVII #$1F40,R1		; Words of 16 bits
+	MVII #intybasic_cc3*256+$40,R4	; 16-bit scratch RAM
+	CALL FILLZERO
+    ENDI
+
 	; PAL/NTSC detect
 	CALL _set_isr
 	DECLE _pal1
