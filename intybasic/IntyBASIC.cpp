@@ -3826,7 +3826,7 @@ private:
                             delete tree;
                             tree = NULL;
                         }
-                        asm_output << "ROM.SwitchBank " << first << "," << (tree->node_value() & 0xffff) << "\n";
+                        asm_output << "ROM.SwitchBank " << first << "," << second << "\n";
                     } else {
                         tree = eval_level0(&type);
                         if (tree->node_type() != C_NUM) {
