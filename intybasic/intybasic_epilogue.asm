@@ -1455,218 +1455,295 @@ _activate_drum_ecs:	PROC
     
     IF intybasic_numbers
 
-	;
-	; Following code from as1600 libraries, prnum16.asm
-	; Public domain by Joseph Zbiciak
-	;
-
-;* ======================================================================== *;
-;*  These routines are placed into the public domain by their author.  All  *;
-;*  copyright rights are hereby relinquished on the routines and data in    *;
-;*  this file.  -- Joseph Zbiciak, 2008				     *;
-;* ======================================================================== *;
+;;==========================================================================;;
+;; IntyBASIC SDK Library: print-num.asm                                     ;;
+;;--------------------------------------------------------------------------;;
+;;  This library is based on a BCD display algorithm originally proposed by ;;
+;;  Mark Ball (GroovyBee), with additional optimizations suggested by Joe   ;;
+;;  Zbiciak (intvnut) in the AtariAge Intellivision Programming forum.  It  ;;
+;;  is a novel implementation of Joe's PRNUM16() routine, intended to       ;;
+;;  execute much faster.                                                    ;;
+;;                                                                          ;;
+;;  The algorithm was then further optimized and adapted for the            ;;
+;;  P-Machinery framework by unrolling the loops, etc.  It was then         ;;
+;;  modified once again to support the original PRNUM16() functionality and ;;
+;;  invocation interface, and serve as a drop-in replacement in the         ;;
+;;  IntyBASIC run-time framework.                                           ;;
+;;--------------------------------------------------------------------------;;
+;;      The file is placed into the public domain by its author.            ;;
+;;      All copyrights are hereby relinquished on the routines and data in  ;;
+;;      this file.  -- James Pujals (DZ-Jay), 2024                          ;;
+;;==========================================================================;;
 
 ;; ======================================================================== ;;
-;;  _PW10								   ;;
-;;      Lookup table holding the first 5 powers of 10 (1 thru 10000) as     ;;
-;;      16-bit numbers.						     ;;
+;;  PRINT_NUM16_PAD                                                         ;;
+;;  Procedure to print an unsigned 16-bit value as a decimal number, left-  ;;
+;;  or right-justified, with optional pre-padding.  It also supports        ;;
+;;  variable field widths.                                                  ;;
+;;                                                                          ;;
+;;  DESCRIPTION:                                                            ;;
+;;      Depending on the entry point invoked, the number is printed in      ;;
+;;      either left- or right-justified format.  Right-justified numbers    ;;
+;;      are padded with leading zeros or blanks to fit the given width.     ;;
+;;      Left-justified numbers are not padded, and the field width argument ;;
+;;      is ignored.                                                         ;;
+;;                                                                          ;;
+;;      Examples:                                                           ;;
+;;          Routine               Value      Field       Output             ;;
+;;          ------------------  ---------  ----------  ----------           ;;
+;;          PRINT_NUM16_PAD.l      123        N/A       "123"               ;;
+;;          PRINT_NUM16_PAD.b      123         3        "123"               ;;
+;;          PRINT_NUM16_PAD.b      123         4        " 123"              ;;
+;;          PRINT_NUM16_PAD.b      123         7        "    123"           ;;
+;;          PRINT_NUM16_PAD.z      123         3        "123"               ;;
+;;          PRINT_NUM16_PAD.z      123         4        "0123"              ;;
+;;          PRINT_NUM16_PAD.z      123         7        "0000123"           ;;
+;;                                                                          ;;
+;;      After doing some housekeeping preparations for the variant invoked, ;;
+;;      the routine then identifies the lowest power-of-10 that is higher   ;;
+;;      than the input number.  It then proceeds to divide the number by    ;;
+;;      decreasing powers-of-ten to derive each digit to print, in          ;;
+;;      succession.  All divisions are made by repeated subtraction.        ;;
+;;                                                                          ;;
+;;      The routine does not access any RAM (other than the stack), or      ;;
+;;      depend on any external resources, so it is fully re-entrant.        ;;
+;;                                                                          ;;
+;;  CODESIZE:                                                               ;;
+;;      132 words, including jump tables and unrolled loops.                ;;
+;;                                                                          ;;
+;; ------------------------------------------------------------------------ ;;
+;;                                                                          ;;
+;;  There are three entry points to this procedure:                         ;;
+;;      PRINT_NUM16_PAD.l       Prints a left-justified 16-bit number.      ;;
+;;                                                                          ;;
+;;      PRINT_NUM16_PAD.z       Prints a right-justified 16-bit number,     ;;
+;;                              padded with zeros.                          ;;
+;;                                                                          ;;
+;;      PRINT_NUM16_PAD.b       Prints a right-justified 16-bit number,     ;;
+;;                              padded with blanks.                         ;;
+;;                                                                          ;;
+;;  NOTE:   The field width must be equal to, or wider than, the decimal    ;;
+;;          number width, or else the output will be corrupted.  Also, the  ;;
+;;          format word must be a valid BACKTAB color value.  If the format ;;
+;;          includes any other bits, it may corrupt the output.             ;;
+;;                                                                          ;;
+;;          The routine also supports field widths larger than 5 positions, ;;
+;;          padding them with zeros or blanks, as necessary.  However, no   ;;
+;;          bounds-checking is performed, so it is possible to attemp to    ;;
+;;          print beyond the BACKTAB bounds.                                ;;
+;;                                                                          ;;
+;;  INPUT for PRINT_NUM16_PAD (all variations)                              ;;
+;;      R0      16-bit numeric value.                                       ;;
+;;      R2      Print field width.                                          ;;
+;;      R3      BACKTAB format word for prefix char.                        ;;
+;;      R4      Pointer to BACKTAB destination.                             ;;
+;;      R5      Pointer to invocation record, followed by return address.   ;;
+;;                                                                          ;;
+;;  OUTPUT                                                                  ;;
+;;      R0      Trashed.                                                    ;;
+;;      R1      Trashed.                                                    ;;
+;;      R2      Trashed.                                                    ;;
+;;      R3      Trashed (color).                                            ;;
+;;      R4      Trashed  (1 word beyond end of number string in BACKTAB).   ;;
 ;; ======================================================================== ;;
-_PW10   PROC    ; 0 thru 10000
-	DECLE   10000, 1000, 100, 10, 1, 0
-	ENDP
+PRNUM16		PROC
+.max_width      QSET    5
+.chr_clrmask    QSET    $F807
+.chr_offset     QSET    (1 SHL 3)
+.digit_base     QSET    ('0' - ' ')
+.lzero          QSET    (((.digit_base -  0) SHL 3) AND $FFFF)
+.lzero_even     QSET    (((.digit_base -  1) SHL 3) AND $FFFF)
+.lzero_odd      QSET    (((.digit_base + 10) SHL 3) AND $FFFF)
+
+                ; --------------------------------------
+                ; Left-Justified (No Padding)
+                ; --------------------------------------
+@@l:            BEGIN
+
+                MVII    #.chr_offset,           R5      ; Initialize character advancement term
+
+                ; --------------------------------------
+                ; Find highest power of 10 to determine
+                ; entry point to digits printing loop.
+                ;   (The loop is unrolled for speed.)
+                ;
+                ;   pow = 4;
+                ;   do {
+                ;       if (val >= (10 ** pow--)) {
+                ;           break;
+                ;       }
+                ;   } while (pow >= 0);
+                ; --------------------------------------
+@@__l_10_4:     CMPI    #10000, R0                      ;   if (val >= (10 ** pow--))
+                BC      @@__pow4                        ;       break;
+
+@@__l_10_3:     CMPI    #1000,  R0                      ;   if (val >= (10 ** pow--))
+                BC      @@__fix_10_3                    ;       break;
+
+@@__l_10_2:     CMPI    #100,   R0                      ;   if (val >= (10 ** pow--))
+                BC      @@__pow2                        ;       break;
+
+@@__l_10_1:     CMPI    #10,    R0                      ;   if (val >= (10 ** pow--))
+                BC      @@__fix_10_1                    ;       break;
+
+@@__l_10_0:     TSTR    R0                              ;   if (val != 0)
+                BNZE    @@__pow0                        ;       break;
+                B       @@__zero
+
+                ; --------------------------------------
+                ; Right-Justified: Zero-Padded
+                ; --------------------------------------
+@@z:            XORI    #.lzero,R3                      ; Initialize prefix to character "0" (zero).
+
+                ; --------------------------------------
+                ; Right-Justified: Blank-Padded
+                ; --------------------------------------
+@@b:            MOVR    R2,     R1                      ; \
+                SUBI    #5,     R1                      ;  > Is field size greater than max width?
+                BLE     @@__padding                     ; /     No:  Just pad field based on magnitude.
+                                                        ;       Yes: Pad field until we reach max width.
+                ; --------------------------------------
+                ; Force padding until we reach max width
+                ;   while (overflow > 0) {
+                ;       print_at(prefix, pos++);
+                ;       overflow--;
+                ;   }
+                ; --------------------------------------
+                SUBR    R1,     R2                      ; R1 = overflow; R2 = max width
+@@__pad_ovr:    MVO@    R3,     R4                      ; Print padding character ...
+                DECR    R1                              ; \_ Is overflow done?
+                BNZE    @@__pad_ovr                     ; /     No:  Continue padding.
+
+@@__padding:    BEGIN
+
+                MOVR    R3,     R1
+                ANDI    #.chr_clrmask,          R3      ; Clear out prefix character
+                MVII    #.chr_offset,           R5      ; Initialize character advancement term
+
+                ADDI    #(@@__switch - 1),      R2      ; \_ Jump to entry point based on field width
+                MVI@    R2,     PC                      ; /
+
+@@__switch:     DECLE   @@__p_10_0  ; Width = 1: 10^0
+                DECLE   @@__p_10_1  ; Width = 2: 10^1
+                DECLE   @@__p_10_2  ; Width = 3: 10^2
+                DECLE   @@__p_10_3  ; Width = 4: 10^3
+                DECLE   @@__p_10_4  ; Width = 5: 10^4
+
+                ; --------------------------------------
+                ; Pad the field with prefix character
+                ;   (The loop is unrolled for speed.)
+                ;
+                ;   pow = 4;  // 10^0..10^4
+                ;   do {
+                ;       if (val >= (10 ** pow--)) {
+                ;           break;
+                ;       }
+                ;       print_at(prefix, pos++);
+                ;   } while (pow >= 0);
+                ; --------------------------------------
+@@__p_10_4:     CMPI    #10000, R0                      ;   if (val >= (10 ** pow--))
+                BC      @@__pow4                        ;       break;
+                MVO@    R1,     R4                      ;   print_at(prefix, pos++);
+
+@@__p_10_3:     CMPI    #1000,  R0                      ;   if (val >= (10 ** pow--))
+                BC      @@__fix_10_3                    ;       break;
+                MVO@    R1,     R4                      ;   print_at(prefix, pos++);
+
+@@__p_10_2:     CMPI    #100,   R0                      ;   if (val >= (10 ** pow--))
+                BC      @@__pow2                        ;       break;
+                MVO@    R1,     R4                      ;   print_at(prefix, pos++);
+
+@@__p_10_1:     CMPI    #10,    R0                      ;   if (val >= (10 ** pow--))
+                BC      @@__fix_10_1                    ;       break;
+                MVO@    R1,     R4                      ;   print_at(prefix, pos++);
+
+@@__p_10_0:     TSTR    R0                              ;   if (val != 0)
+                BNZE    @@__pow0                        ;       break;
+
+                ; --------------------------------------
+                ; Special case for when value is zero
+                ; --------------------------------------
+@@__zero:       XORI    #.lzero,R3                      ; Prepare formatted zero
+                MVO@    R3,     R4                      ;       print_at(zero, pos++);
+                RETURN
+
+                ; --------------------------------------
+                ; Adjust value of odd powers, for direct
+                ; entry into the PRINT_NUM16() routine.
+                ; --------------------------------------
+@@__fix_10_1:   SUBI    #100,   R0                      ; \_ Adjust value to jump into 10^1 block
+                B       @@__pow1                        ; /
+
+@@__fix_10_3:   SUBI    #10000, R0                      ; \_ Adjust value to jump into 10^3 block
+                B       @@__pow3                        ; /
+
+                ; --------------------------------------
+                ; Print decimal digits
+                ; --------------------------------------
+
+                ; 10^4: 10,000
+                ; --------------------------------------
+@@__pow4:       MVII    #.lzero_even,           R1      ; Prep GROM character.
+                XORR    R3,     R1                      ; Mix in the STIC colors.
+                MVII    #10000, R2
+
+@@__d_10_4:     ADDR    R5,     R1
+                SUBR    R2,     R0
+                BC      @@__d_10_4
+                MVO@    R1,     R4                      ; Output to BACKTAB screen buffer.
+
+                ; 10^3: 1,000
+                ; --------------------------------------
+@@__pow3:       MVII    #.lzero_odd,            R1      ; Prep GROM character.
+                XORR    R3,     R1                      ; Mix in the STIC colors.
+                MVII    #1000,  R2
+
+@@__d_10_3:     SUBR    R5,     R1
+                ADDR    R2,     R0
+                BNC     @@__d_10_3
+                MVO@    R1,     R4                      ; Output to BACKTAB screen buffer.
+
+                ; 10^2: 100
+                ; --------------------------------------
+@@__pow2:       MVII    #.lzero_even,           R1      ; Prep GROM character.
+                XORR    R3,     R1                      ; Mix in the STIC colors.
+                MVII    #100,   R2
+
+@@__d_10_2:     ADDR    R5,     R1
+                SUBR    R2,     R0
+                BC      @@__d_10_2
+                MVO@    R1,     R4                      ; Output to BACKTAB screen buffer.
+
+                ; 10^1: 10
+                ; --------------------------------------
+@@__pow1:       MVII    #.lzero_odd,            R1      ; Prep GROM character.
+                XORR    R3,     R1                      ; Mix in the STIC colors.
+                MVII    #10,    R2
+
+@@__d_10_1:     SUBR    R5,     R1
+                ADDR    R2,     R0
+                BNC     @@__d_10_1
+                MVO@    R1,     R4                      ; Output to BACKTAB screen buffer.
+
+                ; 10^0: 1
+                ; --------------------------------------
+@@__pow0:       ADDI    #.digit_base,           R0      ; Prep GROM character.
+                SLL     R0,     2                       ; \
+                SLL     R0,     1                       ;  > chr = ((chr << 3) ^ format);
+                XORR    R3,     R0                      ; /
+                MVO@    R0,     R4                      ; Output to BACKTAB screen buffer.
+
+                ; All done!
+                ; --------------------------------------
+                RETURN
+
+@@____size:     EQU     ($ - PRNUM16)
+                ENDP
 
 ;; ======================================================================== ;;
-;;  PRNUM16.l     -- Print an unsigned 16-bit number left-justified.	;;
-;;  PRNUM16.b     -- Print an unsigned 16-bit number with leading blanks.   ;;
-;;  PRNUM16.z     -- Print an unsigned 16-bit number with leading zeros.    ;;
-;;									  ;;
-;;  AUTHOR								  ;;
-;;      Joseph Zbiciak  <im14u2c AT globalcrossing DOT net>		 ;;
-;;									  ;;
-;;  REVISION HISTORY							;;
-;;      30-Mar-2003 Initial complete revision			       ;;
-;;									  ;;
-;;  INPUTS for all variants						 ;;
-;;      R0  Number to print.						;;
-;;      R2  Width of field.  Ignored by PRNUM16.l.			  ;;
-;;      R3  Format word, added to digits to set the color.		  ;;
-;;	  Note:  Bit 15 MUST be cleared when building with PRNUM32.       ;;
-;;      R4  Pointer to location on screen to print number		   ;;
-;;									  ;;
-;;  OUTPUTS								 ;;
-;;      R0  Zeroed							  ;;
-;;      R1  Unmodified						      ;;
-;;      R2  Unmodified						      ;;
-;;      R3  Unmodified						      ;;
-;;      R4  Points to first character after field.			  ;;
-;;									  ;;
-;;  DESCRIPTION							     ;;
-;;      These routines print unsigned 16-bit numbers in a field up to 5     ;;
-;;      positions wide.  The number is printed either in left-justified     ;;
-;;      or right-justified format.  Right-justified numbers are padded      ;;
-;;      with leading blanks or leading zeros.  Left-justified numbers       ;;
-;;      are not padded on the right.					;;
-;;									  ;;
-;;      This code handles fields wider than 5 characters, padding with      ;;
-;;      zeros or blanks as necessary.				       ;;
-;;									  ;;
-;;	      Routine      Value(hex)     Field	Output	     ;;
-;;	      ----------   ----------   ----------   ----------	   ;;
-;;	      PRNUM16.l      $0045	 n/a	"69"		;;
-;;	      PRNUM16.b      $0045	  4	 "  69"	      ;;
-;;	      PRNUM16.b      $0045	  6	 "    69"	    ;;
-;;	      PRNUM16.z      $0045	  4	 "0069"	      ;;
-;;	      PRNUM16.z      $0045	  6	 "000069"	    ;;
-;;									  ;;
-;;  TECHNIQUES							      ;;
-;;      This routine uses repeated subtraction to divide the number	 ;;
-;;      to display by various powers of 10.  This is cheaper than a	 ;;
-;;      full divide, at least when the input number is large.  It's	 ;;
-;;      also easier to get right.  :-)				      ;;
-;;									  ;;
-;;      The printing routine first pads out fields wider than 5 spaces      ;;
-;;      with zeros or blanks as requested.  It then scans the power-of-10   ;;
-;;      table looking for the first power of 10 that is <= the number to    ;;
-;;      display.  While scanning for this power of 10, it outputs leading   ;;
-;;      blanks or zeros, if requested.  This eliminates "leading digit"     ;;
-;;      logic from the main digit loop.				     ;;
-;;									  ;;
-;;      Once in the main digit loop, we discover the value of each digit    ;;
-;;      by repeated subtraction.  We build up our digit value while	 ;;
-;;      subtracting the power-of-10 repeatedly.  We iterate until we go     ;;
-;;      a step too far, and then we add back on power-of-10 to restore      ;;
-;;      the remainder.						      ;;
-;;									  ;;
-;;  NOTES								   ;;
-;;      The left-justified variant ignores field width.		     ;;
-;;									  ;;
-;;      The code is fully reentrant.					;;
-;;									  ;;
-;;      This code does not handle numbers which are too large to be	 ;;
-;;      displayed in the provided field.  If the number is too large,       ;;
-;;      non-digit characters will be displayed in the initial digit	 ;;
-;;      position.  Also, the run time of this routine may get excessively   ;;
-;;      large, depending on the magnitude of the overflow.		  ;;
-;;									  ;;
-;;      When using with PRNUM32, one must either include PRNUM32 before     ;;
-;;      this function, or define the symbol _WITH_PRNUM32.  PRNUM32	 ;;
-;;      needs a tiny bit of support from PRNUM16 to handle numbers in       ;;
-;;      the range 65536...99999 correctly.				  ;;
-;;									  ;;
-;;  CODESIZE								;;
-;;      73 words, including power-of-10 table			       ;;
-;;      80 words, if compiled with PRNUM32.				 ;;
-;;									  ;;
-;;      To save code size, you can define the following symbols to omit     ;;
-;;      some variants:						      ;;
-;;									  ;;
-;;	  _NO_PRNUM16.l:   Disables PRNUM16.l.  Saves 10 words	    ;;
-;;	  _NO_PRNUM16.b:   Disables PRNUM16.b.  Saves 3 words.	    ;;
-;;									  ;;
-;;      Defining both symbols saves 17 words total, because it omits	;;
-;;      some code shared by both routines.				  ;;
-;;									  ;;
-;;  STACK USAGE							     ;;
-;;      This function uses up to 4 words of stack space.		    ;;
+;;  EOF: romseg-bs.mac                                                      ;;
 ;; ======================================================================== ;;
 
-PRNUM16 PROC
-
-    
-	;; ---------------------------------------------------------------- ;;
-	;;  PRNUM16.l:  Print unsigned, left-justified.		     ;;
-	;; ---------------------------------------------------------------- ;;
-@@l:    PSHR    R5	      ; save return address
-@@l1:   MVII    #$1,    R5      ; set R5 to 1 to counteract screen ptr update
-				; in the 'find initial power of 10' loop
-	PSHR    R2
-	MVII    #5,     R2      ; force effective field width to 5.
-	B       @@z2
-
-	;; ---------------------------------------------------------------- ;;
-	;;  PRNUM16.b:  Print unsigned with leading blanks.		 ;;
-	;; ---------------------------------------------------------------- ;;
-@@b:    PSHR    R5
-@@b1:   CLRR    R5	      ; let the blank loop do its thing
-	INCR    PC	      ; skip the PSHR R5
-
-	;; ---------------------------------------------------------------- ;;
-	;;  PRNUM16.z:  Print unsigned with leading zeros.		  ;;
-	;; ---------------------------------------------------------------- ;;
-@@z:    PSHR    R5
-@@z1:   PSHR    R2
-@@z2:   PSHR    R1
-
-	;; ---------------------------------------------------------------- ;;
-	;;  Find the initial power of 10 to use for display.		;;
-	;;  Note:  For fields wider than 5, fill the extra spots above 5    ;;
-	;;  with blanks or zeros as needed.				 ;;
-	;; ---------------------------------------------------------------- ;;
-	MVII    #_PW10+5,R1     ; Point to end of power-of-10 table
-	SUBR    R2,     R1      ; Subtract the field width to get right power
-	PSHR    R3	      ; save format word
-
-	CMPI    #2,     R5      ; are we leading with zeros?
-	BNC     @@lblnk	 ; no:  then do the loop w/ blanks
-
-	CLRR    R5	      ; force R5==0
-	ADDI    #$80,   R3      ; yes: do the loop with zeros
-	B       @@lblnk
-    
-
-@@llp   MVO@    R3,     R4      ; print a blank/zero
-
-	SUBR    R5,     R4      ; rewind pointer if needed.
-
-	INCR    R1	      ; get next power of 10
-@@lblnk DECR    R2	      ; decrement available digits
-	BEQ     @@ldone
-	CMPI    #5,     R2      ; field too wide?
-	BGE     @@llp	   ; just force blanks/zeros 'till we're narrower.
-	CMP@    R1,     R0      ; Is this power of 10 too big?
-	BNC     @@llp	   ; Yes:  Put a blank and go to next
-
-@@ldone PULR    R3	      ; restore format word
-
-	;; ---------------------------------------------------------------- ;;
-	;;  The digit loop prints at least one digit.  It discovers digits  ;;
-	;;  by repeated subtraction.					;;
-	;; ---------------------------------------------------------------- ;;
-@@digit TSTR    R0	      ; If the number is zero, print zero and leave
-	BNEQ    @@dig1	  ; no: print the number
-
-	MOVR    R3,     R5      ;\    
-	ADDI    #$80,   R5      ; |-- print a 0 there.
-	MVO@    R5,     R4      ;/    
-	B       @@done
-
-@@dig1:
-    
-@@nxdig MOVR    R3,     R5      ; save display format word
-@@cont: ADDI    #$80-8, R5      ; start our digit as one just before '0'
-@@spcl:
- 
-	;; ---------------------------------------------------------------- ;;
-	;;  Divide by repeated subtraction.  This divide is constructed     ;;
-	;;  to go "one step too far" and then back up.		      ;;
-	;; ---------------------------------------------------------------- ;;
-@@div:  ADDI    #8,     R5      ; increment our digit
-	SUB@    R1,     R0      ; subtract power of 10
-	BC      @@div	   ; loop until we go too far
-	ADD@    R1,     R0      ; add back the extra power of 10.
-
-	MVO@    R5,     R4      ; display the digit.
-
-	INCR    R1	      ; point to next power of 10
-	DECR    R2	      ; any room left in field?
-	BPL     @@nxdig	 ; keep going until R2 < 0.
-
-@@done: PULR    R1	      ; restore R1
-	PULR    R2	      ; restore R2
-	PULR    PC	      ; return
-
-	ENDP
-	
     ENDI
 
     IF intybasic_voice
