@@ -42,7 +42,7 @@
 ;;--------------------------------------------------------------------------;;
 ;;      The file is placed into the public domain by its author.            ;;
 ;;      All copyrights are hereby relinquished on the routines and data in  ;;
-;;      this file.  -- James Pujals (DZ-Jay), 2024                          ;;
+;;      this file.  -- James Pujals (DZ-Jay), 2024-2025                     ;;
 ;;==========================================================================;;
 
 ;; ======================================================================== ;;
@@ -1190,11 +1190,12 @@ _rom.type       QSET    _rom.t[_rom.num]
 
 _rom.segnum     QSET    (_rom.segidx[_rom.num] + (%bank%))
 
-
-              ; Open dynamic segment bank
-              IF (_rom.error = _rom.null)
-                __rom_close_seg(_rom.open)
-                __rom_open_seg(_rom.segnum)
+              IF (_rom.segnum <> _rom.open)
+                ; Open dynamic segment bank
+                IF (_rom.error = _rom.null)
+                  __rom_close_seg(_rom.open)
+                  __rom_open_seg(_rom.segnum)
+                ENDI
               ENDI
 
             ENDI
@@ -1366,6 +1367,10 @@ _rom.fld_siz    QSET    4
 _rom.fld_avl    QSET    8
 _rom.scale      QSET    1024
 
+_rom.static_sz  QSET    0
+_rom.static_us  QSET    0
+_rom.static_av  QSET    0
+
       IF (_rom.map > 0)
 
                 ; Draw header
@@ -1391,10 +1396,23 @@ _rom.size       QSET    __rom_stats_scale(_rom.size, _rom.scale)    ; Scaled to 
                 ; Static ROM segment stats
                 SMSG    $("    ", "Static Seg #", $#(_rom.idx), "     ", __rom_stats_pad_left($#(_rom.size), _rom.fld_siz), "K     ", __rom_stats_pad_left($#(_rom.used), _rom.fld_mem), "  ", __rom_stats_pad_left($#(_rom.avlb), _rom.fld_avl), " words")
 
+_rom.static_sz  QSET    (_rom.static_sz + _rom.size)
+_rom.static_us  QSET    (_rom.static_us + _rom.used)
+_rom.static_av  QSET    (_rom.static_av + _rom.avlb)
+
 _rom.idx        QSET    (_rom.idx + 1)
         ENDR
 
 _rom.cnt        QSET    (_rom.segs - _rom.idx)
+
+        ; Report static sub-total if there are dynamic segments.
+        ; (When there are no dynamic segments, the final account
+        ; is the total for static segments.)
+        IF (_rom.cnt > 0)
+                ; Draw footer
+                SMSG    $("    ", __rom_stats_draw_line(single, _rom.hdr_len))
+                SMSG    $("    ", __rom_stats_pad_left("SUB-TOTAL:", _rom.fld_ttl), "   ", __rom_stats_pad_left($#(_rom.static_sz), _rom.fld_siz), "K     ", __rom_stats_pad_left($#(_rom.static_us), _rom.fld_mem), "  ", __rom_stats_pad_left($#(_rom.static_av), _rom.fld_avl), " words")
+        ENDI
 
         ; Dynamic segments
         REPEAT (_rom.cnt)
