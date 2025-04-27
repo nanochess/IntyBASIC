@@ -1,5 +1,5 @@
 IntyBASIC compiler v1.5.0
-(c) Copyright 2014-2020 Óscar Toledo Gutiérrez
+(c) Copyright 2014-2025 Óscar Toledo Gutiérrez
 http://nanochess.org/
 
 BASIC language cross-compiler for the Intellivision.
@@ -45,8 +45,7 @@ ReadMe.txt     This file.
 
 >>>>>>>>>>>>>>  Notes
 
-The current official version is v1.4.2, and the latest bleeding-edge version
-is v1.5.0 that corrects bugs and is in testing state.
+The current official version is v1.5.0.
 
 Also look for the swiss-knife companion tool IntyColor for converting BMP
 images to IntyBASIC data. Located at:
