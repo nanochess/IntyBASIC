@@ -34,7 +34,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.5.0 Dec/10/2024";      // Compiler version
+const string VERSION = "v1.5.0 Apr/27/2025";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -4497,7 +4497,7 @@ int main(int argc, const char * argv[])
     int start;
     
     std::cerr << "\nIntyBASIC compiler " << VERSION << "\n";
-    std::cerr << "(c) 2014-2024 Oscar Toledo G. http://nanochess.org/\n\n";
+    std::cerr << "(c) 2014-2025 Oscar Toledo G. http://nanochess.org/\n\n";
     
     // Get year and default title for program
     // And yep, use old-style C functions :)

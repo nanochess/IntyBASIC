@@ -23,7 +23,8 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.5.0 Nov/15/2024  o Added OPTION MAP, SEGMENT, SEGMENT BANK, BANK and BANK SELECT.
+v1.5.0 Nov/15/2024  o Added OPTION MAP, SEGMENT, SEGMENT BANK, BANK and BANK SELECT
+                      (with contributions by DZ-Jay)
                     o Added SELECT CASE / END SELECT.
                     o Added support for unsigned numbers (suffix U).
                     o Added support for SIGNED/UNSIGNED type conversion in expressions.
@@ -745,7 +746,7 @@ The following statements are available:
        [statement]
      CASE ELSE
        [statement]
-  END CASE
+  END SELECT
 
      It evaluates the expression, and selects the statements to execute from the
      CASE statements. CASE ELSE should be the last statement if it is required to
