@@ -23,7 +23,7 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
-v1.5.0 Nov/15/2024  o Added OPTION MAP, SEGMENT, SEGMENT BANK, BANK and BANK SELECT
+v1.5.0 Apr/27/2025  o Added OPTION MAP, SEGMENT, SEGMENT BANK, BANK and BANK SELECT
                       (with contributions by DZ-Jay)
                     o Added SELECT CASE / END SELECT.
                     o Added support for unsigned numbers (suffix U).
