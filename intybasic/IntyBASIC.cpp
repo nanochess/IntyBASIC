@@ -1486,9 +1486,9 @@ private:
                 
                 // Allows -128 to 255, some people were confused by the fact of a = -1
                 if (c >= 0x0100 && c <= 0xff7f) {
-                    string message;
+                    char message[256];
                     
-                    message = "value " + to_string(c) + " doesn't fit in 8-bits array";
+                    sprintf(message, "value %d doesn't fit in 8-bits array", c);
                     emit_warning(message);
                 }
             }
@@ -1545,9 +1545,9 @@ private:
                     
                     // Allows -128 to 255, some people were confused by the fact of a = -1
                     if (c >= 0x0100 && c <= 0xff7f) {
-                        string message;
+                        char message[256];
                         
-                        message = "assignment of value " + to_string(c) + " doesn't fit in 8-bits variable";
+                        sprintf(message, "assignment of value %d doesn't fit in 8-bits variable", c);
                         emit_warning(message);
                     }
                 }
