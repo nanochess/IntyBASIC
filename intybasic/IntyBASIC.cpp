@@ -806,23 +806,23 @@ private:
                 left = new node(C_NUM, value, NULL, NULL);
                 get_lex();
             } else {
-                left = eval_level7(type);
+                left = eval_level6(type);
                 left = new node(C_NEG, 0, left, NULL);
             }
         } else if (lex == C_PLUS) { // Unary +
             get_lex();
-            left = eval_level7(type);
+            left = eval_level6(type);
         } else if (lex == C_NAME && name == "NOT") {
             get_lex();
-            left = eval_level7(type);
+            left = eval_level6(type);
             left = new node(C_NOT, 0, left, NULL);
         } else if (lex == C_NAME && name == "SIGNED") {
             get_lex();
-            left = eval_level7(type);
+            left = eval_level6(type);
             *type = 0;
         } else if (lex == C_NAME && name == "UNSIGNED") {
             get_lex();
-            left = eval_level7(type);
+            left = eval_level6(type);
             *type = 1;
         } else {
             left = eval_level7(type);
