@@ -4028,7 +4028,7 @@ private:
                 }
             }
             if (lex != C_END) {
-                emit_warning("invalid extra characters");
+                emit_error("invalid extra characters");
             }
         }
     };
