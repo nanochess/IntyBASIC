@@ -23,6 +23,9 @@ All trademarks are property of their respective owners.
 
 >>>>>>>>>>>>>>  Changes in this version
 
+v1.5.1 May/06/2025  o INCLUDE now can be used without limit (before limited to 50 files)
+                    o INCLUDE now can be nested.
+
 v1.5.0 Apr/27/2025  o Added OPTION MAP, SEGMENT, SEGMENT BANK, BANK and BANK SELECT
                       (with contributions by DZ-Jay)
                     o Added SELECT CASE / END SELECT.
@@ -1532,7 +1535,7 @@ label:
   INCLUDE "filename.bas"
   
     Includes the contents of another source file inside the current IntyBASIC
-    program. Notice that you cannot use INCLUDE recursively.
+    source code.
 
     Also, INCLUDE allows you to include external code anywhere in your program.
     You could even have half of a procedure in the main file and the rest of it

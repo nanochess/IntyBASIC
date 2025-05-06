@@ -34,7 +34,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.5.0 Apr/27/2025";      // Compiler version
+const string VERSION = "v1.5.1 May/06/2025";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -185,10 +185,8 @@ private:
     ifstream input;
     ifstream included;
     ifstream included2;
-    int saved_line_number;
     int active_include;
-    int next_include;
-    ifstream include[50];
+    int saved_line_number;
     string line;
     int line_start;
     string assigned;
@@ -3861,91 +3859,15 @@ private:
         str.erase(pos + 1);
     }
     
-public:
     //
-    // Starts compilation
+    // Compile a BASIC file
     //
-    int start(const char *input_file, const char *output_file, const char *library_path, int flags, int cc3_start) {
-        int used_space;
-        int available_vars;
+    int compile(char *current_path, ifstream &input, const char *library_path) {
         char *p;
         int eof;
         string procedure;
-        char *temporary_file;
-        int c;
         
-        global_label = "";
-        line_number = 0;
-        next_label = 1;
-        next_var = 1;
-        scroll_used = false;
-        keypad_used = false;
-        music_used = false;
-        music_ecs_used = false;
-        stack_used = false;
-        numbers_used = false;
-        voice_used = false;
-        ecs_used = false;
-        flash_used = false;
-        playvol_used = false;
-        col_used = false;
-        jlp_used = ((flags & 1) != 0);
-        jlp_flash_size = 16;
-        cc3_used = ((flags & 2) != 0);
-        warnings = ((flags & 4) == 0);
-        option_warnings = true;
-        fastmult_used = false;
-        fastdiv_used = false;
-        intybasic_map = 0;
-        
-        frame_drive = -1;
-
-        option_explicit = false;
-        
-        active_include = 0;
-        next_include = 0;
-        err_code = 0;
-        
-        temporary_file = tmpnam(NULL);
-        
-        input.open(input_file);
-        if (!input.is_open()) {
-            std::cerr << "Error: Unable to open input file: " << input_file << "\n";
-            return 2;
-        }
-        output = new code;
-
-        asm_output.open(temporary_file);
-        if (!asm_output.is_open()) {
-            std::cerr << "Error: Unable to open temporary output file: " << output_file << "\n";
-            input.close();
-            return 2;
-        }
-        asm_output << "\t; IntyBASIC compiler " << VERSION << "\n";
-
-        //
-        // Clean JLP/CC3 RAM
-        //
-        if (jlp_used || cc3_used) {
-            asm_output << "\n";
-            asm_output << "\tMVII #SYSTEM2,R5\n";
-            asm_output << "\tMVII #_SYSTEM2-SYSTEM2-1,R1\n";
-            asm_output << "\tCLRR R0\n";
-            asm_output << "\tMVO@ R0,R5\n";
-            asm_output << "\tDECR R1\n";
-            asm_output << "\tBPL $-2\n";
-            asm_output << "\n";
-        }
-
-        asm_output << "\t;FILE " << input_file << "\n";
-        bitmap_byte = 0;
-        bitmap_state = 0;
-        inside_proc = 0;
-        // Must be defined in this order
-        arrays["#MOBSHADOW"] = 24 | (next_label << 16);  // #MOBSHADOW array (label Q1)
-        next_label++;
-        arrays["#BACKTAB"] = 240 | (next_label << 16);  // #BACKTAB array (label Q2)
-        next_label++;
+        strcpy(path, current_path);
         eof = 0;
         while (1) {
             int label_exists;
@@ -3953,27 +3875,12 @@ public:
             
             line2 = "";
             while (1) {
-                if (active_include) {
-                    if (!getline(include[next_include], line)) {
-                        include[next_include].close();
-                        asm_output << "\t;ENDFILE\n";
-                        next_include++;
-                        active_include = 0;
-                        line_number = saved_line_number;
-                        asm_output << "\t;FILE " << input_file << "\n";
-                    } else {
-                        chomp(line);
-                        line_number++;
-                    }
+                if (!getline(input, line)) {
+                    eof = 1;
+                    break;
                 }
-                if (!active_include) {
-                    if (!getline(input, line)) {
-                        eof = 1;
-                        break;
-                    }
-                    chomp(line);
-                    line_number++;
-                }
+                chomp(line);
+                line_number++;
                 line = line2 + line;
                 if (line.length() > 0 && line[line.length() - 1] == '\\') {
                     line.erase(line.length() - 1, 1);
@@ -3989,7 +3896,7 @@ public:
             line_pos = 0;
             line_size = line.length();
             asm_output << "\t;[" << line_number << "] " << line << "\n";
-            asm_output << "\tSRCFILE \"" << (active_include ? path : input_file) << "\"," << line_number << "\n";
+            asm_output << "\tSRCFILE \"" << current_path << "\"," << line_number << "\n";
             get_lex();
             if (lex == C_LABEL) {
                 if (value == 0)
@@ -4048,71 +3955,69 @@ public:
                     output->trash_registers();
                 } else if (name == "INCLUDE") {
                     int quotes;
+                    ifstream include;
+                    int saved_line_number;
+                    char path1[4096];
                     
-                    if (next_include == 50) {  // No more than 50 INCLUDE
-                        emit_error("more than 50 INCLUDE used");
-                    } else if (active_include) {  // No nested INCLUDE
-                        emit_error("trying to use INCLUDE inside INCLUDE");
+                    while (line_pos < line_size && isspace(line[line_pos]))
+                        line_pos++;
+                    
+                    // Separate filename, admit use of quotes
+                    if (line_pos < line_size && line[line_pos] == '"') {
+                        quotes = 1;
+                        line_pos++;
                     } else {
-                        while (line_pos < line_size && isspace(line[line_pos]))
+                        quotes = 0;
+                    }
+                    p = &path1[0];
+                    while (p < &path1[4095] && line_pos < line_size) {
+                        if (quotes && line[line_pos] == '"')
+                            break;
+                        *p++ = line[line_pos++];
+                    }
+                    if (quotes) {
+                        if (line_pos >= line_size || line[line_pos] != '"')
+                            emit_error("missing quotes in INCLUDE");
+                        else
                             line_pos++;
+                    } else {
+                        while (p > &path1[0] && isspace(*(p - 1)))
+                            p--;
+                    }
+                    *p = '\0';
+                    
+                    // Try to open in current directory and then try library path.
+                    include.open(path1);
+                    if (!include.is_open() && strlen(library_path) + strlen(path1) + 2 < 4095) {
+                        char path2[4096];
                         
-                        // Separate filename, admit use of quotes
-                        if (line_pos < line_size && line[line_pos] == '"') {
-                            quotes = 1;
-                            line_pos++;
-                        } else {
-                            quotes = 0;
-                        }
-                        p = &path[0];
-                        while (p < &path[4095] && line_pos < line_size) {
-                            if (quotes && line[line_pos] == '"')
-                                break;
-                            *p++ = line[line_pos++];
-                        }
-                        if (quotes) {
-                            if (line_pos >= line_size || line[line_pos] != '"')
-                                emit_error("missing quotes in INCLUDE");
-                            else
-                                line_pos++;
-                        } else {
-                            while (p > &path[0] && isspace(*(p - 1)))
-                                p--;
-                        }
-                        *p = '\0';
-                        
-                        // Try to open in current directory and then try library path.
-                        include[next_include].open(path);
-                        if (!include[next_include].is_open() && strlen(library_path) + strlen(path) + 2 < 4095) {
-                            char path2[4096];
-                            
-                            strcpy(path2, path);
-                            strcpy(path, library_path);
+                        strcpy(path2, path1);
+                        strcpy(path1, library_path);
 #ifdef _WIN32
-                            if (strlen(path) > 0 && path[strlen(path) - 1] != '\\')
-                                strcat(path, "\\");
+                        if (strlen(path1) > 0 && path1[strlen(path1) - 1] != '\\')
+                            strcat(path1, "\\");
 #else
-                            if (strlen(path) > 0 && path[strlen(path) - 1] != '/')
-                                strcat(path, "/");
+                        if (strlen(path1) > 0 && path1[strlen(path1) - 1] != '/')
+                            strcat(path1, "/");
 #endif
-                            strcat(path, path2);
-                            // This needed because of bug in Visual C++ 2008 Express Edition
-                            if (++next_include == 50) {
-                                emit_error("too many INCLUDE used");
-                            } else {
-                                include[next_include].open(path);
-                            }
-                        }
-                        if (!include[next_include].is_open()) {
-                            emit_error("INCLUDE not successful");
-                            err_code = 2;
-                            next_include++;
-                        } else {
-                            saved_line_number = line_number;
-                            line_number = 0;
-                            active_include = 1;
-                            asm_output << "\t;FILE " << path << "\n";
-                        }
+                        strcat(path1, path2);
+                        include.open(path1);
+                    }
+                    if (!include.is_open()) {
+                        emit_error("INCLUDE not successful");
+                        err_code = 2;
+                    } else {
+                        active_include++;
+                        saved_line_number = line_number;
+                        line_number = 0;
+                        asm_output << "\t;FILE " << path1 << "\n";
+                        compile(path1, include, library_path);
+                        include.close();
+                        asm_output << "\t;ENDFILE\n";
+                        active_include--;
+                        line_number = saved_line_number;
+                        asm_output << "\t;FILE " << current_path << "\n";
+                        strcpy(path, current_path);
                     }
                     lex = C_END;
                 } else {
@@ -4125,9 +4030,94 @@ public:
             if (lex != C_END) {
                 emit_warning("invalid extra characters");
             }
-            
         }
+    };
     
+public:
+    //
+    // Starts compilation
+    //
+    int start(const char *input_file, const char *output_file, const char *library_path, int flags, int cc3_start) {
+        int used_space;
+        int available_vars;
+        char *temporary_file;
+        int c;
+        
+        active_include = 0;
+        global_label = "";
+        line_number = 0;
+        next_label = 1;
+        next_var = 1;
+        scroll_used = false;
+        keypad_used = false;
+        music_used = false;
+        music_ecs_used = false;
+        stack_used = false;
+        numbers_used = false;
+        voice_used = false;
+        ecs_used = false;
+        flash_used = false;
+        playvol_used = false;
+        col_used = false;
+        jlp_used = ((flags & 1) != 0);
+        jlp_flash_size = 16;
+        cc3_used = ((flags & 2) != 0);
+        warnings = ((flags & 4) == 0);
+        option_warnings = true;
+        fastmult_used = false;
+        fastdiv_used = false;
+        intybasic_map = 0;
+        
+        frame_drive = -1;
+
+        option_explicit = false;
+        
+        err_code = 0;
+        
+        temporary_file = tmpnam(NULL);
+        
+        input.open(input_file);
+        if (!input.is_open()) {
+            std::cerr << "Error: Unable to open input file: " << input_file << "\n";
+            return 2;
+        }
+        output = new code;
+
+        asm_output.open(temporary_file);
+        if (!asm_output.is_open()) {
+            std::cerr << "Error: Unable to open temporary output file: " << output_file << "\n";
+            input.close();
+            return 2;
+        }
+        asm_output << "\t; IntyBASIC compiler " << VERSION << "\n";
+
+        //
+        // Clean JLP/CC3 RAM
+        //
+        if (jlp_used || cc3_used) {
+            asm_output << "\n";
+            asm_output << "\tMVII #SYSTEM2,R5\n";
+            asm_output << "\tMVII #_SYSTEM2-SYSTEM2-1,R1\n";
+            asm_output << "\tCLRR R0\n";
+            asm_output << "\tMVO@ R0,R5\n";
+            asm_output << "\tDECR R1\n";
+            asm_output << "\tBPL $-2\n";
+            asm_output << "\n";
+        }
+
+        bitmap_byte = 0;
+        bitmap_state = 0;
+        inside_proc = 0;
+        // Must be defined in this order
+        arrays["#MOBSHADOW"] = 24 | (next_label << 16);  // #MOBSHADOW array (label Q1)
+        next_label++;
+        arrays["#BACKTAB"] = 240 | (next_label << 16);  // #BACKTAB array (label Q2)
+        next_label++;
+
+        asm_output << "\t;FILE " << input_file << "\n";
+        compile((char *) input_file, input, library_path);
+        asm_output << "\t;ENDFILE\n";
+
         // Final check
         if (inside_proc) {
             if (loops.size() > 0)

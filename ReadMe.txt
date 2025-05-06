@@ -1,4 +1,4 @@
-IntyBASIC compiler v1.5.0
+IntyBASIC compiler v1.5.1
 (c) Copyright 2014-2025 Óscar Toledo Gutiérrez
 http://nanochess.org/
 
