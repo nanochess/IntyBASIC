@@ -102,10 +102,10 @@ void microcode::dump(void) {
                 asm_output << (this->value & 0xffff);
             else
                 mangle_label(this->prefix, this->value);
-            if (this->offset > 0)
+            if (this->offset && (this->offset & 0x8000) == 0)
                 asm_output << "+" << this->offset;
-            else if (this->offset < 0)
-                asm_output << "-" << (-this->offset);
+            else if ((this->offset & 0x8000) != 0)
+                asm_output << "-" << (0x10000 - this->offset);
             asm_output << ",R" << this->r1;
             break;
         case M_NNR: // Constant: ADDI #label-label,R0
@@ -113,10 +113,10 @@ void microcode::dump(void) {
             mangle_label(this->prefix, this->value);
             asm_output << "-";
             mangle_label(this->prefix, this->r2);
-            if (this->offset > 0)
+            if (this->offset && (this->offset & 0x8000) == 0)
                 asm_output << "+" << this->offset;
-            else if (this->offset < 0)
-                asm_output << "-" << (-this->offset);
+            else if ((this->offset & 0x8000) != 0)
+                asm_output << "-" << (0x10000 - this->offset);
             asm_output << ") AND $FFFF,R" << this->r1;
             // Note how the AND in expression solves a bug when subtraction creates a big negative
             // number, triggering an error in as1600
@@ -142,10 +142,10 @@ void microcode::dump(void) {
                 asm_output << this->prefix;
             else
                 mangle_label(this->prefix, this->value);
-            if (this->offset > 0)
+            if (this->offset && (this->offset & 0x8000) == 0)
                 asm_output << "+" << this->offset;
-            else if (this->offset < 0)
-                asm_output << "-" << (-this->offset);
+            else if ((this->offset & 0x8000) != 0)
+                asm_output << "-" << (0x10000 - this->offset);
             break;
         case M_A:  // Address (jumps): CALL CLRSCR
             asm_output << "\t" << opcode_list[this->type] << " ";

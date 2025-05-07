@@ -38,17 +38,17 @@ bool code::subexpression_available(int base, int offset, int index) {
         return false;
     if (subexpression_index != index)  // Return if not same index
         return false;
-    diff = offset - subexpression_offset;
+    diff = (offset - subexpression_offset) & 0xffff;
     subexpression_offset = offset;
     if (subexpression_base == base) {  // Same base array, adjust offset
-        if (diff == 1)
+        if (diff == 0x0001)
             everything.push_back(new microcode(M_R, N_INCR, 3, 0, "", 0, 0));
-        else if (diff == -1)
+        else if (diff == 0xffff)
             everything.push_back(new microcode(M_R, N_DECR, 3, 0, "", 0, 0));
-        else if (diff > 0)
+        else if (diff != 0 && (diff & 0x8000) == 0)
             everything.push_back(new microcode(M_NR, N_ADDI, 3, 0, "", diff, 0));
-        else if (diff < 0)
-            everything.push_back(new microcode(M_NR, N_SUBI, 3, 0, "", -diff, 0));
+        else if ((diff & 0x8000) != 0)
+            everything.push_back(new microcode(M_NR, N_SUBI, 3, 0, "", 0x10000 - diff, 0));
         if (diff != 0) {
             cycles = 0;
             flags_valid = false;

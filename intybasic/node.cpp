@@ -28,7 +28,7 @@ node::node(enum lexical_component type, int value, class node *left, class node 
     
     // Optimizes trees of addition/subtraction operators
     if (type == C_MINUS && right->type == C_NUM && left->type == C_PLUS && left->right->type == C_NUM) {
-        right->value = left->right->value - right->value;
+        right->value = (left->right->value - right->value) & 0xffff;
         this->left = left->left;
         left->left = NULL;
         delete left;
@@ -36,42 +36,42 @@ node::node(enum lexical_component type, int value, class node *left, class node 
         this->type = C_PLUS;
     }
     if (type == C_PLUS && right->type == C_NUM && left->type == C_MINUS && left->right->type == C_NUM) {
-        right->value -= left->right->value;
+        right->value = (right->value - left->right->value) & 0xffff;
         this->left = left->left;
         left->left = NULL;
         delete left;
         left = this->left;
     }
     if (type == C_PLUS && left->type == C_NUM && right->type == C_MINUS && right->right->type == C_NUM) {
-        left->value -= right->right->value;
+        left->value = (left->value - right->right->value) & 0xffff;
         this->right = right->left;
         right->left = NULL;
         delete right;
         right = this->right;
     }
     if (type == C_PLUS && right->type == C_NUM && left->type == C_PLUS && left->right->type == C_NUM) {
-        right->value += left->right->value;
+        right->value = (right->value + left->right->value) & 0xffff;
         this->left = left->left;
         left->left = NULL;
         delete left;
         left = this->left;
     }
     if (type == C_PLUS && left->type == C_NUM && right->type == C_PLUS && right->right->type == C_NUM) {
-        left->value += right->right->value;
+        left->value = (left->value + right->right->value) & 0xffff;
         this->right = right->left;
         right->left = NULL;
         delete right;
         right = this->right;
     }
     if (type == C_PLUS && right->type == C_NUM && left->type == C_PLUS && left->left->type == C_NUM) {
-        right->value += left->left->value;
+        right->value = (right->value + left->left->value) & 0xffff;
         this->left = left->right;
         left->right = NULL;
         delete left;
         left = this->left;
     }
     if (type == C_PLUS && left->type == C_NUM && right->type == C_PLUS && right->left->type == C_NUM) {
-        left->value += right->left->value;
+        left->value = (left->value + right->left->value) & 0xffff;
         this->right = right->right;
         right->right = NULL;
         delete right;
@@ -101,7 +101,7 @@ node::node(enum lexical_component type, int value, class node *left, class node 
         // Pass constant to left side (in order to be added to address in one instruction)
         temp = right->left;
         right->type = C_PLUS;
-        right->right->value = - right->right->value;
+        right->right->value = -right->right->value & 0xffff;
         right->left = left;
         this->left = right;
         this->right = temp;
@@ -120,7 +120,7 @@ node::node(enum lexical_component type, int value, class node *left, class node 
     if (type == C_PLUS) {
         if (left->type == C_NUM && right->type == C_NUM) {  // const + const --> const
             this->type = C_NUM;
-            this->value = left->value + right->value;
+            this->value = (left->value + right->value) & 0xffff;
             delete this->left;
             this->left = NULL;
             delete this->right;
@@ -133,7 +133,7 @@ node::node(enum lexical_component type, int value, class node *left, class node 
     if (type == C_MINUS) {
         if (left->type == C_NUM && right->type == C_NUM) {  // const - const --> const
             this->type = C_NUM;
-            this->value = left->value - right->value;
+            this->value = (left->value - right->value) & 0xffff;
             delete this->left;
             this->left = NULL;
             delete this->right;
@@ -143,7 +143,7 @@ node::node(enum lexical_component type, int value, class node *left, class node 
     if (type == C_MUL) {
         if (left->type == C_NUM && right->type == C_NUM) {  // const * const --> const
             this->type = C_NUM;
-            this->value = left->value * right->value;
+            this->value = (left->value * right->value) & 0xffff;
             delete this->left;
             this->left = NULL;
             delete this->right;
@@ -210,25 +210,25 @@ node::node(enum lexical_component type, int value, class node *left, class node 
     }
     if (type == C_NOT && left->type == C_NUM) {
         this->type = C_NUM;
-        this->value = ~left->value;
+        this->value = ~left->value & 0xffff;
         delete this->left;
         this->left = NULL;
     }
     if (type == C_NEG && left->type == C_NUM) {
         this->type = C_NUM;
-        this->value = -left->value;
+        this->value = -left->value & 0xffff;
         delete this->left;
         this->left = NULL;
     }
     if (type == C_ABS && left->type == C_NUM) {
         this->type = C_NUM;
-        this->value = left->value < 0 ? -left->value : left->value;
+        this->value = ((left->value & 0x8000) ? -left->value : left->value) & 0xffff;
         delete this->left;
         this->left = NULL;
     }
     if (type == C_SGN && left->type == C_NUM) {
         this->type = C_NUM;
-        this->value = left->value < 0 ? -1 : (left->value ? 1 : 0);
+        this->value = (left->value & 0x8000) ? 0xffff : (left->value ? 1 : 0);
         delete this->left;
         this->left = NULL;
     }
@@ -765,14 +765,14 @@ void node::generate(int reg, int decision) {
                     left->generate(reg, 0);
                 }
                 if (type == C_PLUS) {
-                    if (val == 1)
+                    if (val == 0x0001)
                         output->emit_r(N_INCR, reg);
                     else if (val == 0xffff)
                         output->emit_r(N_DECR, reg);
                     else if (val != 0)
                         output->emit_nr(N_ADDI, "", val, reg);
                 } else if (type == C_MINUS) {
-                    if (val == 1)
+                    if (val == 0x0001)
                         output->emit_r(N_DECR, reg);
                     else if (val == 0xffff)
                         output->emit_r(N_INCR, reg);
@@ -878,7 +878,7 @@ void node::generate(int reg, int decision) {
                     output->emit_nr(N_CMPI, "", val, reg);
                     if (decision) {
                         if (value) {    // Unsigned
-                            output->emit_a(N_BEQ, TEMP_PREFIX, decision);
+                            output->emit_a(N_BEQ, "", 4);
                             output->emit_a(N_BNC, TEMP_PREFIX, decision);
                         } else {
                             output->emit_a(N_BLE, TEMP_PREFIX, decision);
@@ -889,7 +889,7 @@ void node::generate(int reg, int decision) {
 
                         output->emit_nr(N_MVII, "", -1, reg);
                         if (value) {    // Unsigned
-                            output->emit_a(N_BEQ, TEMP_PREFIX, label);   // 2+2
+                            output->emit_a(N_BEQ, "", 4);   // 2+2
                             output->emit_a(N_BC, TEMP_PREFIX, label);   // two words of jump and one word of INCR
                         } else {
                             output->emit_a(N_BGT, TEMP_PREFIX, label);   // two words of jump and one word of INCR
@@ -1223,7 +1223,7 @@ void node::generate(int reg, int decision) {
                     output->emit_lor(N_CMP, prefix, variable, offset, reg);
                     if (decision) {
                         if (value) {    // Unsigned
-                            output->emit_a(N_BEQ, TEMP_PREFIX, decision);
+                            output->emit_a(N_BEQ, "", 4);
                             output->emit_a(N_BNC, TEMP_PREFIX, decision);
                         } else {
                             output->emit_a(N_BLE, TEMP_PREFIX, decision);
@@ -1234,7 +1234,7 @@ void node::generate(int reg, int decision) {
 
                         output->emit_nr(N_MVII, "", -1, reg);
                         if (value) {    // Unsigned
-                            output->emit_a(N_BEQ, TEMP_PREFIX, label);   // 2+2
+                            output->emit_a(N_BEQ, "", 4);   // 2+2
                             output->emit_a(N_BC, TEMP_PREFIX, label);   // two words of jump and one word of INCR
                         } else {
                             output->emit_a(N_BGT, TEMP_PREFIX, label);   // two words of jump and one word of INCR
@@ -1510,7 +1510,7 @@ void node::generate(int reg, int decision) {
                             if (reversed) {
                                 output->emit_a(N_BNC, TEMP_PREFIX, label);
                             } else {
-                                output->emit_a(N_BEQ, TEMP_PREFIX, label);
+                                output->emit_a(N_BEQ, "", 4);
                                 output->emit_a(N_BC, TEMP_PREFIX, label);
                             }
                         } else {

@@ -388,6 +388,9 @@ private:
                 value = (value << 4) | temp;
                 line_pos++;
             }
+            if (value > 65535) {
+                emit_warning("number exceeds 16 bits");
+            }
             name = "";
             if (line_pos < line_size && (line[line_pos] == 'u' || line[line_pos] == 'U')) {
                 line_pos++;
@@ -404,6 +407,9 @@ private:
             while (line_pos < line_size && (line[line_pos] == '0' || line[line_pos] == '1')) {
                 value = (value << 1) | (line[line_pos] & 1);
                 line_pos++;
+            }
+            if (value > 65535) {
+                emit_warning("number exceeds 16 bits");
             }
             name = "";
             if (line_pos < line_size && (line[line_pos] == 'u' || line[line_pos] == 'U')) {
@@ -1262,7 +1268,7 @@ private:
             if (name == "u")
                 *type = 1;
             get_lex();
-            return new node(C_NUM, temp, NULL, NULL);
+            return new node(C_NUM, temp & 0xffff, NULL, NULL);
         }
         emit_error("bad syntax for expression");
         return new node(C_NUM, 0, NULL, NULL);
@@ -2227,11 +2233,15 @@ private:
                                 }
                                 if (v == 0) {
                                     v1 = tree->node_value();
-                                    if (v1 < -128 || v1 > 255)
+                                    if (v1 >= 0xff80 && v1 <= 0xffff)
+                                        v1 &= 0xff;
+                                    if (v1 > 255)
                                         emit_error("integer out of 8-bits range in DATA PACKED");
                                 } else {
                                     v2 = tree->node_value();
-                                    if (v2 < -128 || v2 > 255)
+                                    if (v2 >= 0xff80 && v2 <= 0xffff)
+                                        v2 &= 0xff;
+                                    if (v2 > 255)
                                         emit_error("integer out of 8-bits range in DATA PACKED");
                                 }
                                 delete tree;
