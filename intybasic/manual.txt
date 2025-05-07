@@ -25,6 +25,9 @@ All trademarks are property of their respective owners.
 
 v1.5.1 May/06/2025  o INCLUDE now can be used without limit (before limited to 50 files)
                     o INCLUDE now can be nested.
+                    o Syntax now admits NOT NOT 5 and NOT -5
+                    o Correction of > operator with unsigned values.
+                    o Internal constant optimization now gives same values as Intellivision code.
 
 v1.5.0 Apr/27/2025  o Added OPTION MAP, SEGMENT, SEGMENT BANK, BANK and BANK SELECT
                       (with contributions by DZ-Jay)

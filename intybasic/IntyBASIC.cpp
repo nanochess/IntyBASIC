@@ -584,6 +584,16 @@ private:
     }
     
     //
+    // Check for macro
+    //
+    void check_for_macro(void)
+    {
+        if (lex == C_NAME && macros[name] != NULL) {  // Function (macro)
+            replace_macro();
+        }
+    }
+    
+    //
     // Expression evaluation: Level 0 (OR)
     //
     class node *eval_level0(int *type)
@@ -594,6 +604,7 @@ private:
         int small_ops;
         
         small_ops = 0;
+        check_for_macro();
         left = eval_level1(type, &small_ops);
         while (1) {
             if (lex == C_NAME && name == "OR") {
@@ -601,6 +612,7 @@ private:
                 if (small_ops)
                     emit_warning("Small operators used at left side of OR (parenthesis required?)");
                 small_ops = 0;
+                check_for_macro();
                 right = eval_level1(&type2, &small_ops);
                 if (small_ops)
                     emit_warning("Small operators used at right side of OR (parenthesis required?)");
@@ -622,6 +634,7 @@ private:
         class node *right;
         int type2;
         
+        check_for_macro();
         left = eval_level2(type, small_ops);
         while (1) {
             if (lex == C_NAME && name == "XOR") {
@@ -629,6 +642,7 @@ private:
                 if (*small_ops)
                     emit_warning("Small operators used at left side of XOR (parenthesis required?");
                 *small_ops = 0;
+                check_for_macro();
                 right = eval_level2(&type2, small_ops);
                 if (*small_ops)
                     emit_warning("Small operators used at right side of XOR (parenthesis required?");
@@ -650,6 +664,7 @@ private:
         class node *right;
         int type2;
         
+        check_for_macro();
         left = eval_level3(type, small_ops);
         while (1) {
             if (lex == C_NAME && name == "AND") {
@@ -657,6 +672,7 @@ private:
                 if (*small_ops)
                     emit_warning("Small operators used at left side of AND (parenthesis required?");
                 *small_ops = 0;
+                check_for_macro();
                 right = eval_level3(&type2, small_ops);
                 if (*small_ops)
                     emit_warning("Small operators used at right side of AND (parenthesis required?");
@@ -678,35 +694,42 @@ private:
         class node *right;
         int type2;
         
+        check_for_macro();
         left = eval_level4(type, small_ops);
         while (1) {
             if (lex == C_EQUAL) {
                 get_lex();
+                check_for_macro();
                 right = eval_level4(&type2, small_ops);
                 left = new node(C_EQUAL, 0, left, right);
                 *type = 0;
             } else if (lex == C_NOTEQUAL) {
                 get_lex();
+                check_for_macro();
                 right = eval_level4(&type2, small_ops);
                 left = new node(C_NOTEQUAL, 0, left, right);
                 *type = 0;
             } else if (lex == C_LESS) {
                 get_lex();
+                check_for_macro();
                 right = eval_level4(&type2, small_ops);
                 left = new node(C_LESS, *type | type2, left, right);
                 *type = 0;
             } else if (lex == C_LESSEQUAL) {
                 get_lex();
+                check_for_macro();
                 right = eval_level4(&type2, small_ops);
                 left = new node(C_LESSEQUAL, *type | type2, left, right);
                 *type = 0;
             } else if (lex == C_GREATER) {
                 get_lex();
+                check_for_macro();
                 right = eval_level4(&type2, small_ops);
                 left = new node(C_GREATER, *type | type2, left, right);
                 *type = 0;
             } else if (lex == C_GREATEREQUAL) {
                 get_lex();
+                check_for_macro();
                 right = eval_level4(&type2, small_ops);
                 left = new node(C_GREATEREQUAL, *type | type2, left, right);
                 *type = 0;
@@ -727,29 +750,34 @@ private:
         class node *right;
         int type2;
         
+        check_for_macro();
         left = eval_level5(type, small_ops);
         while (1) {
             if (lex == C_PLUS) {
                 get_lex();
                 *small_ops = 1;
+                check_for_macro();
                 right = eval_level5(&type2, small_ops);
                 left = new node(C_PLUS, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else if (lex == C_MINUS) {
                 get_lex();
                 *small_ops = 1;
+                check_for_macro();
                 right = eval_level5(&type2, small_ops);
                 left = new node(C_MINUS, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else if (lex == C_PLUSF) {
                 get_lex();
                 *small_ops = 1;
+                check_for_macro();
                 right = eval_level5(&type2, small_ops);
                 left = new node(C_PLUSF, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else if (lex == C_MINUSF) {
                 get_lex();
                 *small_ops = 1;
+                check_for_macro();
                 right = eval_level5(&type2, small_ops);
                 left = new node(C_MINUSF, 0, left, right);
                 *type = mix_signedness(*type, type2);
@@ -769,23 +797,27 @@ private:
         class node *right;
         int type2;
         
+        check_for_macro();
         left = eval_level6(type);
         while (1) {
             if (lex == C_MUL) {
                 get_lex();
                 *small_ops = 1;
+                check_for_macro();
                 right = eval_level6(&type2);
                 left = new node(C_MUL, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else if (lex == C_DIV) {
                 get_lex();
                 *small_ops = 1;
+                check_for_macro();
                 right = eval_level6(&type2);
                 left = new node(C_DIV, 0, left, right);
                 *type = mix_signedness(*type, type2);
             } else if (lex == C_MOD) {
                 get_lex();
                 *small_ops = 1;
+                check_for_macro();
                 right = eval_level6(&type2);
                 left = new node(C_MOD, 0, left, right);
                 *type = mix_signedness(*type, type2);
@@ -805,6 +837,7 @@ private:
         
         if (lex == C_MINUS) {   // Unary -
             get_lex();
+            check_for_macro();
             if (lex == C_NUM && name == ".") {  // Ok, fractional value, special case
                 value = ((value & 0xff00) >> 8) | ((value & 0x00ff) << 8);
                 value = -value;
@@ -817,20 +850,25 @@ private:
             }
         } else if (lex == C_PLUS) { // Unary +
             get_lex();
+            check_for_macro();
             left = eval_level6(type);
         } else if (lex == C_NAME && name == "NOT") {
             get_lex();
+            check_for_macro();
             left = eval_level6(type);
             left = new node(C_NOT, 0, left, NULL);
         } else if (lex == C_NAME && name == "SIGNED") {
             get_lex();
+            check_for_macro();
             left = eval_level6(type);
             *type = 0;
         } else if (lex == C_NAME && name == "UNSIGNED") {
             get_lex();
+            check_for_macro();
             left = eval_level6(type);
             *type = 1;
         } else {
+            check_for_macro();
             left = eval_level7(type);
         }
         return left;
@@ -1197,10 +1235,6 @@ private:
                 }
                 emit_error("syntax error in ECS");
                 return new node(C_NUM, 0, NULL, NULL);
-            } else if (macros[name] != NULL) {  // Function (macro)
-                if (replace_macro())
-                    return new node(C_NUM, 0, NULL, NULL);
-                return eval_level0(type);
             }
             
             // Take note for sign extension
