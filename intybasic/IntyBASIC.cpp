@@ -34,7 +34,7 @@ using namespace std;
 #include "code.h"       // Class code
 #include "node.h"       // Class node
 
-const string VERSION = "v1.5.1 May/06/2025";      // Compiler version
+const string VERSION = "v1.5.1 May/10/2025";      // Compiler version
 
 const string LABEL_PREFIX = "Q";    // Prefix for BASIC labels
 const string TEMP_PREFIX = "T";     // Prefix for temporal labels
@@ -3799,8 +3799,9 @@ private:
                             emit_error("only constant expression for OPTION MAP parameter");
                         } else {
                             map = tree->node_value();
-                            if (map < 0 || map > 7)
-                                emit_error("bad map for OPTION MAP");
+                            // The library validates it in order to admit personalized extensions.
+                            //if (map < 0 || map > 8)
+                            //    emit_error("bad map for OPTION MAP");
                             intybasic_map = map;
                         }
 

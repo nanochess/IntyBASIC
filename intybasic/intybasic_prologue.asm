@@ -27,6 +27,8 @@
 	; Revision: Jan/10/2018. Added ECS detection.
 	;
 
+    LISTING "off"
+
 ;;==========================================================================;;
 ;; IntyBASIC SDK Library: romseg-bs.mac                                     ;;
 ;;--------------------------------------------------------------------------;;
@@ -58,7 +60,7 @@ _rom            STRUCT  0
 @@static        QEQU    1
 @@dynamic       QEQU    2
 
-@@mapcnt        QEQU    8
+@@mapcnt        QEQU    9
 @@pgsize        QEQU    4096
 
 @@open          QSET    @@invalid
@@ -818,17 +820,24 @@ MACRO   ROM.Setup map
 _rom.init       QEQU    1
 _rom.map        QSET    %map%
 _rom.ecs_off    QSET    _rom.null
+_rom.extra_rom  QSET    0
 
-            IF (DEFINED intybasic_ecs)
+            IF (intybasic_ecs)
 _rom.ecs_req    QSET    intybasic_ecs
             ELSE
 _rom.ecs_req    QSET    _rom.null
             ENDI
 
-            IF (DEFINED intybasic_jlp)
+            IF (intybasic_jlp)
 _rom.jlp_req    QSET    intybasic_jlp
             ELSE
 _rom.jlp_req    QSET    _rom.null
+            ENDI
+
+            IF (intybasic_cc3 OR intybasic_jlp)
+_rom.cart_ram   QSET    1
+            ELSE
+_rom.cart_ram   QSET    _rom.null
             ENDI
 
             ; ---------------------------------------------------------
@@ -887,21 +896,23 @@ _rom.ecs_off    QSET    1
                 __rom_init_segmem(3, $2000, $2FFF, $F,           static)
                 __rom_init_segmem(4, $4810, $4FFF, _rom.invalid, static)
 
-                __rom_init_segmem(5, $7000, $7FFF, $1,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $2,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $3,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $4,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $5,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $6,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $7,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $8,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $9,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $A,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $B,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $C,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $D,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $E,           dynamic)
-                __rom_init_segmem(5, $7000, $7FFF, $F,           dynamic)
+_rom.dynseg     QSET    _rom.segcnt
+
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $1, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $2, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $3, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $4, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $5, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $6, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $7, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $8, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $9, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $A, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $B, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $C, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $D, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $E, dynamic)
+                __rom_init_segmem(_rom.dynseg, $7000, $7FFF, $F, dynamic)
             ENDI
 
             ; MAP #4: Dynamic bank-switching 154K memory map - 8K banks
@@ -915,21 +926,23 @@ _rom.ecs_off    QSET    1
                 __rom_init_segmem(4, $7000, $7FFF, $F,           static)
                 __rom_init_segmem(5, $4810, $4FFF, _rom.invalid, static)
 
-                __rom_init_segmem(6, $E000, $FFFF, $0,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $2,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $3,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $4,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $5,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $6,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $7,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $8,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $9,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $A,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $B,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $C,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $D,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $E,           dynamic)
-                __rom_init_segmem(6, $E000, $FFFF, $F,           dynamic)
+_rom.dynseg     QSET    _rom.segcnt
+
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $0, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $2, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $3, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $4, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $5, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $6, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $7, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $8, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $9, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $A, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $B, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $C, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $D, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $E, dynamic)
+                __rom_init_segmem(_rom.dynseg, $E000, $FFFF, $F, dynamic)
             ENDI
 
             ; MAP #5: Dynamic bank-switching 254K memory map - 16K banks
@@ -942,20 +955,22 @@ _rom.ecs_off    QSET    1
                 __rom_init_segmem(3, $7000, $7FFF, $F,           static)
                 __rom_init_segmem(4, $4810, $4FFF, _rom.invalid, static)
 
-                __rom_init_segmem(5, $C040, $FFFF, $0,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $2,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $3,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $4,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $5,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $6,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $7,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $8,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $9,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $A,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $B,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $C,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $D,           dynamic)
-                __rom_init_segmem(5, $C040, $FFFF, $E,           dynamic)
+_rom.dynseg     QSET    _rom.segcnt
+
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $0, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $2, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $3, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $4, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $5, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $6, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $7, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $8, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $9, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $A, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $B, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $C, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $D, dynamic)
+                __rom_init_segmem(_rom.dynseg, $C040, $FFFF, $E, dynamic)
             ENDI
 
             ; MAP #6: Dynamic bank-switching 256K map -- 2 dynamic segments
@@ -1044,6 +1059,27 @@ _rom.ecs_off    QSET    1
                 __rom_init_segmem(6, $E000, $FFFF, $8,           dynamic)
             ENDI
 
+            ; MAP #8: 50K static memory map
+            IF (_rom.map = 8)
+_rom.extra_rom  QSET    1
+
+                __rom_init_segmem(0, $5000, $6FFF, _rom.invalid, static)
+                __rom_init_segmem(1, $A000, $BFFF, _rom.invalid, static)
+                __rom_init_segmem(2, $C040, $FFFF, _rom.invalid, static)
+                __rom_init_segmem(3, $2100, $2FFF, _rom.invalid, static)
+                __rom_init_segmem(4, $7100, $7FFF, _rom.invalid, static)
+
+                __rom_init_segmem(5, $4810, $4FFF, _rom.invalid, static)
+                __rom_init_segmem(6, $8040, $9FFF, _rom.invalid, static)
+            ENDI
+
+        ENDI
+
+        ; Check if cartridge RAM conflicts with extra ROM at $8040
+        IF (_rom.cart_ram AND _rom.extra_rom)
+          __rom_raise_error(["Map #", $#(_rom.map), " is not compatible with JLP or CC3 cartridge RAM."], _rom.null)
+
+          SMSG $("ERROR: Map #", $#(_rom.map), " is not compatible with JLP or CC3 cartridge RAM.")
         ENDI
 
         IF (_rom.error = _rom.null)
@@ -1460,6 +1496,8 @@ ENDM
 ;; ======================================================================== ;;
 ;;  EOF: romseg-bs.mac                                                      ;;
 ;; ======================================================================== ;;
+
+    LISTING "prev"
 
 	ROM.Setup intybasic_map
 
