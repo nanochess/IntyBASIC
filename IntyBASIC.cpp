@@ -1098,6 +1098,7 @@ private:
                 return tree;
             } else if (name == "VARPTR") {  // Access to variable/array/label address
                 get_lex();
+                check_for_macro();
                 *type = 1;  // Unsigned
                 if (lex != C_NAME) {
                     emit_error("missing variable name for VARPTR");
@@ -2300,6 +2301,7 @@ private:
                                 int type2;
                                 
                                 get_lex();
+                                check_for_macro();
                                 if (lex != C_NAME) {
                                     emit_error("missing variable name for VARPTR");
                                 } else {
