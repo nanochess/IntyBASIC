@@ -3909,7 +3909,7 @@ private:
     //
     // Compile a BASIC file
     //
-    int compile(char *current_path, ifstream &input, const char *library_path) {
+    void compile(char *current_path, ifstream &input, const char *library_path) {
         char *p;
         int eof;
         string procedure;
