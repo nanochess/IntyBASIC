@@ -1548,7 +1548,7 @@ _activate_drum_ecs:	PROC
 ;; ======================================================================== ;;
 PRNUM16		PROC
 .max_width      QSET    5
-.chr_clrmask    QSET    $F807
+.chr_clrmask    QSET    $FE07
 .chr_offset     QSET    (1 SHL 3)
 .digit_base     QSET    ('0' - ' ')
 .lzero          QSET    (((.digit_base -  0) SHL 3) AND $FFFF)
