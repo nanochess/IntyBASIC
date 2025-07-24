@@ -54,6 +54,7 @@
 	; Revision: Jan/09/2019. Solved bug where it would play always like
 	;                        PLAY SIMPLE NO DRUMS.
 	; Revision: May/18/2019. Solved bug where drums failed in ECS side.
+	; Revision: Jul/24/2025. Solves potential BUSRQ miss when using PLAY.
 	;
 
 	;
@@ -662,12 +663,16 @@ _play_music:	PROC
 	BEQ @@1
 	MVI@ R2,R3
 	INCR R2
-@@1:	MVO R2,_music_p
+@@1:	DIS
+	MVO R2,_music_p
 	MVO R2,_music_start
 	SWAP R2
 	MVO R2,_music_start+1
+	NOP		; Avoids potential BUSRQ miss because
+			; long sequence of non-interruptible MVO+SWAP.
 	MVO R3,_music_t
 	MVO R1,_music_tc
+	EIS
 	JR R5
 
 	ENDP
