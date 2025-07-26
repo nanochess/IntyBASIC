@@ -668,11 +668,11 @@ _play_music:	PROC
 	MVO R2,_music_start
 	SWAP R2
 	MVO R2,_music_start+1
-	EIS
 	NOP		; Avoids potential BUSRQ miss because
 			; long sequence of non-interruptible MVO+SWAP.
 	MVO R3,_music_t
 	MVO R1,_music_tc
+	EIS
 	JR R5
 
 	ENDP
