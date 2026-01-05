@@ -4142,7 +4142,7 @@ public:
 
         asm_output.open(temporary_file);
         if (!asm_output.is_open()) {
-            std::cerr << "Error: Unable to open temporary output file: " << output_file << "\n";
+            std::cerr << "Error: Unable to open temporary output file: " << temporary_file << "\n";
             input.close();
             return 2;
         }
