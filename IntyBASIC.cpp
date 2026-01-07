@@ -4131,7 +4131,11 @@ public:
         
         err_code = 0;
         
+#ifdef _WIN32
+        temporary_file = _tempnam(NULL, "intybasic");
+#else
         temporary_file = tmpnam(NULL);
+#endif
         
         input.open(input_file);
         if (!input.is_open()) {
@@ -4282,6 +4286,9 @@ public:
             err_code = 2;
         }
         remove(temporary_file);
+#ifdef _WIN32
+        free(temporary_file);
+#endif
 
         // Copy the epilogue
         strcpy(path, library_path);
