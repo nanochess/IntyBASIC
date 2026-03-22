@@ -27,10 +27,13 @@
 	; Revision: Jan/10/2018. Added ECS detection.
 	;
 
+
     LISTING "off"
 
 ;;==========================================================================;;
 ;; IntyBASIC SDK Library: romseg-bs.mac                                     ;;
+;;  Version:    1.2                                                         ;;
+;;  Updated:    2026-03-20                                                  ;;
 ;;--------------------------------------------------------------------------;;
 ;;  This macro library is used by the IntyBASIC SDK to manage ROM address   ;;
 ;;  segments and generate statistics on program ROM usage.  It is an        ;;
@@ -44,7 +47,7 @@
 ;;--------------------------------------------------------------------------;;
 ;;      The file is placed into the public domain by its author.            ;;
 ;;      All copyrights are hereby relinquished on the routines and data in  ;;
-;;      this file.  -- James Pujals (DZ-Jay), 2024-2025                     ;;
+;;      this file.  -- James Pujals (DZ-Jay), 2024-2026                     ;;
 ;;==========================================================================;;
 
 ;; ======================================================================== ;;
@@ -1367,10 +1370,11 @@ MACRO   ROM.SwitchDefaultBank
 
       IF (_rom.error = _rom.null)
 
+        IF (_rom.map > 0)
 _rom.idx        QSET    .ROM.Segments[_rom.static]
 _rom.cnt        QSET    (_rom.segs - _rom.idx)
 
-        IF (_rom.cnt > 0)
+          IF (_rom.cnt > 0)
             REPEAT (_rom.cnt)
 
                 ROM.SwitchBank _rom.idx, 0
@@ -1378,6 +1382,7 @@ _rom.cnt        QSET    (_rom.segs - _rom.idx)
 _rom.idx        QSET    (_rom.idx + 1)
             ENDR
 
+          ENDI
         ENDI
 
       ENDI
