@@ -219,8 +219,7 @@ MACRO   __rom_validate_seg_bank(seg, bank)
         ; Validate the bank
         IF (_rom.error = _rom.null)
 
-_rom.num    QSET    _rom.segidx[%seg%]
-_rom.max    QSET    (_rom.bnkcnt[_rom.num] - 1)
+_rom.max    QSET    (_rom.bnkcnt[%seg%] - 1)
 
             IF (((%bank%) < 0) OR ((%bank%) > _rom.max))
                 __rom_raise_error(["Invalid bank number #", $#(%bank%), " for dynamic ROM segment #", $#(%seg%)], ["Must be between 0 and ", $#(_rom.max), "."])
@@ -1141,7 +1140,7 @@ MACRO   ROM.SelectDefaultSegment
     LISTING "code"
 
                 __rom_reset_error
-                __rom_assert_setup("SelectSegment")
+                __rom_assert_setup("SelectDefaultSegment")
 
         IF (_rom.error = _rom.null)
 
@@ -1348,6 +1347,43 @@ _rom.r_addr         QSET    (_rom.r_addr + _rom.pgsize)
     LISTING "prev"
 ENDM
 
+;; ======================================================================== ;;
+;;  ROM.SwitchDefaultBank                                                   ;;
+;;  Switches all dynamic ROM segments their default bank (#0). This ensures ;;
+;;  that segments larger than 4K are properly initialized..                 ;;
+;;                                                                          ;;
+;;  ARGUMENTS                                                               ;;
+;;      None.                                                               ;;
+;;                                                                          ;;
+;;  OUTPUT                                                                  ;;
+;;      _rom.error  -1 on failure.                                          ;;
+;; ======================================================================== ;;
+MACRO   ROM.SwitchDefaultBank
+;
+    LISTING "code"
+
+                __rom_reset_error
+                __rom_assert_setup("SwitchDefaultBank")
+
+      IF (_rom.error = _rom.null)
+
+_rom.idx        QSET    .ROM.Segments[_rom.static]
+_rom.cnt        QSET    (_rom.segs - _rom.idx)
+
+        IF (_rom.cnt > 0)
+            REPEAT (_rom.cnt)
+
+                ROM.SwitchBank _rom.idx, 0
+
+_rom.idx        QSET    (_rom.idx + 1)
+            ENDR
+
+        ENDI
+
+      ENDI
+
+    LISTING "prev"
+ENDM
 
 ;; ======================================================================== ;;
 ;;  ROM.End                                                                 ;;
@@ -1536,13 +1572,15 @@ MEMSET:
 	; Note mark is for automatic replacement by IntyBASIC
 _TITLE:
         BYTE 114, 'IntyBASIC program', 0 ;IntyBASIC MARK DON'T CHANGE
-        
+
 	;
 	; Main program
 	;
 _MAIN:
 	DIS			; Disable interrupts
 	MVII #STACK,R6
+
+    ROM.SwitchDefaultBank
 
 	;
 	; Clean memory
