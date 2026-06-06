@@ -248,8 +248,7 @@ MACRO   __rom_validate_segnum(segnum)
             __rom_raise_error(["Unknown internal ROM segment number #", $#(%segnum%), "."], _rom.null)
         ELSE
 
-_rom.type   QSET    _rom.t[%segnum%]
-_rom.max    QSET    (.ROM.Segments[_rom.type] - 1)
+_rom.max    QSET    (_rom.segcnt - 1)  ' Max internal index
 
             IF _EXPMAC (((%segnum%) < 0) OR ((%segnum%) > _rom.max))
                 __rom_raise_error(["Invalid internal segment number #", $#(%segnum%), " for selected memory map"], ["Must be a value between 0 and ", $#(_rom.max), "."])
